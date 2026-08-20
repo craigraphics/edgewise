@@ -1,0 +1,594 @@
+{
+  "version": 1,
+  "subject": "How AI actually works",
+  "description": "A conceptual map from 'learning from examples' through to agents. No calculus, no code. Every node is something you can hold in your head and reason with.",
+  "bands": [
+    {
+      "id": "foundations",
+      "label": "Foundations"
+    },
+    {
+      "id": "learning",
+      "label": "How learning works"
+    },
+    {
+      "id": "networks",
+      "label": "Neural networks"
+    },
+    {
+      "id": "language",
+      "label": "Language models"
+    },
+    {
+      "id": "behaviour",
+      "label": "Why they behave as they do"
+    },
+    {
+      "id": "systems",
+      "label": "Systems built on top"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "prediction-from-examples",
+      "label": "Learning from examples",
+      "subtitle": "Where the rule comes from",
+      "band": "foundations",
+      "layer": 0,
+      "row": 2,
+      "prerequisites": [],
+      "probes": [
+        "Suppose I want a program that spots spam email. What would I have to give a machine-learning system that I would not have to give a normal program?",
+        "If nobody writes the rule, where does the rule come from?"
+      ],
+      "misconceptions": [
+        "Believing the system is given rules in some indirect way, rather than deriving a rule from examples it was never told the reason for.",
+        "Assuming 'learning' means the system understands the examples, rather than finding a pattern that happens to fit them."
+      ],
+      "explanations": {
+        "intuition": "Ordinary software is a set of rules somebody wrote down. Machine learning inverts that: you supply examples paired with the right answers, and the system works out a rule that reproduces them. Nobody ever states the rule, and often nobody could.",
+        "example": "You never write down what makes a photo a cat. You show the system a hundred thousand labelled photos and it settles on something that gets cats right — without anyone knowing what that something is."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "features-and-representation",
+      "label": "Everything is numbers",
+      "subtitle": "Why the encoding decides what is knowable",
+      "band": "foundations",
+      "layer": 1,
+      "row": 1,
+      "prerequisites": [
+        "prediction-from-examples"
+      ],
+      "probes": [
+        "Before a model can do anything with a photograph, or a sentence, something has to happen to it. What?",
+        "If two different things get turned into the same numbers, what has the model lost?"
+      ],
+      "misconceptions": [
+        "Thinking the model reads text or sees images the way a person does, rather than operating on a numeric encoding of them.",
+        "Assuming the encoding is neutral — that turning something into numbers preserves everything about it."
+      ],
+      "explanations": {
+        "intuition": "A model only ever operates on numbers. So the first step is always converting the thing you care about into a list of numbers. That conversion is a decision, and it decides what the model can possibly notice — anything the encoding throws away is invisible from then on.",
+        "example": "A photo becomes a grid of brightness values. A word becomes a position in a list. Neither conversion is obvious or unique, and choosing a different one changes what the model can learn."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "training-vs-inference",
+      "label": "Training vs. using",
+      "subtitle": "Which phase you are actually talking to",
+      "band": "foundations",
+      "layer": 1,
+      "row": 3,
+      "prerequisites": [
+        "prediction-from-examples"
+      ],
+      "probes": [
+        "When you send a message to a chatbot, is it learning anything from you? What makes you say that?",
+        "Something is very expensive and happens once; something is cheap and happens millions of times. Which is which?"
+      ],
+      "misconceptions": [
+        "Believing the model learns from your conversation as you have it — the single most common misconception about deployed AI.",
+        "Assuming that because a chatbot remembers what you said earlier in the conversation, it has learned it."
+      ],
+      "explanations": {
+        "intuition": "There are two completely separate phases. Training adjusts the model's internals using data; it happens once, costs enormous amounts of money, and then stops. Inference is running the finished, frozen model on a new input. When you talk to a deployed model, only inference is happening — nothing about it changes.",
+        "example": "A model that appears to remember what you said three messages ago is not learning. Those messages are being re-sent to it every single turn, and it is reading them fresh each time."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "loss",
+      "label": "How wrong you are",
+      "subtitle": "Measuring wrongness as a number",
+      "band": "learning",
+      "layer": 1,
+      "row": 4,
+      "prerequisites": [
+        "prediction-from-examples"
+      ],
+      "probes": [
+        "If a system is going to improve, something has to tell it how badly it is doing. What would that have to look like — not the formula, just what it has to produce?",
+        "Why does it need a number rather than just 'right' or 'wrong'?"
+      ],
+      "misconceptions": [
+        "Thinking of the loss as an accuracy score reported to humans, rather than the signal the training process actually steers by.",
+        "Missing that a single number, chosen by a person, defines what the model will optimise for — including its blind spots."
+      ],
+      "explanations": {
+        "intuition": "You need one number saying how wrong the model currently is, and it has to be a smooth number rather than right-or-wrong. 'Wrong' gives you nowhere to go; 'wrong by this much' tells you which direction is better. That number is the loss, and choosing it is choosing what the model will care about.",
+        "example": "Predicting a house costs 300k when it costs 310k should be less wrong than predicting 900k. A right-or-wrong score treats those identically and gives the system nothing to work with."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "neuron",
+      "label": "What a 'neuron' is",
+      "subtitle": "What an artificial neuron actually does",
+      "band": "networks",
+      "layer": 2,
+      "row": 0,
+      "prerequisites": [
+        "features-and-representation"
+      ],
+      "probes": [
+        "People say neural networks are modelled on the brain. How far do you think that comparison actually goes?",
+        "If I gave you a single artificial neuron and told you it takes several numbers in and puts one number out, what do you think happens in between?"
+      ],
+      "misconceptions": [
+        "'A neuron is like a brain cell.' The resemblance is a historical naming choice and almost nothing else — no chemistry, no spiking, no biological plasticity.",
+        "Believing individual neurons hold individual concepts — a 'grandmother neuron' — rather than concepts being spread across many."
+      ],
+      "explanations": {
+        "intuition": "An artificial neuron multiplies each of its inputs by a weight, adds them up, and passes the total through a simple function that bends the line. That is the whole thing. The weights are the part that gets learned; everything else is fixed arithmetic.",
+        "example": "Ten numbers in, each multiplied by its own weight, summed, then squashed. One number out. You could do it on paper."
+      },
+      "simplificationCost": "The word 'neuron' does real damage. It imports intuitions about brains — firing, memory, thinking — that do not apply, and it makes the arithmetic sound more mysterious than it is."
+    },
+    {
+      "id": "tokens",
+      "label": "Text as tokens",
+      "subtitle": "Why the model never sees letters",
+      "band": "language",
+      "layer": 2,
+      "row": 2,
+      "prerequisites": [
+        "features-and-representation"
+      ],
+      "probes": [
+        "A language model has to turn your sentence into numbers. What do you think the unit is — letters, words, something else?",
+        "Why might a model be strangely bad at counting the letters in a word?"
+      ],
+      "misconceptions": [
+        "Assuming the unit is the word. Tokens are usually fragments, and common words get one token while rare ones get several.",
+        "Not connecting tokenisation to the model's observable failures — spelling, letter-counting, arithmetic on long numbers."
+      ],
+      "explanations": {
+        "intuition": "Text is chopped into tokens — chunks that are often a word, often part of one. The model never sees letters. It sees a sequence of token IDs, and everything it does is over those chunks.",
+        "example": "Ask a model how many r's are in 'strawberry' and it may get it wrong. It is not looking at letters at all; it sees two or three chunks and has to reason about spelling it cannot directly observe."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "generalization-overfitting",
+      "label": "Memorising vs. learning",
+      "subtitle": "Why a perfect score is a warning",
+      "band": "learning",
+      "layer": 2,
+      "row": 3,
+      "prerequisites": [
+        "prediction-from-examples",
+        "training-vs-inference"
+      ],
+      "probes": [
+        "A model gets every single training example exactly right. Is that good news? Why or why not?",
+        "What would you actually want a model to have picked up, as opposed to what it could pick up?"
+      ],
+      "misconceptions": [
+        "Reading perfect training performance as success, rather than as the classic warning sign.",
+        "Thinking overfitting means the model is bad, rather than that it learned the wrong thing very well."
+      ],
+      "explanations": {
+        "intuition": "A model with enough capacity can simply memorise its training data — get everything right and have learned nothing transferable. What you actually want is a rule that works on examples it has never seen. Perfect scores on the data you trained on are evidence of memorisation at least as often as evidence of understanding.",
+        "example": "A student who memorises last year's exam paper scores full marks on it and fails this year's. Nothing about the full marks was fake; it just measured the wrong thing."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "gradient-descent",
+      "label": "Getting less wrong",
+      "subtitle": "Improving by a great many tiny nudges",
+      "band": "learning",
+      "layer": 2,
+      "row": 4,
+      "prerequisites": [
+        "loss"
+      ],
+      "probes": [
+        "You have a number saying how wrong the model is, and millions of dials you could turn. How would you go about turning them?",
+        "Why nudge repeatedly instead of just calculating the best setting directly?"
+      ],
+      "misconceptions": [
+        "'It rolls downhill on a landscape.' The picture implies you can see the landscape and that it has three dimensions; it has millions, and nothing can see it.",
+        "Thinking training finds the best possible settings, rather than a good-enough resting place among many."
+      ],
+      "explanations": {
+        "intuition": "For each dial, work out whether nudging it up or down would make the loss a little smaller. Nudge every dial slightly that way. Repeat millions of times. There is no cleverness in it — it is a vast number of tiny local improvements, each blind to the whole.",
+        "example": "You are on a foggy hillside and can only feel the slope under your feet. You step downhill. You do it again. You have no idea whether the valley you reach is the lowest one, and you never will."
+      },
+      "simplificationCost": "The ball-rolling-downhill picture is genuinely useful but wrong in one way that matters: it suggests a landscape you could look at and a lowest point you could aim for. The real space has millions of dimensions, nothing sees it, and where training stops is one acceptable resting place among astronomically many."
+    },
+    {
+      "id": "layers-depth",
+      "label": "Why depth helps",
+      "subtitle": "What stacking layers actually buys",
+      "band": "networks",
+      "layer": 3,
+      "row": 0,
+      "prerequisites": [
+        "neuron"
+      ],
+      "probes": [
+        "If one neuron is a weighted sum, what do you get by putting a whole layer of them after another layer?",
+        "What would go wrong if you stacked layers but left out the bending function inside each neuron?"
+      ],
+      "misconceptions": [
+        "Assuming depth just means 'more capacity', missing that depth builds compositional structure — later layers work on what earlier layers found.",
+        "Not realising that without the non-linearity, stacked layers collapse into a single layer and depth buys literally nothing."
+      ],
+      "explanations": {
+        "intuition": "Each layer takes what the previous layer found and combines it into something more assembled. Early layers latch onto small local things; later layers work with combinations of those. The bending function inside each neuron is what makes this work — without it, any stack of layers is mathematically identical to one layer.",
+        "example": "In an image network, the first layers respond to edges, later ones to shapes made of edges, later still to objects made of shapes. Nobody designed that hierarchy; it falls out of the stacking."
+      },
+      "simplificationCost": "The edges-then-shapes-then-objects story is real but tidier than the truth. Most units in most networks do not correspond to anything a person can name, and the neat hierarchy is drawn from the minority that happen to be interpretable."
+    },
+    {
+      "id": "embeddings",
+      "label": "Meaning as position",
+      "subtitle": "Words as points in a very large space",
+      "band": "language",
+      "layer": 3,
+      "row": 2,
+      "prerequisites": [
+        "tokens",
+        "features-and-representation"
+      ],
+      "probes": [
+        "Each token becomes a long list of numbers. What could that list possibly capture about the token?",
+        "If 'bank' can mean a riverbank or a place for money, what does that do to the idea of one fixed position per word?"
+      ],
+      "misconceptions": [
+        "'Similar words sit close together' — true, but the 2D scatter plots people have seen are projections that throw away almost all the structure.",
+        "Thinking each word has one permanent position, when in a modern language model the position shifts with context."
+      ],
+      "explanations": {
+        "intuition": "Each token gets a long list of numbers — hundreds or thousands — which you can think of as a position in a very high-dimensional space. Tokens used in similar ways end up in similar regions. That arrangement is learned, not designed, and nobody decided what any single dimension means.",
+        "example": "The famous one is that the direction from 'man' to 'woman' is roughly the same as from 'king' to 'queen'. Nobody built that in. It emerged because those words are used in parallel ways."
+      },
+      "simplificationCost": "Every picture of embeddings you have seen is a 2D or 3D projection of something with hundreds of dimensions. It is not a simplified view of the space — it is a shadow, and most of the structure that makes embeddings work is destroyed in casting it."
+    },
+    {
+      "id": "train-test-split",
+      "label": "Holding data back",
+      "subtitle": "The only defence against fooling yourself",
+      "band": "learning",
+      "layer": 3,
+      "row": 3,
+      "prerequisites": [
+        "generalization-overfitting"
+      ],
+      "probes": [
+        "You want to know whether a model actually learned something transferable. What would you have to have done before training started?",
+        "Someone tunes their model fifty times against the same held-out set and reports the best result. What is wrong with that number?"
+      ],
+      "misconceptions": [
+        "Treating the split as bureaucracy rather than as the only defence against fooling yourself.",
+        "Missing that repeatedly tuning against a held-out set gradually turns it into training data — the leak that produces most overstated results."
+      ],
+      "explanations": {
+        "intuition": "Before training, hide some of your data. Never let the model see it. At the end, test on that. It is the only way to distinguish a model that learned something from one that memorised — and the discipline is fragile, because every time you make a decision based on that held-out score you have leaked a little of it back in.",
+        "example": "A benchmark result that looks too good usually means the test material leaked into training. At the scale of modern models, trained on much of the public internet, this is extremely hard to rule out."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "parameters-scale",
+      "label": "What parameters are",
+      "subtitle": "What 'billions of parameters' means",
+      "band": "networks",
+      "layer": 4,
+      "row": 0,
+      "prerequisites": [
+        "layers-depth"
+      ],
+      "probes": [
+        "When you read that a model has 70 billion parameters, what are those 70 billion things?",
+        "Does a model with ten times the parameters know ten times as much? What is your reasoning?"
+      ],
+      "misconceptions": [
+        "'More parameters means smarter.' It conflates capacity with capability — data, training method and tuning matter at least as much.",
+        "Imagining parameters as stored facts rather than as weights that shape a computation."
+      ],
+      "explanations": {
+        "intuition": "The parameters are the weights — the multipliers on every connection, plus a few extras. That is the entire learned content of the model. A 70-billion-parameter model is a list of 70 billion numbers, and running it means doing arithmetic with all of them.",
+        "example": "Nothing else is stored. No database of facts, no copy of the training text. Whatever the model appears to know is a consequence of those numbers and nothing else."
+      },
+      "simplificationCost": "Counting parameters is a poor proxy for capability, and the industry knows it. Smaller models trained on better data routinely beat larger ones. The number is quoted because it is easy to quote."
+    },
+    {
+      "id": "backprop-intuition",
+      "label": "Blame, spread backwards",
+      "subtitle": "How the error reaches every weight",
+      "band": "networks",
+      "layer": 4,
+      "row": 1,
+      "prerequisites": [
+        "layers-depth",
+        "gradient-descent"
+      ],
+      "probes": [
+        "The output was wrong, and there are a million weights spread across many layers. How would you decide which ones to blame?",
+        "Why would you work backwards from the output rather than forwards from the input?"
+      ],
+      "misconceptions": [
+        "Treating backpropagation as a separate learning algorithm, rather than as the efficient way of getting the nudges that gradient descent then applies.",
+        "Believing it requires calculus to understand what it is doing, as opposed to how it is computed."
+      ],
+      "explanations": {
+        "intuition": "Start at the output, where you know exactly how wrong you were. Work out how much each weight in the last layer contributed to that error. Then hand the leftover blame back to the layer before, and repeat all the way to the input. One backwards sweep produces a nudge for every weight in the network.",
+        "example": "A restaurant gets a bad review for a dish. The kitchen assigns some blame to the sauce, some to the cooking; the sauce station then splits its share between its own ingredients. Blame flows backwards through the chain, and everyone learns their part of it."
+      },
+      "simplificationCost": "The blame metaphor is honest about what backpropagation achieves and silent about how. The actual mechanism is the chain rule from calculus, applied mechanically. You do not need it to reason about training — but 'spreading blame' will not help you if you ever read the equations."
+    },
+    {
+      "id": "attention",
+      "label": "Attention",
+      "subtitle": "Deciding which words matter to which",
+      "band": "language",
+      "layer": 4,
+      "row": 2,
+      "prerequisites": [
+        "embeddings"
+      ],
+      "probes": [
+        "In 'the trophy did not fit in the suitcase because it was too big', what does 'it' refer to — and what would a model need to be able to do to get that right?",
+        "Every word in a sentence needs to be interpreted using the other words. What does that imply about how much work grows as sentences get longer?"
+      ],
+      "misconceptions": [
+        "'The model pays attention to the important words.' It is a learned weighted average over every position, computed mechanically — no selecting, no noticing.",
+        "Thinking attention gives an explanation of the model's reasoning; attention weights are widely misread as interpretability."
+      ],
+      "explanations": {
+        "intuition": "For every token, the model computes a relevance score against every other token, turns those scores into proportions, and builds a new representation of that token as a weighted blend of the others. Words that help interpret it contribute more. Nothing chooses — the scores come out of learned arithmetic.",
+        "example": "For 'it', the scores against 'trophy' and 'suitcase' come out different, and the blend leans toward the right one. That leaning was learned from text, not reasoned out."
+      },
+      "simplificationCost": "'Attention' is as misleading a word as 'neuron'. It suggests something is looking, choosing, noticing. Nothing is. And attention weights look like an explanation of the model's reasoning, which is why they are so often presented as one — the research on whether they actually are is much less encouraging than the pictures suggest."
+    },
+    {
+      "id": "transformer",
+      "label": "The transformer",
+      "subtitle": "The arrangement that made this possible",
+      "band": "language",
+      "layer": 5,
+      "row": 1,
+      "prerequisites": [
+        "attention",
+        "layers-depth"
+      ],
+      "probes": [
+        "You have attention, and you have the idea of stacking layers. How would you put them together into something you could actually train?",
+        "The earlier generation of language models read a sentence one word at a time, in order. What does dropping that requirement buy you?"
+      ],
+      "misconceptions": [
+        "Thinking the transformer is a new kind of maths, rather than a particular arrangement of pieces that were already understood.",
+        "Missing that its decisive advantage was parallel training on modern hardware, not raw quality per unit of computation."
+      ],
+      "explanations": {
+        "intuition": "A transformer is a stack of blocks, each containing an attention step and an ordinary feed-forward step. Every block lets each position gather information from every other, then processes it. Repeat dozens or hundreds of times. Because attention looks at all positions at once rather than in sequence, the whole thing trains in parallel — which is why it won.",
+        "example": "The architecture that made modern language models possible is roughly two components, alternating, many times over. Its power comes from scale and parallelism, not intricacy."
+      },
+      "simplificationCost": "Position handling is left out here. Attention alone treats a sentence as an unordered bag, so transformers add a separate mechanism to encode word order. It matters, and skipping it makes the design look simpler than it is."
+    },
+    {
+      "id": "context-window",
+      "label": "What the model sees",
+      "subtitle": "Why nothing persists between messages",
+      "band": "behaviour",
+      "layer": 5,
+      "row": 3,
+      "prerequisites": [
+        "attention",
+        "tokens"
+      ],
+      "probes": [
+        "A long conversation with a chatbot starts going off the rails near the end. What might be happening mechanically?",
+        "If nothing about the model changes between messages, how does it know what you said earlier?"
+      ],
+      "misconceptions": [
+        "Believing the model remembers the conversation, rather than the entire conversation being resent every turn.",
+        "Thinking a bigger context window means better use of it — models reliably attend less well to the middle of a long input."
+      ],
+      "explanations": {
+        "intuition": "The context window is everything the model can see in one go — your message, the conversation so far, any instructions. It has a hard size limit measured in tokens. Nothing outside it exists as far as the model is concerned, and nothing persists between calls: the whole history is re-sent every single turn.",
+        "example": "When an old conversation seems forgotten, it usually was — pushed out of the window entirely. And even inside the window, material in the middle gets used less reliably than material at either end."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "next-token-prediction",
+      "label": "Next-token prediction",
+      "subtitle": "What an LLM is actually trained to do",
+      "band": "language",
+      "layer": 6,
+      "row": 1,
+      "prerequisites": [
+        "transformer",
+        "tokens"
+      ],
+      "probes": [
+        "What do you think the training objective of a large language model actually is — what was it being scored on?",
+        "Given that objective, does it surprise you that these models can do things like write working code? What would you say to someone who argues it rules that out?"
+      ],
+      "misconceptions": [
+        "'It just predicts the next word, so it cannot really reason.' This confuses the training objective with a ceiling on capability, and it is the single most consequential misconception about language models.",
+        "The opposite error: assuming that because the output is impressive, something other than next-token prediction must be going on."
+      ],
+      "explanations": {
+        "intuition": "Take an enormous amount of text. Hide the next token. Make the model guess it. Score the guess, nudge the weights, repeat trillions of times. That is the whole objective. Everything else these models do is a consequence of getting extremely good at it — because predicting the next token of a chess commentary, or a proof, or a working program requires modelling whatever produced that text.",
+        "example": "To predict the last token of 'the murderer turned out to be the ...' across a whole detective novel, you have to have tracked the plot. The objective is simple; what it forces the model to represent is not."
+      },
+      "simplificationCost": "The word 'just' in 'just predicts the next word' is doing enormous unearned work. The objective is genuinely simple. What that objective forces a model to build internally is an open research question, and the confident dismissal is not supported by anything."
+    },
+    {
+      "id": "rag",
+      "label": "Retrieval (RAG)",
+      "subtitle": "Giving the model something to read",
+      "band": "systems",
+      "layer": 6,
+      "row": 3,
+      "prerequisites": [
+        "context-window",
+        "embeddings"
+      ],
+      "probes": [
+        "You want a chatbot that can answer questions about your company's internal documents, which it was never trained on. Without retraining anything, how would you do it?",
+        "Your search step pulls back the wrong three documents. What does the model do?"
+      ],
+      "misconceptions": [
+        "Believing retrieval adds knowledge to the model. It adds text to the input; the model itself is untouched.",
+        "Assuming retrieval fixes hallucination. It changes what gets hallucinated about, and a bad retrieval produces a confident wrong answer with citations attached."
+      ],
+      "explanations": {
+        "intuition": "Search your documents for passages relevant to the question, paste them into the context window alongside the question, and ask the model to answer from them. The model has learned nothing — it is reading, in the moment, from material you handed it.",
+        "example": "The usual search step uses embeddings: turn the question and every document into positions in space, and take the nearest ones. Everything then depends on that search being right, because the model will work confidently with whatever it is given."
+      },
+      "simplificationCost": "Retrieval is often sold as the cure for hallucination. It is not. It narrows what the model is working from, which helps — but a wrong retrieval yields a fluent, well-cited, wrong answer, and that is harder to catch than an obvious invention."
+    },
+    {
+      "id": "sampling-temperature",
+      "label": "Sampling",
+      "subtitle": "Why the same prompt gives new answers",
+      "band": "language",
+      "layer": 7,
+      "row": 0,
+      "prerequisites": [
+        "next-token-prediction"
+      ],
+      "probes": [
+        "Ask a model the same question twice and you get different wordings. Where does that variation come from, given the model itself has not changed?",
+        "If you always took the single most likely next token, what do you think the output would read like?"
+      ],
+      "misconceptions": [
+        "Thinking the model 'decides' to phrase things differently, rather than a token being drawn from a probability distribution.",
+        "Assuming always taking the most likely token gives the best output — in practice it produces flat, repetitive, looping text."
+      ],
+      "explanations": {
+        "intuition": "The model does not output a token. It outputs a probability for every possible token. Something outside the model then draws one from that distribution. Temperature controls how much the draw favours the likely options — low means predictable, high means varied and eventually incoherent.",
+        "example": "This is why the same prompt gives different answers, and why setting temperature to zero makes a model near-deterministic. The randomness is a knob outside the model, not something the model is doing."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "pretraining-vs-posttraining",
+      "label": "Becoming an assistant",
+      "subtitle": "Where 'helpful assistant' comes from",
+      "band": "behaviour",
+      "layer": 7,
+      "row": 1,
+      "prerequisites": [
+        "next-token-prediction",
+        "loss"
+      ],
+      "probes": [
+        "A model trained purely to predict the next token of internet text — what would it actually do if you typed a question into it?",
+        "So how does it end up answering questions instead? What had to happen in between?"
+      ],
+      "misconceptions": [
+        "Thinking helpfulness emerges from pretraining, when a raw pretrained model would more likely continue your question with more questions.",
+        "Treating a model's personality and refusals as properties of the technology rather than choices made by people during post-training."
+      ],
+      "explanations": {
+        "intuition": "Pretraining gives you something that continues text. That is not an assistant. Post-training reshapes it: examples of good conversational answers, then tuning against human preferences between competing responses. The assistant persona, the tone, the refusals, the willingness to answer at all — all of that is added afterwards, deliberately, by people.",
+        "example": "Type a question into a raw pretrained model and a plausible continuation is more questions, because that is what a list of questions looks like on the internet. Answering is a trained behaviour."
+      },
+      "simplificationCost": "This treats post-training as a tidy second stage. In practice it is many overlapping stages with contested methods, and it is where most of the disagreement about model behaviour actually lives."
+    },
+    {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "subtitle": "Why confident wrongness is structural",
+      "band": "behaviour",
+      "layer": 7,
+      "row": 2,
+      "prerequisites": [
+        "next-token-prediction",
+        "generalization-overfitting"
+      ],
+      "probes": [
+        "A model invents a citation that does not exist — plausible authors, plausible journal, plausible year. Given how it was trained, why would that happen?",
+        "Why does it state the invented one with the same confidence as a real one?"
+      ],
+      "misconceptions": [
+        "'The model is lying' or 'making things up' — both imply intent, and imply a truthful mode it is departing from. There is no such mode.",
+        "Treating hallucination as a bug to be patched rather than a direct consequence of the training objective."
+      ],
+      "explanations": {
+        "intuition": "The model was trained to produce likely continuations, not true ones. A fake citation that looks exactly like a real one is, by that measure, an excellent output. Nothing in the training distinguishes 'true' from 'shaped like the truth', and there is no internal flag marking which is which — so the confidence is identical because the process is identical.",
+        "example": "It is not departing from a truthful mode. It is doing exactly what it always does, and this time the likely continuation happened not to be real."
+      },
+      "simplificationCost": "Calling it 'hallucination' imports the idea of a perception gone wrong, implying a working perception the rest of the time. The output is produced the same way whether or not it happens to be true."
+    },
+    {
+      "id": "tool-use",
+      "label": "Tool use",
+      "subtitle": "Letting the model do things",
+      "band": "systems",
+      "layer": 8,
+      "row": 1,
+      "prerequisites": [
+        "next-token-prediction",
+        "pretraining-vs-posttraining"
+      ],
+      "probes": [
+        "A model that only produces text — how could it ever look up today's weather, or send an email?",
+        "When a model 'calls a tool', what has it actually emitted, and who runs the thing?"
+      ],
+      "misconceptions": [
+        "Believing the model executes the tool. It emits a structured request; your code executes it and hands the result back as more text.",
+        "Missing that the model's only capability throughout is still producing tokens — the doing happens entirely outside it."
+      ],
+      "explanations": {
+        "intuition": "You describe some available tools in the model's input. When it wants one, it produces a structured block naming the tool and its arguments. Your code spots that, runs the real function, and pastes the result back into the context. The model then continues with that result visible. It never executes anything.",
+        "example": "'What is the weather in Madrid' produces not an answer but a request for a weather tool with Madrid as the argument. Your program calls the API, puts the answer in the context, and the model writes the sentence."
+      },
+      "simplificationCost": null
+    },
+    {
+      "id": "agents",
+      "label": "Agents",
+      "subtitle": "A model in a loop, and why that is hard",
+      "band": "systems",
+      "layer": 9,
+      "row": 1,
+      "prerequisites": [
+        "tool-use",
+        "context-window"
+      ],
+      "probes": [
+        "What do you think separates an 'AI agent' from a chatbot that can call tools?",
+        "An agent is given a goal and works for twenty minutes unsupervised. What do you think tends to go wrong, and why?"
+      ],
+      "misconceptions": [
+        "'An agent is an AI that acts on its own.' It is the same next-token model in a loop, with tools, and a stopping condition written by a person.",
+        "Assuming agents fail because the model is not smart enough, when the common failures are context filling up, errors compounding across steps, and no reliable way to know it is done."
+      ],
+      "explanations": {
+        "intuition": "Take a model that can call tools and put it in a loop: give it a goal, let it call a tool, feed the result back, let it decide the next move, repeat until it says it is finished. That loop is the agent. There is no new capability in the model — the autonomy is the loop, and the loop is ordinary code somebody wrote.",
+        "example": "The hard parts are not intelligence. Every step's output becomes the next step's input, so mistakes compound; the context window fills with accumulated history; and deciding when the goal is met is genuinely difficult to get right."
+      },
+      "simplificationCost": "Describing an agent as 'a model in a loop' is accurate and undersells the engineering. Nearly all the difficulty in a working agent lives in context management, error recovery, and stopping conditions — none of which the model provides."
+    }
+  ]
+}
