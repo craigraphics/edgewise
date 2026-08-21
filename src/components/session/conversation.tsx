@@ -1,11 +1,15 @@
 'use client';
 
+import { AudioLines, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useMicLevel } from '@/hooks/use-mic-level';
 import { useVoice } from '@/hooks/use-voice';
 import type { Message } from '@/lib/session/use-session';
+
+import { VoiceHalo } from './voice-halo';
 
 type Props = {
   messages: Message[];
@@ -36,6 +40,14 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
   );
 
   const voice = useVoice(submit);
+
+  /*
+   * Measured only while the microphone is actually open. The tutor's own turn is
+   * spoken through `speechSynthesis`, whose output cannot be metered from the
+   * page, so the halo shows for both voices but only reacts to one — which is
+   * the right way round, since the question it answers is "can it hear me".
+   */
+  const micLevel = useMicLevel(voice.listening);
 
   /*
    * Speak each new tutor turn once.
@@ -129,7 +141,11 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
 
   return (
     // The shell sizes this now; it fills whatever the aside gives it.
-    <div className="flex min-h-0 flex-1 flex-col">
+    <VoiceHalo
+      active={voice.listening || voice.speaking}
+      level={micLevel}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {messages.map((message, index) => (
           <div key={index} className={message.role === 'user' ? 'pl-6' : undefined}>
@@ -161,17 +177,20 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
 
       <div className="mt-4 space-y-2">
         {status === 'done' ? (
+          /* Named for what the tools menu already calls this exact action, now
+             that it does the same thing: the map is cleared, not just the
+             transcript. */
           <Button variant="outline" size="touch" onClick={onReset}>
-            Start again
+            Start over
           </Button>
         ) : (
           <>
             {voice.listening ? (
-              <div className="border-foreground/25 flex h-[5.25rem] items-center justify-between rounded-md border border-dashed px-3">
+              /* Holds the textarea's height so nothing under it moves when the
+                 microphone opens. Stopping lives in the button below, which is
+                 the same control that started it. */
+              <div className="border-foreground/25 flex h-[5.25rem] items-center rounded-sm border border-dashed px-3">
                 <span className="text-muted-foreground text-sm">Listening…</span>
-                <Button size="touch" variant="outline" onClick={voice.stopListening}>
-                  Done talking
-                </Button>
               </div>
             ) : (
               <Textarea
@@ -204,15 +223,39 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
                 I don&rsquo;t know
               </Button>
 
-              {voice.supported.listen && voice.enabled && !voice.listening ? (
-                <Button size="touch" variant="outline" onClick={voice.listen} disabled={busy}>
-                  Answer out loud
-                </Button>
-              ) : null}
-
               {voice.speaking ? (
                 <Button size="touch" variant="ghost" onClick={voice.stopSpeaking}>
                   Stop reading
+                </Button>
+              ) : null}
+              {/*
+               * One control for talking, not two: it starts the microphone and
+               * stops it, the way voice mode works everywhere else people have
+               * met it. Two buttons in two places — "Answer out loud" here and
+               * "Done talking" up in the box — made stopping something you had
+               * to go and find.
+               *
+               * Wave rather than a microphone because this is not dictation.
+               * What you say is not typed into the box for you to edit and
+               * send: it IS the answer, it goes off the moment you stop, and
+               * the tutor talks back. A microphone icon would promise a
+               * transcript you get to correct first.
+               */}
+              {voice.supported.listen && voice.enabled ? (
+                <Button
+                  size="touch"
+                  // Square, and pushed to the far edge so it lines up with the
+                  // right-hand side of the box you would otherwise type into.
+                  className="ml-auto w-10 px-0"
+                  variant={voice.listening ? 'default' : 'outline'}
+                  onClick={voice.listening ? voice.stopListening : voice.listen}
+                  // Stopping stays available even mid-request; only starting is
+                  // held back while a turn is in flight.
+                  disabled={busy && !voice.listening}
+                  aria-label={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                  title={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                >
+                  {voice.listening ? <Square className="fill-current" /> : <AudioLines />}
                 </Button>
               ) : null}
             </div>
@@ -221,7 +264,7 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
           </>
         )}
       </div>
-    </div>
+    </VoiceHalo>
   );
 }
 

@@ -78,7 +78,10 @@ export async function POST(request: Request) {
    */
   if (!input.currentNodeId) {
     const opening = nextToAsk(GRAPH, learner);
-    if (!opening) return NextResponse.json({ done: true, say: NOTHING_LEFT });
+    if (!opening) {
+      const lead = leadNode(GRAPH, learner);
+      return NextResponse.json({ done: true, say: nothingToAsk(learner), nodeId: lead?.id ?? null });
+    }
 
     return NextResponse.json({
       done: false,
@@ -217,6 +220,27 @@ const OPENING =
   "Let's work out where your understanding of this currently sits — there are no right answers here, and \"I don't know\" is genuinely useful. Starting somewhere near the bottom:";
 
 const NOTHING_LEFT = "There's nothing left for me to ask about — you've got the whole map.";
+
+/**
+ * Opening a session with nothing left to ask.
+ *
+ * Separate copy from the closing, and separate for two reasons. Nothing has
+ * been asked yet, so "that gives me what I needed" would be a lie. And the
+ * condition is much weaker than it sounds: `nextToAsk` considers only
+ * `unexplored` nodes, so this fires as soon as every node the frontier has
+ * opened carries any mark at all — which is emphatically not the same as
+ * knowing the whole map. Saying "you've got the whole map" to someone holding
+ * three of twenty-three read as the app being broken, and fairly.
+ */
+function nothingToAsk(learner: LearnerModel): string {
+  const lead = leadNode(GRAPH, learner);
+  if (!lead) return NOTHING_LEFT;
+
+  const resting = downstreamOf(GRAPH, lead.id).length;
+  const rests = resting > 0 ? ` — ${resting} of the later ideas rest on it` : '';
+
+  return `Everything I would have asked about already has a mark on the map, so there is nothing new to place. ${lead.label} is still the place to start from${rests}. It is highlighted for you.`;
+}
 
 /**
  * What the map now says, in one sentence.

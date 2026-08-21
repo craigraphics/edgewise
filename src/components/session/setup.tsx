@@ -93,7 +93,7 @@ export function Setup({ onClose, config, onSave, onForget }: Props) {
                       type="button"
                       disabled={needsKey}
                       onClick={() => onSave({ apiKey: draft.trim(), model: id })}
-                      className={`block w-full rounded-md border px-3 py-2.5 text-left text-sm leading-relaxed disabled:opacity-40 ${
+                      className={`block w-full rounded-sm border px-3 py-2.5 text-left text-sm leading-relaxed disabled:opacity-40 ${
                         config.model === id ? 'border-foreground/40' : 'border-border'
                       }`}
                     >
