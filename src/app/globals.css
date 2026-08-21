@@ -196,3 +196,182 @@
         transform: none;
     }
 }
+
+/*
+ * The voice halo — a gradient ring around the conversation panel while the
+ * microphone is open or the tutor is speaking.
+ *
+ * Built from the band tokens above rather than a palette of its own, so the one
+ * strongly coloured thing in the interface stays the one the map already uses.
+ * Three of the six, not all six: a full spectrum sweep would read as the band
+ * legend saying something, which it is not.
+ *
+ * `@property` rather than plain custom properties, because an unregistered
+ * property is an untyped token and cannot be interpolated — the gradient would
+ * step round in jumps instead of rotating, and the level would snap between the
+ * meter's 15Hz samples.
+ */
+@property --halo-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: true;
+}
+
+@property --halo-level {
+    syntax: "<number>";
+    initial-value: 0;
+    inherits: true;
+}
+
+/*
+ * The same three hues the map uses for foundations, systems and learning, but
+ * pitched for the background they are blurred over. On dark the band tokens are
+ * already right. On white they are not: a mid-lightness colour, blurred wide and
+ * dropped to a third opacity, disappears — the first pass was invisible in light
+ * mode and looked like the effect had failed to load.
+ */
+:root {
+    --halo-1: oklch(0.55 0.19 250);
+    --halo-2: oklch(0.52 0.21 310);
+    --halo-3: oklch(0.55 0.17 175);
+}
+
+.dark {
+    --halo-1: var(--band-foundations);
+    --halo-2: var(--band-systems);
+    --halo-3: var(--band-learning);
+}
+
+.edgewise-halo {
+    /* Interpolating between the meter's samples is the whole difference between
+       a glow that breathes with a voice and one that flickers at 15Hz. */
+    transition: --halo-level 140ms linear;
+}
+
+.edgewise-halo-aura {
+    /* Positioned against the panel itself, not the conversation inside it.
+       The aside is the element with a visible edge — the divider between the
+       map and the panel — and a glow needs something to come off. Painted on
+       the invisible content box it floated in the middle of nothing. */
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 450ms ease;
+}
+
+.edgewise-halo-aura[data-active="true"] {
+    opacity: 1;
+}
+
+/*
+ * The right-hand edge, carried out to the window.
+ *
+ * The panel's left side already has a gutter — the aside's own `pl-6` — so the
+ * light there peaks on the divider and is spent before it reaches any text. The
+ * right side has no such gap: content runs flush to the panel's edge, which put
+ * the brightest part of the fade directly on the buttons.
+ *
+ * So the aura reaches past the panel to the window edge, which gives the right
+ * side the same gutter the left has and puts the light where the eye already
+ * reads an edge. The `max()` term covers a window wider than the shell's own
+ * 92rem, where the panel stops short of the glass by more than the padding.
+ */
+@media (min-width: 64rem) {
+    .edgewise-halo-aura {
+        right: calc(-1.5rem - max(0px, (100vw - 92rem) / 2));
+    }
+}
+
+/*
+ * Separate from the layer above so the two fades compose rather than fight: this
+ * one breathes continuously, that one fades the whole thing in as voice starts
+ * and out as it stops. Sharing a single opacity would make the fade-in jump to
+ * wherever the breathing keyframe happened to be.
+ */
+.edgewise-halo-breathe {
+    position: absolute;
+    inset: 0;
+    transform-origin: center;
+    animation:
+        edgewise-halo-spin 7s linear infinite,
+        edgewise-halo-breathe 3.6s ease-in-out infinite;
+}
+
+/*
+ * Light falling off the panel's edges, rather than a band drawn near them.
+ *
+ * Two earlier attempts both cut hard, and for the same reason: a band has two
+ * edges of its own, and blurring one only moves the boundary rather than
+ * removing it. What is masked here is not a shape but a fade — four
+ * edge-anchored gradients, one per side, each running from solid at its own
+ * edge to nothing `--halo-reach` inward. Multiple mask layers add together by
+ * default, so the four union into a frame that is brightest at the border and
+ * has no boundary anywhere: it is already at zero before it reaches the text.
+ *
+ * `--halo-reach` is how far the light carries, and it grows with the voice —
+ * which is the expansion you see, with nothing moving to produce it.
+ */
+.edgewise-halo-glow,
+.edgewise-halo-ring {
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(
+        from var(--halo-angle),
+        var(--halo-1),
+        var(--halo-2),
+        var(--halo-3),
+        var(--halo-1)
+    );
+    -webkit-mask:
+        linear-gradient(to right, #000, transparent var(--halo-reach)),
+        linear-gradient(to left, #000, transparent var(--halo-reach)),
+        linear-gradient(to bottom, #000, transparent var(--halo-reach)),
+        linear-gradient(to top, #000, transparent var(--halo-reach));
+    mask:
+        linear-gradient(to right, #000, transparent var(--halo-reach)),
+        linear-gradient(to left, #000, transparent var(--halo-reach)),
+        linear-gradient(to bottom, #000, transparent var(--halo-reach)),
+        linear-gradient(to top, #000, transparent var(--halo-reach));
+}
+
+/* The near fade carries the colour and sits tight to the edge. */
+.edgewise-halo-ring {
+    --halo-reach: calc(0.9rem + var(--halo-level) * 0.7rem);
+    opacity: calc(0.3 + var(--halo-level) * 0.38);
+}
+
+/* The far one carries the presence: wide, weak, and the part you catch out of
+   the corner of an eye while looking at the map. */
+.edgewise-halo-glow {
+    --halo-reach: calc(2.75rem + var(--halo-level) * 1.75rem);
+    opacity: calc(0.12 + var(--halo-level) * 0.16);
+}
+
+@keyframes edgewise-halo-spin {
+    to {
+        --halo-angle: 360deg;
+    }
+}
+
+@keyframes edgewise-halo-breathe {
+    0%,
+    100% {
+        opacity: 0.62;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/*
+ * The light still brightens and reaches further with the voice — that is the
+ * signal, and removing it would leave someone with no answer to "can it hear
+ * me". Only the idle rotation and breathing go.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .edgewise-halo-breathe {
+        animation: none;
+    }
+}

@@ -113,7 +113,12 @@ export default function Page() {
       <header className="border-border shrink-0 border-b px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[92rem] flex-wrap items-center gap-x-6 gap-y-3">
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight">{GRAPH.subject}</h1>
+            <div className="flex min-w-0 items-baseline gap-2">
+              <h1 className="truncate text-lg font-semibold tracking-tight">{GRAPH.subject}</h1>
+              {/* Aligned on the title's baseline and set not to shrink, so a
+                  narrow window truncates the subject rather than the byline. */}
+              <span className="text-muted-foreground shrink-0 text-xs">by William Craig</span>
+            </div>
             {/*
              * The one line that must never scroll away: where you are, and what
              * the map currently says is worth having next.
@@ -246,7 +251,10 @@ export default function Page() {
           </div>
         </section>
 
-        <aside className="border-border flex min-h-0 shrink-0 flex-col border-b px-4 py-4 sm:px-6 lg:w-[24rem] lg:border-b-0 lg:border-l lg:px-0 lg:pl-6">
+        {/* `relative` so the voice halo, raised from inside the conversation,
+            lights this panel's edges — including the divider it shares with the
+            map — rather than the content box it is declared in. */}
+        <aside className="border-border relative flex min-h-0 shrink-0 flex-col border-b px-4 py-4 sm:px-6 lg:w-[24rem] lg:border-b-0 lg:border-l lg:px-0 lg:pl-6">
           {selected ? (
             <Inspector
               graph={GRAPH}
@@ -276,7 +284,20 @@ export default function Page() {
               firstTime={!started}
               onStart={() => session.start(model.states)}
               onAnswer={(text) => session.answer(text, model.states)}
-              onReset={session.reset}
+              onReset={() => {
+                /*
+                 * Clears the marks too, not just the transcript.
+                 *
+                 * Resetting the conversation alone left every node the frontier
+                 * had opened still marked, and `nextToAsk` only ever offers
+                 * `unexplored` nodes — so the fresh session had nothing to ask
+                 * and ended on its own opening turn. Starting again has to mean
+                 * the whole thing again, which is the same action the tools menu
+                 * calls Start over.
+                 */
+                resetMarks();
+                session.reset();
+              }}
             />
           ) : (
             <p className="text-muted-foreground text-sm">
@@ -296,7 +317,7 @@ function ToolButton({ children, onClick }: { children: React.ReactNode; onClick:
     <button
       type="button"
       onClick={onClick}
-      className="hover:bg-accent flex h-11 w-full items-center rounded-md px-2 text-left text-sm"
+      className="hover:bg-accent flex h-11 w-full items-center rounded-sm px-2 text-left text-sm"
     >
       {children}
     </button>

@@ -113,7 +113,7 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
       </p>
 
       {voice.listening ? (
-        <div className="border-foreground/25 flex h-20 items-center justify-between rounded-md border border-dashed px-3">
+        <div className="border-foreground/25 flex h-20 items-center justify-between rounded-sm border border-dashed px-3">
           <span className="text-muted-foreground text-sm">{voice.interim || 'Listening…'}</span>
           <Button size="touch" variant="outline" onClick={voice.stopListening}>
             Done
