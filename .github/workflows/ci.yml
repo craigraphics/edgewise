@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Read-only: nothing here publishes, comments or pushes.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the pnpm version from `packageManager` in package.json, so this
+      # cannot drift from what the lockfile was written with.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Node that Vercel builds production on. Running checks on
+          # a version the deploy never sees is how CI stays green while the
+          # build breaks.
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Not optional, and not the same as a build.
+      #
+      # `LayoutProps<'/'>` and friends are types Next GENERATES; on a clean
+      # checkout there is no `.next`, so `tsc` fails with "Cannot find name
+      # 'LayoutProps'" before it looks at a single line of real code. Verified by
+      # running this sequence against a fresh clone. `typegen` produces them
+      # without a full build and needs no environment variables — which matters,
+      # because none of the secrets the app runs on exist here.
+      - run: pnpm exec next typegen
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm test
