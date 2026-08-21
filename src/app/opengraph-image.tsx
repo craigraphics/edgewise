@@ -12,7 +12,7 @@ import { ImageResponse } from 'next/og';
  * closer to the real thing than embedding an SVG the renderer supports only in
  * part.
  */
-export const alt = 'Edgewise — find the idea blocking the rest';
+export const alt = 'Edgewise: A Tutor That Asks Before It Teaches';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -68,8 +68,8 @@ export default function OpengraphImage() {
               lineHeight: 1.05,
             }}
           >
-            <div>Find the one idea</div>
-            <div>blocking the rest.</div>
+            <div>A tutor that asks</div>
+            <div>before it teaches.</div>
           </div>
           <div style={{ fontSize: 34, color: '#94a7bd', lineHeight: 1.35 }}>
             A map of where your understanding of AI stops — and the way through it.

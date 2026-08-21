@@ -25,7 +25,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    default: 'Edgewise — find the idea blocking the rest',
+    default: 'Edgewise: A Tutor That Asks Before It Teaches',
     // Written for pages that do not exist yet; a second page should not have to
     // remember to append the product name by hand.
     template: '%s · Edgewise',
@@ -50,12 +50,12 @@ export const metadata: Metadata = {
     type: 'website',
     url: SITE,
     siteName: 'Edgewise',
-    title: 'Edgewise — find the idea blocking the rest',
+    title: 'Edgewise: A Tutor That Asks Before It Teaches',
     description: DESCRIPTION,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Edgewise — find the idea blocking the rest',
+    title: 'Edgewise: A Tutor That Asks Before It Teaches',
     description: DESCRIPTION,
   },
   category: 'education',

@@ -9,7 +9,7 @@ import type { MetadataRoute } from 'next';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Edgewise — find the idea blocking the rest',
+    name: 'Edgewise: A Tutor That Asks Before It Teaches',
     short_name: 'Edgewise',
     description:
       'Find the one idea blocking the rest of your understanding of AI, then learn the whole thing from there.',
