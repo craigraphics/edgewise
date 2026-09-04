@@ -66,6 +66,8 @@ export type Size = { width: number; height: number };
 /** The camera: the content coordinate at the pane's top-left, and the scale. */
 export type Camera = { x: number; y: number; scale: number };
 
+export type FitMode = 'legible' | 'width' | 'all';
+
 export type MapLayout = {
   points: Map<string, Point>;
   edges: { id: string; from: string; to: string }[];
@@ -133,26 +135,34 @@ export const clampZoom = (scale: number): number => Math.min(MAX_ZOOM, Math.max(
 /**
  * The scale at which the content fits the pane.
  *
- * `width` is the desktop default: the map is authored to be a little taller
- * than a laptop screen, so fitting both axes would shrink the labels to about
- * nine pixels to buy a view of the whole thing at once. Fitting the width keeps
- * the labels legible and leaves the last couple of layers to a scroll, which is
- * the trade the previous build measured and got right. It stops at
- * `LEGIBLE_SCALE` and pans the remainder rather than shrinking further.
+ * Three modes, because the map is doing three different jobs.
  *
- * `all` is for a phone, where the map is two and a half times the viewport wide
- * and the alternative is landing on a drawing whose top-left corner is off
- * screen.
+ * `legible` is the desktop default, with the panel beside the map. The map is
+ * authored a little taller than a laptop screen, so fitting both axes would
+ * shrink the labels to about nine pixels to buy a view of the whole thing at
+ * once. This keeps the labels at or above twelve and pans the remainder — the
+ * trade the previous build measured and got right, when it expressed the same
+ * rule as a 760px floor.
+ *
+ * `width` is for the layouts where the panel floats over the map. It shows the
+ * full width always and pans vertically. Flooring it at legibility instead
+ * clipped the right-hand column mid-node at tablet sizes, which reads as a
+ * broken drawing rather than as something you can scroll — a failure the
+ * previous build already measured and fixed once.
+ *
+ * `all` is what the Fit control does, and the phone default: the whole shape at
+ * once. At that size the labels are genuinely too small to read cold, which is
+ * what an overview is — tapping any node still opens its full text in the panel.
  */
-export function fitScale(content: Size, pane: Size, mode: 'width' | 'all'): number {
+export function fitScale(content: Size, pane: Size, mode: FitMode): number {
   if (pane.width <= 0 || pane.height <= 0) return 1;
-  const byWidth = pane.width / content.width;
+  const byWidth = Math.min(1, pane.width / content.width);
 
+  // Capped at 1 in every mode: a pane larger than the map should give it air,
+  // not enlarge it.
   if (mode === 'all') return clampZoom(Math.min(byWidth, pane.height / content.height));
-
-  // Never below legibility, and never blown up past the authored size either —
-  // a wide monitor should give the map air, not a 200% enlargement.
-  return clampZoom(Math.min(1, Math.max(LEGIBLE_SCALE, byWidth)));
+  if (mode === 'width') return clampZoom(byWidth);
+  return clampZoom(Math.max(LEGIBLE_SCALE, byWidth));
 }
 
 /**
@@ -205,7 +215,7 @@ export function zoomAt(camera: Camera, pointer: Point, factor: number, content: 
 }
 
 /** The camera that shows `content` fitted to `pane`, centred. */
-export function fitCamera(content: Size, pane: Size, mode: 'width' | 'all'): Camera {
+export function fitCamera(content: Size, pane: Size, mode: FitMode): Camera {
   const scale = fitScale(content, pane, mode);
   return clampCamera({ scale, x: 0, y: 0 }, content, pane);
 }

@@ -35,6 +35,10 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-sm),12px)] in-data-[slot=button-group]:rounded-sm",
         "icon-lg": "size-9",
+        // The icon counterpart of `touch`, and 40px for the same reason: it is
+        // what a finger can reliably hit, and every other icon size here is
+        // 24-36px.
+        "icon-touch": "size-10",
       },
     },
     defaultVariants: {

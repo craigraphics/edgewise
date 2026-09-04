@@ -59,24 +59,39 @@ describe('clampZoom', () => {
 
 describe('fitScale', () => {
   it('fits the width at 1:1 when the map is exactly its pane', () => {
-    expect(fitScale(CONTENT, PANE, 'width')).toBe(1);
+    expect(fitScale(CONTENT, PANE, 'legible')).toBe(1);
   });
 
   /*
-   * The rule the label size actually depends on. A 1280 laptop with the panel
+   * The rule the desktop label size depends on. A 1280 laptop with the panel
    * beside the map cannot show all 904 units at once; it shrinks as far as
    * twelve-pixel labels and then pans the last few units rather than shrinking
    * into illegibility, which is what the previous build's 760px floor was for.
    */
-  it('stops shrinking at the point the labels reach 12px', () => {
-    const scale = fitScale(CONTENT, { width: 700, height: 790 }, 'width');
+  it('legible stops shrinking at the point the labels reach 12px', () => {
+    const scale = fitScale(CONTENT, { width: 700, height: 790 }, 'legible');
     expect(scale).toBe(LEGIBLE_SCALE);
     expect(scale * LABEL_SIZE).toBeCloseTo(12, 6);
   });
 
-  it('never blows the map up past its authored size on a wide monitor', () => {
-    expect(fitScale(CONTENT, { width: 2400, height: 1400 }, 'width')).toBe(1);
+  /*
+   * Under a sheet the opposite rule applies: the full width has to be visible,
+   * because clipping the right-hand column mid-node reads as a broken drawing
+   * rather than as something you can pan. So `width` has no legibility floor.
+   */
+  it('width always shows the whole width, however narrow the pane', () => {
+    for (const paneWidth of [390, 640, 768, 820, 1024]) {
+      const scale = fitScale(CONTENT, { width: paneWidth, height: 900 }, 'width');
+      expect(paneWidth / scale).toBeGreaterThanOrEqual(CONTENT.width - 0.001);
+    }
   });
+
+  it.each(['legible', 'width', 'all'] as const)(
+    'never blows the map up past its authored size in %s mode',
+    (mode) => {
+      expect(fitScale(CONTENT, { width: 2400, height: 1400 }, mode)).toBe(1);
+    },
+  );
 
   it('fitting all is never larger than fitting the width', () => {
     expect(fitScale(CONTENT, PANE, 'all')).toBeLessThanOrEqual(fitScale(CONTENT, PANE, 'width'));
@@ -89,7 +104,7 @@ describe('fitScale', () => {
   });
 
   it('survives a pane that has not been measured yet', () => {
-    expect(fitScale(CONTENT, { width: 0, height: 0 }, 'width')).toBe(1);
+    expect(fitScale(CONTENT, { width: 0, height: 0 }, 'legible')).toBe(1);
   });
 });
 
@@ -172,7 +187,7 @@ describe('fitCamera and viewBoxFor', () => {
   });
 
   it('starts at the top when fitting the width', () => {
-    expect(fitCamera(CONTENT, PANE, 'width').y).toBe(0);
+    expect(fitCamera(CONTENT, PANE, 'legible').y).toBe(0);
   });
 });
 

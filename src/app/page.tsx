@@ -15,7 +15,7 @@ import { Setup, setupLabel } from '@/components/session/setup';
 import { Welcome } from '@/components/session/welcome';
 import { Walkthrough } from '@/components/session/walkthrough';
 import { PHONE_QUERY, SHEET_QUERY, useMedia } from '@/hooks/use-media';
-import { leadNode, stateOf } from '@/lib/graph/frontier';
+import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
 import { GRAPH } from '@/lib/graph/load';
 import { coveredBy, teachingOrder } from '@/lib/graph/order';
 import type { NodeState } from '@/lib/graph/types';
@@ -103,6 +103,15 @@ export default function Page() {
   );
 
   const lead = leadNode(GRAPH, model);
+  /* The sentence the whole map exists to deliver, so the panel can say it too
+     rather than making someone find the right node to click. */
+  const leadDetail = useMemo(
+    () =>
+      lead
+        ? { node: lead, state: stateOf(model, lead.id), resting: downstreamOf(GRAPH, lead.id).length }
+        : null,
+    [lead, model],
+  );
   const selected = GRAPH.nodes.find((node) => node.id === selectedId) ?? null;
   const solid = useMemo(
     () => new Set(GRAPH.nodes.filter((node) => stateOf(model, node.id) === 'known').map((n) => n.id)),
@@ -212,6 +221,7 @@ export default function Page() {
       firstTime={!started}
       onStart={() => session.start(model.states)}
       onAnswer={(text) => session.answer(text, model.states)}
+      lead={leadDetail}
       onReset={() => {
         /*
          * Clears the marks too, not just the transcript.
@@ -306,14 +316,29 @@ export default function Page() {
               selectedId={selectedId}
               highlightedId={highlighted}
               covered={covered}
-              fit={phone ? 'all' : 'width'}
+              /* Beside the panel, legibility wins and the last units pan.
+                 Under a sheet, the full width has to be visible — clipping a
+                 column mid-node reads as a broken drawing. On a phone the map
+                 is a backdrop, so the whole shape wins outright. */
+              fit={phone ? 'all' : sheetLayout ? 'width' : 'legible'}
               quiet={started}
             />
           </div>
         </section>
 
         {sheetLayout ? (
-          <PanelSheet snap={snap} onSnapChange={setSnapOverride} containerHeight={regionHeight}>
+          <PanelSheet
+            snap={snap}
+            onSnapChange={setSnapOverride}
+            containerHeight={regionHeight}
+            /*
+             * Pinned over the bottom of the map rather than laid out beside it.
+             * As an ordinary flex child it sat at the TOP of the row with the
+             * map showing underneath, and — having no width of its own — grew
+             * to the width of its longest unwrapped line and ran off the screen.
+             */
+            className="absolute inset-x-0 bottom-0"
+          >
             {/* The position moves into the panel here: the header has no room
                 for it at this width, and it is worth the space at any width. */}
             <Position

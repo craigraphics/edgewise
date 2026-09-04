@@ -49,7 +49,9 @@ export function MapLegend({ graph, className }: { graph: ConceptGraph; className
           type="button"
           onClick={() => setBandsOpen((open) => !open)}
           aria-expanded={bandsOpen}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-2xs transition-colors duration-[--dur-fast]"
+          /* Negative margin against the padding: a 40px hit area for a finger,
+             without a 40px row in the layout. */
+          className="text-muted-foreground hover:text-foreground -my-3 flex items-center gap-1.5 py-3 text-2xs transition-colors duration-[--dur-fast]"
         >
           <span className="flex gap-px" aria-hidden>
             {graph.bands.map((band) => (

@@ -56,7 +56,7 @@ export function ModeSwitch({
             aria-checked={active}
             onClick={() => onChange(option.id)}
             className={cn(
-              'relative h-9 rounded-[7px] px-3 text-sm font-medium whitespace-nowrap transition-colors duration-[--dur]',
+              'relative h-10 flex-1 rounded-[7px] px-3 text-sm font-medium whitespace-nowrap transition-colors duration-[--dur] sm:flex-none',
               active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -70,9 +70,11 @@ export function ModeSwitch({
                 transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.9 }}
               />
             ) : null}
+            {/* The full label everywhere it fits. On a phone the switch has a
+                row to itself, so both halves get their real names back. */}
             <span className="relative">
-              <span className="hidden sm:inline">{option.label}</span>
-              <span className="sm:hidden">{option.short}</span>
+              <span className="hidden min-[400px]:inline">{option.label}</span>
+              <span className="min-[400px]:hidden">{option.short}</span>
             </span>
           </button>
         );

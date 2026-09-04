@@ -45,7 +45,14 @@ export function AppHeader({
 }: Props) {
   return (
     <header className="border-border bg-surface-0/85 supports-[backdrop-filter]:bg-surface-0/70 shrink-0 border-b backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-[92rem] items-center gap-3 px-4 sm:px-6">
+      {/*
+       * One row from 640 up. Below that the mode switch takes a row of its own
+       * rather than squeezing the subject down to "How …", which is what a
+       * single row produced at 390: the two long labels plus two icon buttons
+       * left the title 58px. Two 44px rows is 10% of a phone viewport, against
+       * the 330px — 39% — that the wrapping buttons used to take.
+       */}
+      <div className="mx-auto flex max-w-[92rem] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:h-14 sm:flex-nowrap sm:py-0 sm:px-6">
         <div className="flex min-w-0 items-baseline gap-2">
           <h1 className="font-display truncate text-lg font-semibold">{graph.subject}</h1>
           {/* Aligned on the title's baseline and set not to shrink, so a
@@ -63,14 +70,29 @@ export function AppHeader({
           className="ml-2 hidden lg:flex"
         />
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          {marking ? (
-            <Button variant="outline" size="touch" onClick={onLeaveMarking}>
-              Done marking
-            </Button>
-          ) : (
-            <ModeSwitch value={mode} onChange={onModeChange} />
-          )}
+        {/*
+         * Order matters here, and it bit once already: with the tools group
+         * taking the free space first, the mode switch was pushed off the right
+         * edge of the window. Exactly one thing gets `ml-auto` per row.
+         */}
+        {marking ? (
+          <Button
+            variant="outline"
+            size="touch"
+            onClick={onLeaveMarking}
+            className="order-last w-full sm:order-none sm:ml-auto sm:w-auto"
+          >
+            Done marking
+          </Button>
+        ) : (
+          <ModeSwitch
+            value={mode}
+            onChange={onModeChange}
+            className="order-last w-full sm:order-none sm:ml-auto sm:w-auto"
+          />
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:ml-0">
           <ToolsMenu items={tools} />
           <ThemeToggle />
         </div>

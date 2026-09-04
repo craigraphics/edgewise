@@ -25,7 +25,7 @@ export function ToolsMenu({ items }: { items: Item[] }) {
     <Menu.Root>
       <Menu.Trigger
         render={
-          <Button variant="ghost" size="icon-lg" aria-label="Settings and tools">
+          <Button variant="ghost" size="icon-touch" aria-label="Settings and tools">
             <EllipsisIcon />
           </Button>
         }

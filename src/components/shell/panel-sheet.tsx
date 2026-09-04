@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 /**
@@ -108,7 +110,7 @@ export function PanelSheet({ snap, onSnapChange, containerHeight, children, clas
       // `relative` so the voice halo, raised from inside the conversation,
       // lights this panel's edges rather than the content box it is declared in.
       className={cn(
-        'bg-surface-1 border-border relative z-20 flex shrink-0 flex-col rounded-t-2xl border-t shadow-[0_-8px_32px_-16px_oklch(0_0_0/25%)]',
+        'bg-surface-1 border-border z-20 flex flex-col overflow-hidden rounded-t-2xl border-t shadow-[0_-8px_32px_-16px_oklch(0_0_0/25%)]',
         dragged === null && 'transition-[height] duration-[--dur-slow] ease-[--ease]',
         className,
       )}
@@ -132,10 +134,36 @@ export function PanelSheet({ snap, onSnapChange, containerHeight, children, clas
           event.preventDefault();
           onSnapChange(stops[Math.min(2, Math.max(0, stops.indexOf(snap) + step))]);
         }}
-        className="flex h-7 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+        className="relative flex h-9 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
       >
         <span className="bg-border h-1 w-9 rounded-full" aria-hidden />
       </div>
+
+      {/*
+       * A named way back to the map.
+       *
+       * On a phone the panel opens over the whole map, and the only way down
+       * was to find the grab handle and drag it — which is a gesture you have
+       * to already suspect exists. The map is the product; there has to be a
+       * word for it.
+       */}
+      <button
+        type="button"
+        onClick={() => onSnapChange(snap === 'peek' ? 'full' : 'peek')}
+        className="text-muted-foreground hover:text-foreground absolute top-0 right-2 z-10 flex h-10 items-center gap-1 rounded-md px-3 text-2xs transition-colors duration-[--dur-fast]"
+      >
+        {snap === 'peek' ? (
+          <>
+            <ChevronUpIcon className="size-3" />
+            Back
+          </>
+        ) : (
+          <>
+            <ChevronDownIcon className="size-3" />
+            Map
+          </>
+        )}
+      </button>
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 sm:px-6">{children}</div>
     </aside>

@@ -3,10 +3,12 @@
 import { AudioLines, InfoIcon, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { NodeGlyph } from '@/components/map/node-glyph';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useMicLevel } from '@/hooks/use-mic-level';
 import { useVoice } from '@/hooks/use-voice';
+import type { ConceptNode, NodeState } from '@/lib/graph/types';
 import type { Message } from '@/lib/session/use-session';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +23,8 @@ type Props = {
   onStart: () => void;
   onAnswer: (text: string) => void;
   onReset: () => void;
+  /** The node the map is pointing at, and what rests on it. */
+  lead: { node: ConceptNode; state: NodeState; resting: number } | null;
 };
 
 /**
@@ -36,7 +40,16 @@ type Props = {
  * face. No bubbles either way. The asymmetry is the point — one of these voices
  * is being read, the other is being recorded.
  */
-export function Conversation({ messages, status, error, firstTime, onStart, onAnswer, onReset }: Props) {
+export function Conversation({
+  messages,
+  status,
+  error,
+  firstTime,
+  onStart,
+  onAnswer,
+  onReset,
+  lead,
+}: Props) {
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +161,46 @@ export function Conversation({ messages, status, error, firstTime, onStart, onAn
           {firstTime ? 'Start the questions' : 'Start'}
         </Button>
         {error ? <p className="text-muted-foreground mt-4 text-base leading-relaxed">{error}</p> : null}
+
+        {/*
+         * The panel at rest was a paragraph, a button, and six hundred pixels
+         * of nothing. This is what fills it — not decoration, but the map's own
+         * claim in words: here is the idea it is pointing at, and here is how
+         * much of the rest is waiting behind it.
+         *
+         * That sentence is the entire argument for the map existing, and until
+         * now it was only reachable by clicking the right node. Someone
+         * returning to a half-finished session should not have to hunt for the
+         * one thing that says why to carry on.
+         */}
+        {!firstTime && lead ? (
+          <div className="border-border mt-8 border-t pt-6">
+            <p className="text-muted-foreground text-2xs font-medium uppercase">Where the map says to start</p>
+            <div className="bg-surface-2/60 border-border mt-2.5 flex items-start gap-3 rounded-xl border p-3.5">
+              <span
+                aria-hidden
+                className="mt-0.5 w-[3px] shrink-0 self-stretch rounded-full"
+                style={{ background: `var(--band-${lead.node.band})`, opacity: 0.7 }}
+              />
+              <svg width={13} height={13} aria-hidden className="mt-1 shrink-0 overflow-visible">
+                <NodeGlyph
+                  state={lead.state}
+                  cx={6.5}
+                  cy={6.5}
+                  colour={`var(--band-${lead.node.band})`}
+                />
+              </svg>
+              <span className="min-w-0">
+                <span className="block text-base font-medium">{lead.node.label}</span>
+                <span className="text-muted-foreground mt-1 block text-base leading-relaxed">
+                  {lead.resting > 0
+                    ? `${lead.resting} of the later ideas rest on this one, which is why so much of the rest probably feels slippery.`
+                    : lead.node.subtitle}
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }

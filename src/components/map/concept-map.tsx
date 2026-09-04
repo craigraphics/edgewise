@@ -12,6 +12,7 @@ import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/g
 import {
   ACCENT_WIDTH,
   type Camera,
+  type FitMode,
   GLYPH_X,
   LABEL_LINE_HEIGHT,
   LABEL_SIZE,
@@ -94,11 +95,8 @@ type Props = {
   highlightedId?: string | null;
   /** Nodes the walkthrough has already been through. */
   covered?: ReadonlySet<string>;
-  /**
-   * `all` fits the whole map into the pane; `width` keeps the labels at their
-   * authored size and lets the last layers scroll. Phones get `all`.
-   */
-  fit?: 'width' | 'all';
+  /** How the map sits in its pane at rest. See `FitMode` in the layout module. */
+  fit?: FitMode;
   /** Suppresses the staggered first reveal — used when the map is remounted. */
   quiet?: boolean;
   className?: string;
@@ -111,7 +109,7 @@ export function ConceptMap({
   selectedId,
   highlightedId,
   covered,
-  fit = 'width',
+  fit = 'legible',
   quiet = false,
   className,
 }: Props) {
@@ -193,11 +191,13 @@ export function ConceptMap({
     [applyCamera, camera, content, pane],
   );
 
+  /* The Fit control always means the whole thing, whatever the resting mode
+     is — "fit" that left a third of the map off screen would be a lie. */
   const refit = useCallback(() => {
     if (pane.width === 0) return;
-    touched.current = false;
-    setCamera(fitCamera(content, pane, fit));
-  }, [content, fit, pane]);
+    touched.current = true;
+    setCamera(fitCamera(content, pane, 'all'));
+  }, [content, pane]);
 
   /*
    * Wheel is zoom with a modifier and pan without, which is what every map
@@ -434,7 +434,7 @@ function ZoomButton({
   return (
     <Button
       variant="outline"
-      size="icon-lg"
+      size="icon-touch"
       aria-label={label}
       title={label}
       onClick={onClick}
