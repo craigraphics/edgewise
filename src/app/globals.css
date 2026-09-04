@@ -213,6 +213,11 @@
     outline-offset: 2px;
     border-radius: var(--radius-sm);
     }
+  /* The map's nodes draw their own ring in SVG. An outline here would be boxed
+     to the group's bounds, which for the lead node includes its caption. */
+  svg [data-node]:focus-visible {
+    outline: none;
+    }
   body {
     @apply bg-background text-foreground;
     }
@@ -249,9 +254,14 @@
  * `behaviour` moved off hue 25. At that hue and chroma it rendered as a
  * saturated red-pink, so "Hallucination" and "What the model sees" read as
  * error rows — which contradicts this product's own rule that red is reserved
- * for nothing. Hue 38 at lower chroma is terracotta: still plainly the warm
+ * for nothing. Hue 42 at lower chroma is terracotta: still plainly the warm
  * band, no longer an alarm. It cannot be mistaken for a real error either,
- * since the only red in the build is `--destructive` at nearly twice the chroma.
+ * since the only red in the build is `--destructive` at twice the chroma.
+ *
+ * The first attempt at this sat at hue 38 with chroma 0.135 in light mode, and
+ * the assertion in `globals.test.ts` rejected it — close enough to red to still
+ * carry the alarm reading. `language` moved from 78 to 82 at the same time so
+ * the two warm bands keep forty degrees between them.
  *
  * The rest moved a few degrees apart from each other (`learning` off
  * `networks`, most of all) now that they sit on a tinted rather than a neutral
@@ -264,8 +274,8 @@
     --band-foundations: oklch(0.545 0.145 258);
     --band-learning: oklch(0.545 0.115 196);
     --band-networks: oklch(0.545 0.115 152);
-    --band-language: oklch(0.585 0.125 78);
-    --band-behaviour: oklch(0.575 0.135 38);
+    --band-language: oklch(0.585 0.125 82);
+    --band-behaviour: oklch(0.575 0.125 42);
     --band-systems: oklch(0.525 0.165 300);
 }
 
@@ -273,8 +283,8 @@
     --band-foundations: oklch(0.70 0.125 258);
     --band-learning: oklch(0.745 0.115 196);
     --band-networks: oklch(0.755 0.125 152);
-    --band-language: oklch(0.79 0.125 78);
-    --band-behaviour: oklch(0.735 0.115 38);
+    --band-language: oklch(0.79 0.125 82);
+    --band-behaviour: oklch(0.735 0.115 42);
     --band-systems: oklch(0.705 0.135 300);
 }
 

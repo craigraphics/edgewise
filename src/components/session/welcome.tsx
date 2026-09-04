@@ -139,18 +139,24 @@ export function Welcome() {
  */
 function Premise() {
   return (
-    <svg viewBox="0 0 300 96" className="h-24 w-full max-w-[300px]" role="img" aria-label="Three ideas, each resting on the one before it. The middle one is not yet held, so the one above it is out of reach.">
+    <svg
+      viewBox="0 0 220 104"
+      className="h-[104px] w-full max-w-[220px]"
+      role="img"
+      aria-label="Three ideas, each resting on the one before it. The middle one is not yet held, so the one above it is out of reach."
+    >
+      {/* The edges run BETWEEN the cards, not through them: 24px card, 16px gap. */}
       <g fill="none" strokeLinecap="round">
-        <path d="M40 30 C 40 42, 40 42, 40 54" className="stroke-foreground/40" strokeWidth={1.6} />
-        <path d="M40 72 C 40 84, 40 84, 40 96" className="stroke-foreground/12" strokeWidth={1.2} />
+        <path d="M92 24 L 92 40" className="stroke-foreground/40" strokeWidth={1.6} />
+        <path d="M92 64 L 92 80" className="stroke-foreground/12" strokeWidth={1.2} />
       </g>
 
       {[
-        { y: 6, band: 'foundations', state: 'known' as const, label: 'you have this' },
-        { y: 48, band: 'networks', state: 'blocked' as const, label: 'this one is missing' },
-        { y: 90, band: 'language', state: 'unexplored' as const, label: 'so this is out of reach' },
+        { y: 0, band: 'foundations', state: 'known' as const, label: 'you have this' },
+        { y: 40, band: 'networks', state: 'blocked' as const, label: 'this one is missing' },
+        { y: 80, band: 'language', state: 'unexplored' as const, label: 'out of reach' },
       ].map((row) => (
-        <g key={row.band} transform={`translate(24, ${row.y})`}>
+        <g key={row.band} transform={`translate(12, ${row.y})`}>
           <rect
             width={160}
             height={24}

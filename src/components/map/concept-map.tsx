@@ -501,12 +501,23 @@ function MapNode({
   }, [state]);
 
   return (
+    /*
+     * Two groups, and the split is load-bearing.
+     *
+     * The outer one carries the position, as a `transform` ATTRIBUTE. The inner
+     * one carries everything else, including the reveal animation — and that
+     * animation moves a CSS `transform`, which on the same element overrides the
+     * attribute entirely rather than composing with it. It did: with both on one
+     * group, every node on a fresh map collapsed onto the origin and only the
+     * last one drawn was visible, and `animation-fill-mode: both` then kept them
+     * there for good.
+     */
+    <g transform={`translate(${origin.x}, ${origin.y})`}>
     <g
       data-node={node.id}
       tabIndex={0}
       role="button"
       aria-label={`${node.label}. ${STATE_LABEL[state]}.${isLead ? ' Start here.' : ''}${isCovered ? ' Already walked through.' : ''} In ${node.band}.`}
-      transform={`translate(${origin.x}, ${origin.y})`}
       onClick={onSelect ? () => onSelect(node) : undefined}
       onKeyDown={(event) => onKeyDown(event, node)}
       onFocus={() => onFocus(node.id)}
@@ -689,6 +700,7 @@ function MapNode({
           {leadWeight > 0 ? `Start here — ${leadWeight} ideas rest on this` : 'Start here'}
         </text>
       ) : null}
+    </g>
     </g>
   );
 }
