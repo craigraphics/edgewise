@@ -168,21 +168,32 @@ export function fitScale(content: Size, pane: Size, mode: FitMode): number {
 /**
  * Where the camera is allowed to sit.
  *
- * When the view is wider than the content on an axis, the content is centred on
- * that axis and cannot be dragged — otherwise a map smaller than its pane could
- * be flung into a corner and look lost.
+ * When the view is larger than the content on an axis, the map cannot be
+ * dragged on that axis — otherwise a map smaller than its pane could be flung
+ * into a corner and look lost. But the two axes settle differently, and that is
+ * deliberate:
+ *
+ * - **Horizontally it centres.** There is no reading direction across the map;
+ *   an off-centre drawing just looks misplaced.
+ * - **Vertically it sits at the top.** The map reads downwards — the root is the
+ *   thing everything else rests on — so the root belongs at the top of the pane.
+ *   Centring put it 360px down on a tablet, under a sheet that hid the bottom
+ *   half, so the first thing on screen was empty space.
  */
 export function panBounds(content: Size, pane: Size, scale: number) {
   const view = { width: pane.width / scale, height: pane.height / scale };
 
-  const axis = (contentLength: number, viewLength: number) =>
-    viewLength >= contentLength
-      ? { min: (contentLength - viewLength) / 2, max: (contentLength - viewLength) / 2 }
-      : { min: 0, max: contentLength - viewLength };
+  const slack = (contentLength: number, viewLength: number) => contentLength - viewLength;
 
-  const x = axis(content.width, view.width);
-  const y = axis(content.height, view.height);
-  return { minX: x.min, maxX: x.max, minY: y.min, maxY: y.max };
+  const x = slack(content.width, view.width);
+  const y = slack(content.height, view.height);
+
+  return {
+    minX: x < 0 ? x / 2 : 0,
+    maxX: x < 0 ? x / 2 : x,
+    minY: y < 0 ? y : 0,
+    maxY: 0 < y ? y : 0,
+  };
 }
 
 export function clampCamera(camera: Camera, content: Size, pane: Size): Camera {

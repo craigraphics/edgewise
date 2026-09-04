@@ -109,9 +109,28 @@ describe('fitScale', () => {
 });
 
 describe('panBounds', () => {
-  it('pins an axis the view already covers, so a small map cannot be flung into a corner', () => {
+  it('pins a horizontal axis the view already covers, so a small map cannot be flung sideways', () => {
     const bounds = panBounds(CONTENT, PANE, 1);
     expect(bounds.minX).toBe(bounds.maxX);
+  });
+
+  it('centres horizontally when the view is wider than the map', () => {
+    const pane = { width: 1200, height: 800 };
+    const bounds = panBounds(CONTENT, pane, 1);
+    expect(bounds.minX).toBe((CONTENT.width - pane.width) / 2);
+    expect(bounds.minX).toBe(bounds.maxX);
+  });
+
+  /*
+   * The map reads downwards, so the root belongs at the top of the pane. Centred
+   * vertically it sat 360px down on a tablet, under a sheet covering the bottom
+   * half — so the first thing on screen was empty space.
+   */
+  it('sits at the top when the view is taller than the map', () => {
+    const bounds = panBounds(CONTENT, { width: 904, height: 1400 }, 1);
+    expect(bounds.minY).toBeLessThanOrEqual(0);
+    expect(bounds.maxY).toBe(0);
+    expect(clampCamera({ x: 0, y: 0, scale: 1 }, CONTENT, { width: 904, height: 1400 }).y).toBe(0);
   });
 
   it('allows exactly the overflow on an axis the view does not cover', () => {

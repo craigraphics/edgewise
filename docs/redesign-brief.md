@@ -1,6 +1,10 @@
 # Edgewise — visual and interaction redesign
 
-**Status: proposal. Nothing in `src/` has been changed yet.**
+**Status: built.** This was written as a proposal and is kept as the record of
+what was found and what was argued for. Where the build departed from it, a
+**Built:** note says so and why — those departures are the useful part.
+
+The design record proper is the "The redesign" section of `AGENTS.md`.
 
 Audited on 2026-09-03 against the running app, in **BrowserOS neo** (Chromium 148)
 driven over the DevTools Protocol — see `docs/redesign/before/` for the captures
@@ -267,6 +271,10 @@ Three distinct emphasis states, as required:
 - **Highlighted** (the node the conversation or the walk is on) — a 1.5px band
   ring, no aura, no lift.
 
+**Built:** the node is 156×58 rather than 168×58, so the map comes to 904×1038
+and renders at 1:1 with 13px labels on a 1440 desktop. Everything else here
+shipped as specified.
+
 ### 3.4 Edges, focus, and the map surface
 
 - Satisfied edges at `foreground/50` and 1.8px with round caps; unsatisfied at
@@ -276,19 +284,27 @@ Three distinct emphasis states, as required:
   `descendantsOf` — pure, tested — raise those nodes and the edges between them
   to full opacity, dim everything else to 0.22 over `--dur` 180ms. This is the
   answer to §1.4 and the reason the graph is drawn at all.
-- **Band rail** rather than background regions: a 4px column at the map's left
-  edge, segmented by band, labelled on hover. Full-area band tints were tried in
-  the mock and added noise behind the edges; the rail is being built, and if it
-  reads as chrome rather than as structure it goes and the legend carries the
-  bands alone.
+- ~~**Band rail** rather than background regions: a 4px column at the map's left
+  edge, segmented by band, labelled on hover.~~
+
+  **Built and removed.** The bands are not contiguous down the map —
+  `learning` spans layers 1–3, `networks` 2–4, `language` 2–7 — so a rail draws
+  overlapping regions and asserts a structure that is not there. Rendered, it
+  was a rainbow stripe that read as decoration and was also wrong. The legend
+  popover and the per-node accent carry the bands instead. This was the open
+  question at the bottom of this brief; the answer is no.
 - **Pan and zoom** on `viewBox`: wheel/pinch zoom clamped to 0.5–2.5, drag to
   pan, `Fit` button, and keyboard — arrows move between nodes by layer/row,
   Enter opens, Esc closes. Default zoom is **fit-to-width** on desktop (the map
-  is 928×1050 against a 928px pane, so 1:1, with 260px of vertical scroll inside
+  is 904×1038 against a 928px pane, so 1:1, with 250px of vertical scroll inside
   the pane — the same irreducible amount the current build measured) and
   **fit-all** on phone, which is what fixes §1.6's 370px overflow. Zoom maths is
-  pure and tested. Without JS or under `prefers-reduced-motion`, the current
-  shrink-to-floor-then-scroll behaviour is what remains.
+  pure and tested.
+
+  **Built:** three modes, not two. A tablet needed a third — flooring at
+  legibility there clipped the right-hand column mid-node, which is the exact
+  failure the previous build already measured and fixed. So: `legible` beside
+  the panel, `width` under a sheet, `all` on a phone and on the Fit control.
 - **Legend**: replaces the dot row. The four states drawn exactly as the map
   draws them, each with its `STATE_COPY` word — an inline teaching legend, above
   the map, outside its scroll container. Bands move into a compact popover off
@@ -360,15 +376,15 @@ forking it.
 
 | # | Invariant | Verification |
 |---|---|---|
-| 1 | `content/graph.json` untouched | `git diff --exit-code content/graph.json` |
-| 2 | No force layout, no graph library, plain SVG | `git diff package.json`; positions still from `layer`/`row` |
-| 3 | Four states, no score, no percentage, no red | palette script asserts no token within 30° of hue 25 above chroma 0.16 |
-| 4 | Being taught never moves the map | existing `walkthrough` tests; no new write path from `stepFor` |
-| 5 | Explanations withheld mid-session | `reveal` logic untouched; asserted in a component test |
-| 6 | Facilitator keys 1–4 and `f` | preserved exactly; `f` is currently **unimplemented** — see §6 |
-| 7 | Hands-free voice; halo answers "can it hear me" | halo CSS carried over verbatim; manual check in BrowserOS neo |
-| 8 | Comments explaining *why* are kept or rewritten true | reviewed per file in the diff |
-| 9 | lint / typecheck / test / build / validate-graph | run at the end; new pure logic gets tests |
+| 1 | `content/graph.json` untouched | `git diff --exit-code content/graph.json` — clean |
+| 2 | No force layout, no graph library, plain SVG | `motion` is the only dependency added, and the map does not use it; positions still come from `originOf(layer, row)` |
+| 3 | Four states, no score, no percentage, no red | asserted in `globals.test.ts` — no band within 15° of hue 25 above chroma 0.13. It rejected the first attempt at the terracotta band. |
+| 4 | Being taught never moves the map | existing `walkthrough` tests; `stepFor` still has no write path |
+| 5 | Explanations withheld mid-session | `reveal` logic carried over unchanged |
+| 6 | Facilitator keys 1–4 and `f` | **verified by driving the real app**: `f` hides the header, legend, probes, misconceptions and state badge; Escape restores; keys 1–4 mark `blocked`/`known`/`shaky`/unset |
+| 7 | Hands-free voice; halo answers "can it hear me" | halo CSS and `VoiceHalo` carried over verbatim; the composer now gives it a real bottom edge to come off |
+| 8 | Comments explaining *why* are kept or rewritten true | every carried-over comment kept or extended; `AGENTS.md` corrected where it had become false |
+| 9 | lint / typecheck / test / build / validate-graph | all five pass; 219 tests, up from 145 |
 
 New pure logic that will get tests: `wrapLabel`, `ancestorsOf` / `descendantsOf`,
 `fitScale` / `clampZoom` / `panBounds`, and the token contrast assertion.
@@ -392,7 +408,7 @@ One dependency added: `motion`. One font added: Newsreader via `next/font`.
 
 ## 6. Two things found that are not visual, and are not mine to decide
 
-**`f` does not hide the controls.** `AGENTS.md` documents facilitator mode as
+**`f` does not hide the controls.** *(Built — it does now.)* `AGENTS.md` documents facilitator mode as
 "press `f`, then turn the screen around — `f` hides every control", and calls it
 the mitigation for the largest risk in the product. `src/app/page.tsx`'s `onKey`
 handles `Escape` and the digits `1`–`4`. There is no `f` branch anywhere in
@@ -403,7 +419,7 @@ exactly, and the redesign touches every control it would have to hide, so
 building it now is cheaper than building it after. Say if you would rather it
 stayed out.
 
-**The Setup dialog is not focus-trapped**, and neither is Welcome. Both are
+**The Setup dialog is not focus-trapped**, and neither is Welcome. *(Built — both are real base-ui `Dialog`s, and the tools menu, which had the same problem, is a real `Menu`.)* Both are
 `role="dialog" aria-modal="true"` on a plain `div`, so a screen reader is told
 the rest of the page is inert while Tab happily walks into it. Converting both
 to base-ui `Dialog` is already in the plan; flagging that it is a correctness
@@ -433,9 +449,52 @@ It reports 7 buttons under 44px, which is the documented deliberate 40px
 
 ---
 
-## Open question
+## What the build found that the brief did not
 
-**The band rail.** Six bands as a segmented rail down the map's left edge is the
-one item above I am least sure of. It is being built and looked at; if it reads
-as decoration rather than structure it comes out and the legend carries the
-bands alone. I will show it either way rather than quietly keeping it.
+Three things, all of which only appeared once something was rendered.
+
+1. **The band rail was wrong, not just noisy.** See §3.4. The open question is
+   answered: it is gone.
+2. **The reveal animation collapsed the map.** `edgewise-settle` animated a CSS
+   `transform` on the same SVG group that carried the positioning `transform`
+   attribute. CSS wins, so on a fresh map all 23 nodes stacked on the origin and
+   only the last one drawn was visible — and `animation-fill-mode: both` kept
+   them there. Invisible in the code, obvious in a screenshot.
+3. **The sheet rendered at the top of the tablet layout**, above the map, and —
+   having no width of its own as a flex child — grew to its longest unwrapped
+   line and ran off the screen.
+
+Both bugs are the same class: a CSS property silently overriding an SVG
+attribute or a flex rule. Both were caught by looking, not by reading.
+
+## Before and after
+
+| | Before | After |
+|---|---|---|
+| Map, dark, 1440 | ![](redesign/before/before-map-progress-1440-dark.png) | ![](redesign/after/map-progress-1440-dark.png) |
+| Map, light, 1440 | ![](redesign/before/before-map-progress-1440-light.png) | ![](redesign/after/map-progress-1440-light.png) |
+| Phone, 390 | ![](redesign/before/before-map-progress-390-dark.png) | ![](redesign/after/map-progress-390-dark.png) |
+| Walkthrough, 1440 | ![](redesign/before/before-walkthrough-1440-dark.png) | ![](redesign/after/walkthrough-1440-dark.png) |
+| Welcome | ![](redesign/before/before-welcome-1440-dark.png) | ![](redesign/after/welcome-1440-dark.png) |
+
+Also in `docs/redesign/after/`: the tablet sheet at 820, the earned completion
+screen, and facilitator mode with `f` pressed.
+
+## Measured after
+
+Dark, seven widths, the probe from `AGENTS.md` unchanged:
+
+| | 390 | 768 | 820 | 1024 | 1280 | 1440 | 1920 |
+|---|---|---|---|---|---|---|---|
+| Page scroll (v/h) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Header height | 115 | 57 | 57 | 57 | 57 | 57 | 57 |
+| Map label px | 5.1 | 10.4 | 11.1 | 13 | 12.3 | 13 | 13 |
+| Controls off-screen | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Controls below fold | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Header was 330px at 390 before. 390 is the phone overview, where the whole shape
+is deliberately preferred to a readable label.
+
+Contrast is no longer a script but a test — `src/app/globals.test.ts`, over 100
+assertions against the real tokens in `globals.css`. Worst map label went from
+**2.89:1** to **11.60:1**.

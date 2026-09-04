@@ -163,7 +163,7 @@ Voice needs Chrome. Everything works by typing in any browser.
 ### Other commands
 
 ```bash
-pnpm test              # 85 tests
+pnpm test              # 219 tests
 pnpm validate-graph    # checks the 23 ideas are wired up correctly
 pnpm calibrate         # checks the AI can actually tell good answers from bad
 pnpm leak-probe        # checks a failed request cannot leak your API key
