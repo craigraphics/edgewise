@@ -1,7 +1,10 @@
 'use client';
 
+import { XIcon } from 'lucide-react';
+
+import { NodeGlyph } from '@/components/map/node-glyph';
+import { Caveat } from '@/components/session/caveat';
 import { ExplainBack } from '@/components/session/explain-back';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { downstreamOf, stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/graph/types';
@@ -23,6 +26,13 @@ type Props = {
   model: LearnerModel;
   /** Facilitator mode: show the probes and let them be marked by hand. */
   marking: boolean;
+  /**
+   * `f` has been pressed and the screen is about to be turned around. Every
+   * control goes — the marks most of all. Watching someone click "Not yet"
+   * against you is the most direct possible way to make a diagnosis feel like a
+   * grading, which is the failure this product is least able to survive.
+   */
+  presenting?: boolean;
   /** False mid-session: withholds the explanation for anything not yet settled. */
   reveal: boolean;
   /** The walkthrough has been through this one, so there is nothing left to withhold. */
@@ -33,28 +43,73 @@ type Props = {
   onClose: () => void;
 };
 
-export function Inspector({ graph, node, model, marking, reveal, covered, config, onEarned, onMark, onClose }: Props) {
+/**
+ * The state, drawn the way the map draws it.
+ *
+ * A plain grey `Badge` saying "Not yet" gave the panel and the map two
+ * unrelated vocabularies for the same fact. Reusing `NodeGlyph` means the mark
+ * you just read on a node is the mark you see here, and it cannot drift.
+ */
+function StateBadge({ state, band }: { state: NodeState; band: string }) {
+  return (
+    <span className="bg-surface-2 border-border text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs">
+      <svg width={11} height={11} aria-hidden className="shrink-0 overflow-visible">
+        <NodeGlyph state={state} cx={5.5} cy={5.5} colour={`var(--band-${band})`} />
+      </svg>
+      {STATE_COPY[state]}
+    </span>
+  );
+}
+
+export function Inspector({
+  graph,
+  node,
+  model,
+  marking,
+  presenting = false,
+  reveal,
+  covered,
+  config,
+  onEarned,
+  onMark,
+  onClose,
+}: Props) {
   const blocked = downstreamOf(graph, node.id);
   const state = stateOf(model, node.id);
 
   return (
-    <div className="space-y-4">
+    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <Badge variant="secondary">{STATE_COPY[state]}</Badge>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-4"
-          >
-            Close
-          </button>
+          {/*
+           * The state badge is a mark, so it goes with the rest of them when
+           * the screen is turned around. Showing someone "Not yet" against the
+           * idea they are being asked about is the grading this mode exists to
+           * prevent.
+           */}
+          {presenting ? (
+            <span />
+          ) : (
+            <StateBadge state={state} band={node.band} />
+          )}
+          {presenting ? null : (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+              className="-mt-1 -mr-1"
+            >
+              <XIcon />
+            </Button>
+          )}
         </div>
-        <h2 className="mt-3 text-xl font-semibold tracking-tight">{node.label}</h2>
+        <h2 className="font-display mt-3 text-xl font-semibold">{node.label}</h2>
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
 
-      {marking ? (
+      {marking && presenting ? null : marking ? (
         <>
           <div className="flex flex-wrap gap-1.5">
             {MARKS.map((mark, index) => (
@@ -77,10 +132,10 @@ export function Inspector({ graph, node, model, marking, reveal, covered, config
            * survive.
            */}
           <div>
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Ask them</p>
+            <p className="text-muted-foreground text-2xs font-medium uppercase">Ask them</p>
             <ul className="mt-1.5 space-y-2">
               {node.probes.map((probe) => (
-                <li key={probe} className="text-sm leading-relaxed">
+                <li key={probe} className="text-base leading-relaxed">
                   {probe}
                 </li>
               ))}
@@ -89,10 +144,10 @@ export function Inspector({ graph, node, model, marking, reveal, covered, config
 
           {node.misconceptions.length > 0 ? (
             <div>
-              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Listen for</p>
+              <p className="text-muted-foreground text-2xs font-medium uppercase">Listen for</p>
               <ul className="mt-1.5 space-y-2">
                 {node.misconceptions.map((misconception) => (
-                  <li key={misconception} className="text-muted-foreground text-sm leading-relaxed">
+                  <li key={misconception} className="text-muted-foreground text-base leading-relaxed">
                     {misconception}
                   </li>
                 ))}
@@ -101,13 +156,13 @@ export function Inspector({ graph, node, model, marking, reveal, covered, config
           ) : null}
         </>
       ) : !reveal && !covered && state === 'unexplored' ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-base leading-relaxed">
           Not gone into yet. Whatever you already have here is what the conversation is trying to find out.
         </p>
       ) : (
         <>
-          <p className="text-sm leading-relaxed">{node.explanations.intuition}</p>
-          <p className="text-muted-foreground text-sm leading-relaxed">{node.explanations.example}</p>
+          <p className="font-display text-read">{node.explanations.intuition}</p>
+          <p className="text-muted-foreground text-base leading-relaxed">{node.explanations.example}</p>
 
           {/*
            * Surfaced with the explanation rather than buried. A simplification
@@ -115,12 +170,9 @@ export function Inspector({ graph, node, model, marking, reveal, covered, config
            * something the learner has to be rescued from later.
            */}
           {node.simplificationCost ? (
-            <div className="border-foreground/15 border-l-2 pl-4">
-              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                What this telling costs
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed">{node.simplificationCost}</p>
-            </div>
+            <Caveat title="What this telling costs" band={node.band}>
+              {node.simplificationCost}
+            </Caveat>
           ) : null}
         </>
       )}
@@ -136,14 +188,14 @@ export function Inspector({ graph, node, model, marking, reveal, covered, config
        * confining it to a position in the walkthrough would make it a step in
        * someone else's flow rather than something they chose.
        */}
-      {!marking && (reveal || covered) ? (
+      {!marking && !presenting && (reveal || covered) ? (
         <ExplainBack node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
       {blocked.length > 0 && state !== 'known' ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          <span className="text-foreground font-medium">{blocked.length} later ideas</span> rest on this one,
-          including {blocked.slice(0, 3).map((entry) => entry.label).join(', ')}.
+        <p className="border-border text-muted-foreground border-t pt-4 text-base leading-relaxed">
+          <span className="text-foreground font-medium tabular">{blocked.length} later ideas</span> rest on
+          this one, including {blocked.slice(0, 3).map((entry) => entry.label).join(', ')}.
         </p>
       ) : null}
     </div>

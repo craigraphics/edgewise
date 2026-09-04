@@ -106,15 +106,15 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-muted-foreground text-xs leading-relaxed">
-        In your own words, however roughly. Everyday language beats the right terminology — this is only useful if
-        it is actually yours.
+    <div className="bg-surface-2/60 border-border space-y-2.5 rounded-xl border p-3.5">
+      <p className="text-muted-foreground text-2xs leading-relaxed">
+        In your own words, however roughly. Everyday language beats the right terminology — this is only
+        useful if it is actually yours.
       </p>
 
       {voice.listening ? (
-        <div className="border-foreground/25 flex h-20 items-center justify-between rounded-sm border border-dashed px-3">
-          <span className="text-muted-foreground text-sm">{voice.interim || 'Listening…'}</span>
+        <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
+          <span className="text-muted-foreground text-base">{voice.interim || 'Listening…'}</span>
           <Button size="touch" variant="outline" onClick={voice.stopListening}>
             Done
           </Button>
@@ -126,6 +126,7 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
           placeholder={`So ${node.label.toLowerCase()} is basically…`}
           rows={4}
           disabled={busy}
+          className="bg-surface-1 resize-none"
         />
       )}
 
@@ -151,19 +152,34 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
         </Button>
       </div>
 
-      {busy ? <p className="text-muted-foreground text-sm">…</p> : null}
-      {error ? <p className="text-muted-foreground text-sm leading-relaxed">{error}</p> : null}
+      {busy ? (
+        <p className="text-muted-foreground font-display text-read animate-pulse">Reading it…</p>
+      ) : null}
+      {error ? <p className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
 
       {reply ? (
-        <div className="space-y-1.5 pt-1">
-          <p className="text-sm leading-relaxed">{reply.say}</p>
+        <div className="edgewise-rise space-y-2 pt-1">
+          <p className="font-display text-read">{reply.say}</p>
           {/*
            * Stated plainly when something moved, and silent when it did not.
            * "Not yet" as an explicit verdict on an attempt someone volunteered
            * is the discouraging half of this interaction, and the reply above
            * already says what was missing.
+           *
+           * When it did move, it is worth a moment: this is the only thing in
+           * the product that changes the map, and the same pulse fires on the
+           * node itself, so the two read as one event in two places.
            */}
-          {reply.moved ? <p className="text-muted-foreground text-xs">The map has moved on this one.</p> : null}
+          {reply.moved ? (
+            <p className="text-foreground flex items-center gap-1.5 text-2xs font-medium">
+              <span
+                aria-hidden
+                className="edgewise-aura inline-block size-1.5 rounded-full"
+                style={{ background: 'var(--foreground)' }}
+              />
+              The map has moved on this one.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

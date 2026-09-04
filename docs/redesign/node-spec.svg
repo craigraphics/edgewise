@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 470" width="800" height="470" font-family="Geist, ui-sans-serif, system-ui, sans-serif">
+  <style>
+    .card  { fill: var(--s2); stroke: var(--line); stroke-width: 1; }
+    .label { font-size: 13px; font-weight: 500; letter-spacing: -0.005em; }
+    .lab-on  { fill: var(--fg); }
+    .lab-off { fill: var(--muted); }
+    .cap   { font-size: 11px; letter-spacing: 0.01em; }
+    .head  { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; fill: var(--muted); }
+    .note  { font-size: 11.5px; fill: var(--muted); }
+    svg { --s1: #101319; --s2: #1a1d24; --line: #ffffff1a; --fg: #f2f4f9; --muted: #a4a9b4; --band: #6dc688; --band2: #6c9feb; }
+  </style>
+  <rect width="800" height="470" fill="var(--s1)"/>
+
+  <!-- ROW 1: the four states -->
+  <text x="28" y="34" class="head">The four states</text>
+
+  <g transform="translate(28,52)">
+    <rect width="168" height="58" rx="10" class="card"/>
+    <rect width="168" height="58" rx="10" fill="var(--band)" fill-opacity="0.14"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band)"/>
+    <circle cx="20" cy="29" r="4.5" fill="var(--band)"/>
+    <text x="36" y="24" class="label lab-on">Learning from</text>
+    <text x="36" y="40" class="label lab-on">examples</text>
+  </g>
+  <text x="28" y="126" class="cap" fill="var(--fg)">Solid</text>
+  <text x="28" y="142" class="note">filled disc · tinted card</text>
+
+  <g transform="translate(216,52)">
+    <rect width="168" height="58" rx="10" class="card"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band)" fill-opacity="0.75"/>
+    <circle cx="20" cy="29" r="4.5" fill="none" stroke="var(--band)" stroke-width="1.5"/>
+    <path d="M20 24.5 A4.5 4.5 0 0 1 20 33.5 Z" fill="var(--band)"/>
+    <text x="36" y="33" class="label lab-on">Meaning as position</text>
+  </g>
+  <text x="216" y="126" class="cap" fill="var(--fg)">Half-held</text>
+  <text x="216" y="142" class="note">half disc · plain card</text>
+
+  <g transform="translate(404,52)">
+    <rect width="168" height="58" rx="10" class="card"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band)" fill-opacity="0.55"/>
+    <circle cx="20" cy="29" r="4.5" fill="none" stroke="var(--band)" stroke-width="1.5"/>
+    <text x="36" y="33" class="label lab-on">Why depth helps</text>
+  </g>
+  <text x="404" y="126" class="cap" fill="var(--fg)">Not yet</text>
+  <text x="404" y="142" class="note">open ring · waiting, never failed</text>
+
+  <g transform="translate(592,52)">
+    <rect width="168" height="58" rx="10" class="card" stroke-opacity="0.5"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band)" fill-opacity="0.3"/>
+    <circle cx="20" cy="29" r="2" fill="var(--muted)" fill-opacity="0.7"/>
+    <text x="36" y="33" class="label lab-off">Holding data back</text>
+  </g>
+  <text x="592" y="126" class="cap" fill="var(--fg)">Not looked at</text>
+  <text x="592" y="142" class="note">faint dot · muted label</text>
+
+  <!-- ROW 2 -->
+  <text x="28" y="200" class="head">Lead · selected · highlighted · covered</text>
+
+  <g transform="translate(28,224)">
+    <rect x="-7" y="-7" width="182" height="72" rx="15" fill="var(--band)" fill-opacity="0.10"/>
+    <rect x="-4" y="-4" width="176" height="66" rx="13" fill="none" stroke="var(--band)" stroke-width="1.5" stroke-opacity="0.85"/>
+    <rect width="168" height="58" rx="10" class="card"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band)" fill-opacity="0.55"/>
+    <circle cx="20" cy="29" r="4.5" fill="none" stroke="var(--band)" stroke-width="1.5"/>
+    <text x="36" y="33" class="label lab-on">What a 'neuron' is</text>
+    <text x="84" y="80" class="cap" fill="var(--band)" text-anchor="middle">Start here — 10 ideas rest on this</text>
+  </g>
+  <text x="28" y="330" class="note">lead: aura + caption</text>
+
+  <g transform="translate(216,224)">
+    <rect x="-4" y="-4" width="176" height="66" rx="13" fill="none" stroke="var(--fg)" stroke-width="2"/>
+    <rect width="168" height="58" rx="10" fill="#22262f" stroke="var(--line)"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band2)" fill-opacity="0.75"/>
+    <circle cx="20" cy="29" r="4.5" fill="var(--band2)"/>
+    <text x="36" y="33" class="label lab-on">Everything is numbers</text>
+  </g>
+  <text x="216" y="330" class="note">selected: neutral ring</text>
+
+  <g transform="translate(404,224)">
+    <rect x="-3" y="-3" width="174" height="64" rx="12" fill="none" stroke="var(--band2)" stroke-width="1.5" stroke-opacity="0.7"/>
+    <rect width="168" height="58" rx="10" class="card"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band2)" fill-opacity="0.75"/>
+    <circle cx="20" cy="29" r="4.5" fill="none" stroke="var(--band2)" stroke-width="1.5"/>
+    <path d="M20 24.5 A4.5 4.5 0 0 1 20 33.5 Z" fill="var(--band2)"/>
+    <text x="36" y="33" class="label lab-on">Training vs. using</text>
+  </g>
+  <text x="404" y="330" class="note">highlighted: band ring</text>
+
+  <g transform="translate(592,224)">
+    <rect width="168" height="58" rx="10" class="card"/>
+    <path d="M0 10 A10 10 0 0 1 10 0 L3 0 L3 58 L10 58 A10 10 0 0 1 0 48 Z" fill="var(--band2)" fill-opacity="0.75"/>
+    <circle cx="20" cy="29" r="4.5" fill="none" stroke="var(--band2)" stroke-width="1.5"/>
+    <text x="36" y="33" class="label lab-on">Text as tokens</text>
+    <circle cx="156" cy="12" r="2.2" fill="var(--muted)" fill-opacity="0.8"/>
+  </g>
+  <text x="592" y="330" class="note">covered: corner dot</text>
+
+  <!-- ROW 3: dimming -->
+  <text x="28" y="384" class="head">Focus: ancestors and descendants raised, the rest dimmed</text>
+  <g transform="translate(28,400)" opacity="1">
+    <g opacity="0.22">
+      <rect width="120" height="40" rx="8" class="card"/>
+      <text x="14" y="24" class="label lab-off" font-size="11">unrelated</text>
+    </g>
+    <g transform="translate(136,0)">
+      <rect width="120" height="40" rx="8" class="card"/>
+      <path d="M0 8 A8 8 0 0 1 8 0 L3 0 L3 40 L8 40 A8 8 0 0 1 0 32 Z" fill="var(--band)"/>
+      <text x="14" y="24" class="label lab-on" font-size="11">rests on this</text>
+    </g>
+    <g transform="translate(272,0)">
+      <rect width="120" height="40" rx="8" class="card"/>
+      <path d="M0 8 A8 8 0 0 1 8 0 L3 0 L3 40 L8 40 A8 8 0 0 1 0 32 Z" fill="var(--band)"/>
+      <text x="14" y="24" class="label lab-on" font-size="11">focused</text>
+    </g>
+    <g transform="translate(408,0)" opacity="0.22">
+      <rect width="120" height="40" rx="8" class="card"/>
+      <text x="14" y="24" class="label lab-off" font-size="11">unrelated</text>
+    </g>
+  </g>
+</svg>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { Caveat } from '@/components/session/caveat';
 import { Completion } from '@/components/session/completion';
 import { ExplainBack } from '@/components/session/explain-back';
 import { Button } from '@/components/ui/button';
@@ -180,18 +181,39 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
        * on purpose. These are the things you look up at while listening, and
        * they must not scroll away with the prose.
        */}
-      <div className="shrink-0 pb-3">
-        <p className="text-muted-foreground text-xs">
-          {walk.position + 1} of {walk.order.length}
-          {step.brief ? ' · you already had this one' : ''}
-        </p>
-        <h2 className="mt-1 text-xl font-semibold tracking-tight">{step.node.label}</h2>
+      <div className="shrink-0 pb-4">
+        {/*
+         * How far through, drawn rather than counted in prose. Twenty-three
+         * ticks read as twenty-three ideas; a percentage would read as a score,
+         * and this product does not have one.
+         */}
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 gap-0.5" aria-hidden>
+            {walk.order.map((node, index) => (
+              <span
+                key={node.id}
+                className="h-0.5 flex-1 rounded-full transition-colors duration-[--dur]"
+                style={{
+                  background:
+                    index <= walk.position ? `var(--band-${node.band})` : 'var(--muted-foreground)',
+                  opacity: index <= walk.position ? 1 : 0.2,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-muted-foreground tabular shrink-0 text-2xs">
+            {walk.position + 1} of {walk.order.length}
+          </p>
+        </div>
+        <h2 className="font-display mt-3 text-xl font-semibold">{step.node.label}</h2>
+        {step.brief ? (
+          <p className="text-muted-foreground mt-1 text-2xs">You already had this one — just in passing.</p>
+        ) : null}
       </div>
 
       <div ref={scroller} className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-
         {step.body.map((paragraph) => (
-          <p key={paragraph} className="text-sm leading-relaxed">
+          <p key={paragraph} className="font-display text-read max-w-[60ch]">
             {paragraph}
           </p>
         ))}
@@ -202,22 +224,21 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
          * something the learner has to be rescued from later.
          */}
         {step.caveat ? (
-          <div className="border-foreground/15 border-l-2 pl-4">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Worth flagging
-            </p>
-            <p className="mt-1.5 text-sm leading-relaxed">{step.caveat}</p>
-          </div>
+          <Caveat title="What this simplification gets wrong" band={step.node.band}>
+            {step.caveat}
+          </Caveat>
         ) : null}
 
         {aside ? (
-          <div className="bg-muted rounded-lg px-3 py-2">
-            <p className="text-sm leading-relaxed">{aside}</p>
+          <div className="bg-surface-2 edgewise-rise rounded-xl px-4 py-3">
+            <p className="font-display text-read">{aside}</p>
           </div>
         ) : null}
 
-        {busy ? <p className="text-muted-foreground text-sm">…</p> : null}
-        {error ? <p className="text-muted-foreground text-sm leading-relaxed">{error}</p> : null}
+        {busy ? (
+          <p className="text-muted-foreground font-display text-read animate-pulse">Thinking…</p>
+        ) : null}
+        {error ? <p className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
 
         {/*
          * Offered after the step, never required before advancing. Gating the
@@ -234,7 +255,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         </div>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="edgewise-raised border-border mt-4 shrink-0 space-y-2.5 rounded-xl border p-3">
         <Textarea
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
@@ -247,6 +268,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
           placeholder="Ask anything about this — or just let it run"
           rows={2}
           disabled={busy}
+          className="bg-surface-1 resize-none"
         />
 
         {/*
@@ -332,7 +354,9 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
 
 function VoiceLine({ voice, playing }: { voice: ReturnType<typeof useVoice>; playing: boolean }) {
   if (!voice.supported.speak) {
-    return <p className="text-muted-foreground text-xs">This browser cannot read it aloud — Chrome can.</p>;
+    return (
+      <p className="text-muted-foreground text-2xs">This browser cannot read it aloud — Chrome can.</p>
+    );
   }
 
   /*
@@ -340,7 +364,7 @@ function VoiceLine({ voice, playing }: { voice: ReturnType<typeof useVoice>; pla
    * rather than left to be discovered when the screen changes on its own.
    */
   return (
-    <p className="text-muted-foreground pt-1 text-xs leading-relaxed">
+    <p className="text-muted-foreground text-2xs leading-relaxed">
       {playing
         ? 'Reading aloud, and it moves to the next idea on its own. Interrupt whenever.'
         : 'It can read the whole thing to you and move through it by itself.'}
