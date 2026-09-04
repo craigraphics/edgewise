@@ -59,10 +59,15 @@ explain back. **It has never been in front of anyone but the owner.**
    contact instead of hunting for a button.
 3. Press <kbd>f</kbd>, then turn the screen around.
 
-**<kbd>f</kbd> hides every control — marks, probes, misconceptions, reset.**
-That is not tidiness. The largest risk here is that being diagnosed feels like
-being graded, and watching someone click "Not yet" against you is the most
-direct possible way to produce that feeling.
+**<kbd>f</kbd> hides every control — marks, probes, misconceptions, the state
+badge, the header, the legend.** That is not tidiness. The largest risk here is
+that being diagnosed feels like being graded, and watching someone click "Not
+yet" against you is the most direct possible way to produce that feeling.
+
+This was described here from the beginning and **was not implemented until the
+redesign** — there was no `f` branch anywhere in `src/`, so the gate could not
+be run as written. Worth knowing that a documented mitigation can sit unbuilt
+for as long as nobody runs the procedure it belongs to.
 
 Watch, do not ask. The signal is unprompted — they point at something, or ask
 about a node they were not curious about a minute ago. The anti-signal is polite
@@ -83,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 43 tests, pure logic
+pnpm test             # 219 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -140,8 +145,15 @@ reshuffle between turns when nothing has changed.
 
 Plain SVG, no graph library, no force simulation. The drawing is the artefact
 being judged; a layout that moves every render is not trustworthy enough to
-produce recognition. It renders at authored size and scrolls rather than
-scaling — scaling drops the 10.5px labels below legibility.
+produce recognition. Zoom and pan move a `viewBox` — a camera over a fixed
+drawing — so nothing in them can move one node relative to another.
+
+How it sits in its pane depends on what it is being asked to do; see `FitMode`
+in `src/lib/map/layout.ts`. Beside the panel it stops shrinking when the labels
+reach 12px and pans the remainder. Under a sheet it always shows the full width,
+because clipping a column mid-node reads as a broken drawing rather than as
+something you can scroll. On a phone, and on the Fit control, it shows the whole
+shape.
 
 ### `src/app/api/turn/route.ts` — stateless, and derives more than it asks
 
@@ -459,20 +471,37 @@ audit through the browser tools, run at real device sizes before and after. Run
 it again after any layout change — the numbers are the point, not the opinion.
 
 ```js
-// paste into javascript_tool against the running app
+// paste into the console against the running app
 const vh=innerHeight, vw=innerWidth, doc=document.documentElement;
 const t=[...document.querySelectorAll('button')].map(b=>{
   const r=b.getBoundingClientRect();
-  return {l:b.innerText.trim().slice(0,24), h:Math.round(r.height), bottom:Math.round(r.bottom)};
-}).filter(x=>x.l);
+  return {l:(b.innerText||b.getAttribute('aria-label')||'').trim().slice(0,24),
+          h:Math.round(r.height), bottom:Math.round(r.bottom), right:Math.round(r.right)};
+}).filter(x=>x.l && x.h>0);
 const a=document.querySelector('aside');
+const s=document.querySelector('section[aria-label="Concept map"]');
+const edge=(e)=>e?Math.round(e.getBoundingClientRect().right):0;
 ({viewport:`${vw}x${vh}`,
   pageScrollV:Math.max(0,doc.scrollHeight-vh),
   pageScrollH:Math.max(0,doc.scrollWidth-vw),
+  // The two that matter, and the two the first version of this probe missed.
+  clippedRight:Math.max(0, edge(a)-vw, edge(s)-vw),
   panelTop:a?Math.round(a.getBoundingClientRect().top):null,
-  under44:t.filter(x=>x.h<44).map(x=>x.l),
-  controlsBelowFold:t.filter(x=>x.bottom>vh).map(x=>x.l)})
+  under40:t.filter(x=>x.h<40).map(x=>x.l),
+  controlsOffRight:t.filter(x=>x.right>vw+1).map(x=>x.l),
+  controlsBelowFold:t.filter(x=>x.bottom>vh+1).map(x=>x.l)})
 ```
+
+**`pageScrollH` is not enough on its own, and finding that out cost a shipped
+bug.** The shell is `overflow-hidden`, so when a region is too wide the overflow
+is clipped rather than scrolled — `scrollWidth` equals `clientWidth` and the
+probe reports a clean zero while half the conversation panel is off the side of
+the window. `clippedRight` compares each region's own right edge to the
+viewport, which is what actually catches it.
+
+**Run it after a resize, not only after a load.** The bug that motivated this was
+invisible on a fresh load at every width and appeared only when a window that
+had been wider was made narrower. See "Two bugs this pass created" below.
 
 ### What it found, and what fixed it
 
@@ -501,6 +530,10 @@ The tablet number was the bad one: the panel where every interaction happens sat
 4. **The map scales to its pane down to a 760px floor, then scrolls.** Fixed
    size clipped the right-hand column mid-node and read as a broken drawing;
    unlimited scaling drops the 10.5px labels below legibility on a tablet.
+   *(Superseded: the floor is now stated as the point where the label reaches
+   12px — `LEGIBLE_SCALE` — because legibility was always the actual
+   constraint, and a pixel width stops being correct the moment the geometry
+   changes.)*
 5. **`size="touch"` (44px) on anything a finger uses.** Every other size in the
    shadcn set is under it — fine for a mouse, not for a tablet.
 
@@ -592,7 +625,10 @@ last place it could creep back in.
 
 - **Node boxes get an opaque base rect** (`var(--background)`) under the state
   fill. The faint states run at 5–7% opacity, so edges passing behind a box
-  showed through the label.
+  showed through the label. *(Still true, and now doing more: the card is a
+  neutral surface in every state rather than a wash of the band colour, which is
+  what took the label's contrast out of the hands of six different hues. See
+  "Legibility, measured" below.)*
 - **The theme toggle moved into the header flow.** It was `fixed top-3 right-3`
   and sat on top of the header's own controls.
 - **The four walkthrough controls are a 2x2 grid, not a wrapping row.** Labels of
@@ -600,7 +636,240 @@ last place it could creep back in.
   buttons; equal 176px cells make them one set of four.
 - **`size="touch"` is 40px, not 44.** The usual guidance is 44; it read heavy on
   a desktop where most of this is used. Everything else in the shadcn set is
-  28–36px, which a finger cannot reliably hit.
+  28–36px, which a finger cannot reliably hit. `icon-touch` is its square
+  counterpart, added for the header and map controls, which were 36px.
+
+## The redesign — what changed and why
+
+A full pass over the presentation layer. Nothing in `content/graph.json` moved,
+no layout is computed, the four states are still four, and there is still no
+score, no percentage and no red.
+
+### Legibility, measured
+
+The one defect rather than a preference, and it was on the most important
+element in the product.
+
+`STATE_STYLE` used to paint the node fill as the band colour at an opacity and
+put the label straight on it. Measured, in light mode:
+
+| State | Label | Worst band | AA 4.5:1 |
+|---|---|---|---|
+| `known` | white on 90% band | **2.89** | ✗ |
+| `shaky` | foreground on 28% band | 13.77 | ✓ |
+| `blocked` | muted on 7% band | **4.34** | ✗ |
+| `unexplored` | muted on 5% band | **4.45** | ✗ |
+
+Dark passed everywhere (worst 5.42). So the map was legible to whoever built it,
+who works in dark, and not to a light-mode visitor — and `known`, the worst case
+at 2.89, is the state the map most wants read.
+
+The cause was structural, not a bad colour pick: **the label's contrast was
+hostage to six hues across four opacities**, twenty-four combinations that all
+had to pass and seven did not. No retune could have fixed that. So the label
+came off the band colour: every node is now an opaque neutral card with the band
+as a 3px accent down its leading edge. **Worst case is now 11.60, both themes.**
+
+`src/app/globals.test.ts` asserts this against the real tokens in `globals.css`
+— every state on every band in both themes, band accents as graphics at 3:1,
+body and muted text on all three surfaces. Retuning a colour now fails there
+rather than in front of a learner.
+
+### State is a glyph, never a colour
+
+Four states used to be four dash patterns on a 1.3px border — solid, `5 3`,
+`2 4`, solid-but-fainter — at four fill opacities between 5% and 90%. The
+difference between "not yet" and "not looked at" was about one pixel of pattern
+and two per cent of fill, and nothing on screen taught the code.
+
+They are now shapes: **filled disc, half disc, open ring, faint dot**. That
+progression survives greyscale, every kind of colour blindness, and a screenshot
+at a third size. `blocked` is an *open ring* — waiting, never failed.
+
+The legend teaches them, drawn with the map's own `NodeGlyph` so it cannot drift
+from what it explains, and it sits **above** the map. It used to sit below the
+full 1038px of the drawing, inside the drawing's own scroll container, and
+explained the six bands rather than the four states.
+
+### The lead node was drawn as an error
+
+`isLead` drew a dashed ring around a node that — being by definition not `known`
+— was already dashed or dotted for its state. Two nested dashed rectangles is
+how every design system on earth draws *invalid*, on the one node the map most
+wants you to walk towards.
+
+It now has a soft breathing aura in its band colour **and a caption**: *"Start
+here — 22 ideas rest on this"*, computed from `downstreamOf`. That sentence is
+the whole argument for the map existing and it was previously reachable only by
+clicking the right node and reading to the bottom of the panel. It names the
+structure, never the person; "you are missing this" is a verdict and that tone
+is what this product cannot survive.
+
+Three emphases, three treatments, none mistakable for another: **lead** is the
+band aura plus caption, **selected** is a crisp neutral ring, **highlighted**
+(what the conversation or the walk is on) is a band ring. Those last two used to
+arrive on one prop, which meant the walkthrough left the map dimmed to a single
+cone for all twenty-three steps.
+
+### The picture answers what rests on what
+
+33 edges over 23 nodes, six of them crossing within forty pixels around
+`attention`. Hovering did nothing; selecting did nothing. So the two questions a
+prerequisite graph exists to answer were answerable only by tracing a curve with
+a finger.
+
+Focus a node and `focusOn` raises its ancestor and descendant cones and dims the
+rest. **An edge counts only when both ends are in the same cone** — an edge from
+an ancestor straight to a descendant bypasses the focused node, and lighting it
+would claim the node is on a path it is not on. That rule is tested.
+
+### Two faces
+
+Geist stays for the interface. **Newsreader** carries the headings and the
+tutor's voice. The tutor's turns are the only place this product speaks to a
+person and they were set in the same face and size as a button label; being
+spoken to in a text serif reads differently from being messaged in a UI face,
+and that distinction is the whole job of the conversation panel.
+
+Everything else comes off one type scale in `@theme`. There is no `text-[10.5px]`
+any more.
+
+### Surfaces, and the band that read as an alarm
+
+Pure black and pure white gave the interface no way to separate the panel from
+the map from the page. Three tonal levels now — warm paper on light, cool
+near-black on dark — with `--surface-raised` carrying an inset highlight, which
+is what makes a raised surface read as lit rather than as a lighter rectangle.
+
+`behaviour` moved off hue 25. At that hue and chroma it rendered as a saturated
+red-pink, so "Hallucination" and "What the model sees" read as error rows in a
+table — which contradicts this product's own rule that red is reserved for
+nothing. **The first attempt at the fix was itself rejected by the new test**:
+hue 38 at chroma 0.135 was still inside the alarm range. It sits at 42 / 0.125,
+and `language` moved 78 → 82 to keep forty degrees between the two warm bands.
+
+### Two layouts, not one with a fallback
+
+Below 1280 the panel is a **drag-handled sheet over a full-width map** with
+three stops, rather than a stack. Stacking measured badly in both directions: a
+tablet got 530px of map underneath a panel that hid it, and a phone split one
+non-scrolling viewport into two unusable 250px halves. A sheet makes the split
+adjustable by the person using it, which is the only thing that works at both
+sizes.
+
+The phone header is two 44px rows rather than three wrapped ones — **115px
+instead of 330px**, and the subject keeps its name instead of truncating to
+"How …".
+
+Panel first in the DOM still holds. The page still never scrolls.
+
+### `f` existed only in this file
+
+`AGENTS.md` has described facilitator mode since the beginning — "press `f`,
+then turn the screen around" — and calls it the mitigation for the largest risk
+in the product. There was no `f` branch anywhere in `src/`. The validation gate
+could not be run as documented.
+
+It is implemented now, and hides the header, the legend, the marking buttons,
+the probes, the misconceptions, and **the state badge** — which is itself a
+mark, and showing someone "Not yet" against the idea they are being asked about
+is exactly the grading the mode exists to prevent. Escape leaves it first, since
+by definition every control that would is hidden.
+
+### Both dialogs were lying to screen readers
+
+`Welcome` and `Setup` were `role="dialog" aria-modal="true"` on plain `div`s.
+That announces the rest of the page as inert while Tab walks straight into it,
+with no focus trap and no restore. Both are real base-ui `Dialog`s now. The
+tools drawer had the same shape of problem — a bare `div` with no roving focus,
+arrow keys, type-ahead, escape or focus return — and is a real `Menu`.
+
+That is a correctness fix, not a restyle.
+
+### Two bugs this pass created and then found
+
+Worth keeping, because both are the same class: **a CSS property silently
+overriding an SVG attribute or a flex rule.**
+
+1. **The reveal collapsed the map.** `edgewise-settle` animated a CSS
+   `transform` on the same group that carried the node's positioning
+   `transform` ATTRIBUTE. CSS wins, so on a fresh map all 23 nodes stacked on
+   the origin and only the last one drawn was visible — and
+   `animation-fill-mode: both` kept them there. Fixed by splitting into an outer
+   group that positions and an inner one that animates. The verification is a
+   count: 23 nodes, 23 distinct positions.
+2. **The sheet rendered at the top.** As an ordinary flex child in a row it sat
+   above the map, and — having no width of its own — grew to the width of its
+   longest unwrapped line and ran off the screen. It is pinned
+   `absolute inset-x-0 bottom-0` below the desktop breakpoint.
+
+3. **The conversation panel was pushed off the right of the window.** This one
+   shipped, and was reported rather than caught. The map's `<svg>` carried
+   `width`/`height` ATTRIBUTES, which give it an intrinsic size — and a flex
+   item's automatic minimum size is its content's min-content width. So the map
+   region could never shrink below whatever it had last measured. On a fresh
+   load at any width it was fine; widen the window and then narrow it, and the
+   map stayed put and cut the panel in half. Measured: **116px of the panel
+   clipped after a 1920 → 1300 resize.**
+
+   Fixed by sizing the SVG from CSS (`h-full w-full`) so it has no intrinsic
+   width at all, plus `min-w-0` on both regions. The viewBox already matches the
+   pane's aspect ratio by construction, so filling it is exact.
+
+   **The probe above did not catch it, and that is the more useful lesson.** It
+   measured `scrollWidth - innerWidth`, and the shell is `overflow-hidden`, so
+   the overflow was clipped rather than scrolled and the number stayed a clean
+   zero. It also only ever ran on a freshly loaded page, and this failure only
+   appears after a resize. Both gaps are closed above.
+
+Neither of the first two was visible in the code and both were obvious in a
+screenshot. The third was invisible in both, and only a measurement aimed at the
+right quantity would have found it — which is this project's oldest lesson,
+turning up again.
+
+### Motion
+
+One duration set and one curve, in `globals.css`. Nothing overshoots. The only
+two loops are the voice halo's breathe and the lead node's aura, and both answer
+a question continuously — "can it hear me", "where do I start" — which is the
+only thing that earns a loop.
+
+`MotionConfig reducedMotion="user"` is not optional. Every hand-written
+animation already respected `prefers-reduced-motion`, but `motion`'s own
+transitions ignore it unless told, so half the system would have honoured the
+setting and half would quietly not. Verified under emulation: no running
+animations at all.
+
+**Not** the View Transitions API, though Next 16 supports it. React's
+`<ViewTransition>` activates on Transitions, Suspense or `useDeferredValue` —
+"Regular `setState` calls do not trigger them" — and this app is one route whose
+modes are `useState` on a client component. Every switch would need wrapping in
+`startTransition`, and the `::view-transition` overlay would sit over the voice
+halo and the map's pointer handling for the duration. `AnimatePresence` gets the
+same crossfade without either.
+
+### The band rail, dropped after seeing it
+
+The plan had a segmented rail down the map's left edge showing the six bands as
+areas. Built, rendered, and removed: **the bands are not contiguous down the
+map** — `learning` spans layers 1–3, `networks` 2–4, `language` 2–7 — so a rail
+draws overlapping regions and asserts a structure that is not there. The legend
+popover and the per-node accent carry the bands instead.
+
+### Measured after
+
+Dark, seven widths, the same probe as before:
+
+| | 390 | 768 | 820 | 1024 | 1280 | 1440 | 1920 |
+|---|---|---|---|---|---|---|---|
+| Page scroll | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Header height | 115 | 57 | 57 | 57 | 57 | 57 | 57 |
+| Map label px | 5.1 | 10.4 | 11.1 | 13 | 12.3 | 13 | 13 |
+| Controls off-screen | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Controls below fold | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+390 is the phone overview, where the whole shape is deliberately preferred to a
+readable label — tapping any node still opens its full text in the panel.
 
 ### Calibrating `explainBack` — and the fixture that was wrong, not the model
 
