@@ -295,7 +295,13 @@ export default function Page() {
            * Below desktop the map fills the whole region and the panel floats
            * over it. At desktop it is a column of its own again.
            */
-          className="absolute inset-0 flex min-h-0 flex-col px-4 pt-3 sm:px-6 xl:relative xl:inset-auto xl:flex-1 xl:px-0"
+          /*
+           * `min-w-0` is load-bearing, not tidiness. A flex item's automatic
+           * minimum size is its content's min-content width, so without this
+           * the map region could not shrink below the map — and narrowing the
+           * window pushed the panel off the right-hand edge and cut it in half.
+           */
+          className="absolute inset-0 flex min-h-0 min-w-0 flex-col px-4 pt-3 sm:px-6 xl:relative xl:inset-auto xl:flex-1 xl:px-0"
         >
           {/*
            * The legend, above the map rather than below it.
@@ -356,7 +362,7 @@ export default function Page() {
           /* `relative` so the voice halo, raised from inside the conversation,
              lights this panel's edges — including the divider it shares with
              the map — rather than the content box it is declared in. */
-          <aside className="border-border relative flex min-h-0 w-[22rem] shrink-0 flex-col border-l py-4 pl-6 2xl:w-[26rem]">
+          <aside className="border-border relative flex min-h-0 w-[22rem] min-w-0 shrink-0 flex-col border-l py-4 pl-6 2xl:w-[26rem]">
             <PanelBody view={view} selectedId={selectedId}>
               {panel}
             </PanelBody>

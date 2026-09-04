@@ -471,20 +471,37 @@ audit through the browser tools, run at real device sizes before and after. Run
 it again after any layout change — the numbers are the point, not the opinion.
 
 ```js
-// paste into javascript_tool against the running app
+// paste into the console against the running app
 const vh=innerHeight, vw=innerWidth, doc=document.documentElement;
 const t=[...document.querySelectorAll('button')].map(b=>{
   const r=b.getBoundingClientRect();
-  return {l:b.innerText.trim().slice(0,24), h:Math.round(r.height), bottom:Math.round(r.bottom)};
-}).filter(x=>x.l);
+  return {l:(b.innerText||b.getAttribute('aria-label')||'').trim().slice(0,24),
+          h:Math.round(r.height), bottom:Math.round(r.bottom), right:Math.round(r.right)};
+}).filter(x=>x.l && x.h>0);
 const a=document.querySelector('aside');
+const s=document.querySelector('section[aria-label="Concept map"]');
+const edge=(e)=>e?Math.round(e.getBoundingClientRect().right):0;
 ({viewport:`${vw}x${vh}`,
   pageScrollV:Math.max(0,doc.scrollHeight-vh),
   pageScrollH:Math.max(0,doc.scrollWidth-vw),
+  // The two that matter, and the two the first version of this probe missed.
+  clippedRight:Math.max(0, edge(a)-vw, edge(s)-vw),
   panelTop:a?Math.round(a.getBoundingClientRect().top):null,
-  under44:t.filter(x=>x.h<44).map(x=>x.l),
-  controlsBelowFold:t.filter(x=>x.bottom>vh).map(x=>x.l)})
+  under40:t.filter(x=>x.h<40).map(x=>x.l),
+  controlsOffRight:t.filter(x=>x.right>vw+1).map(x=>x.l),
+  controlsBelowFold:t.filter(x=>x.bottom>vh+1).map(x=>x.l)})
 ```
+
+**`pageScrollH` is not enough on its own, and finding that out cost a shipped
+bug.** The shell is `overflow-hidden`, so when a region is too wide the overflow
+is clipped rather than scrolled — `scrollWidth` equals `clientWidth` and the
+probe reports a clean zero while half the conversation panel is off the side of
+the window. `clippedRight` compares each region's own right edge to the
+viewport, which is what actually catches it.
+
+**Run it after a resize, not only after a load.** The bug that motivated this was
+invisible on a fresh load at every width and appeared only when a window that
+had been wider was made narrower. See "Two bugs this pass created" below.
 
 ### What it found, and what fixed it
 
@@ -786,8 +803,29 @@ overriding an SVG attribute or a flex rule.**
    longest unwrapped line and ran off the screen. It is pinned
    `absolute inset-x-0 bottom-0` below the desktop breakpoint.
 
-Neither was visible in the code and both were obvious in a screenshot, which is
-this project's usual lesson in a new place.
+3. **The conversation panel was pushed off the right of the window.** This one
+   shipped, and was reported rather than caught. The map's `<svg>` carried
+   `width`/`height` ATTRIBUTES, which give it an intrinsic size — and a flex
+   item's automatic minimum size is its content's min-content width. So the map
+   region could never shrink below whatever it had last measured. On a fresh
+   load at any width it was fine; widen the window and then narrow it, and the
+   map stayed put and cut the panel in half. Measured: **116px of the panel
+   clipped after a 1920 → 1300 resize.**
+
+   Fixed by sizing the SVG from CSS (`h-full w-full`) so it has no intrinsic
+   width at all, plus `min-w-0` on both regions. The viewBox already matches the
+   pane's aspect ratio by construction, so filling it is exact.
+
+   **The probe above did not catch it, and that is the more useful lesson.** It
+   measured `scrollWidth - innerWidth`, and the shell is `overflow-hidden`, so
+   the overflow was clipped rather than scrolled and the number stayed a clean
+   zero. It also only ever ran on a freshly loaded page, and this failure only
+   appears after a resize. Both gaps are closed above.
+
+Neither of the first two was visible in the code and both were obvious in a
+screenshot. The third was invisible in both, and only a measurement aimed at the
+right quantity would have found it — which is this project's oldest lesson,
+turning up again.
 
 ### Motion
 

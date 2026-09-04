@@ -327,7 +327,7 @@ export function ConceptMap({
   const minRow = useMemo(() => Math.min(...graph.nodes.map((node) => node.row)), [graph.nodes]);
 
   return (
-    <div className={cn('relative flex min-h-0 flex-1 flex-col', className)}>
+    <div className={cn('relative flex min-h-0 min-w-0 flex-1 flex-col', className)}>
       <div
         ref={paneRef}
         onWheel={onWheel}
@@ -335,16 +335,29 @@ export function ConceptMap({
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className="min-h-0 flex-1 touch-none overflow-hidden [&:active]:cursor-grabbing"
+        className="min-h-0 min-w-0 flex-1 touch-none overflow-hidden [&:active]:cursor-grabbing"
       >
         {camera ? (
           <svg
             viewBox={viewBoxFor(camera, pane)}
-            width={pane.width}
-            height={pane.height}
+            /*
+             * Sized by CSS, NOT by `width`/`height` attributes.
+             *
+             * Those attributes give the SVG an intrinsic size, which becomes
+             * the min-content width of every flex ancestor — so the map pane
+             * could never shrink below whatever it last measured. Widen the
+             * window and then narrow it again and the map stayed at its old
+             * width, pushing the conversation panel off the right-hand edge and
+             * cutting it in half. Measured: 116px of the panel clipped after a
+             * 1920 → 1300 resize.
+             *
+             * The viewBox keeps the same aspect ratio as the pane by
+             * construction (both axes are divided by the same scale), so
+             * filling the pane is exact rather than letterboxed.
+             */
+            className="block h-full w-full"
             role="group"
             aria-label={`Concept map: ${graph.nodes.length} ideas, each resting on the ones before it. Every idea is marked solid, half-held, not yet, or not looked at.`}
-            className="block select-none"
           >
             <g fill="none" aria-hidden>
               {layout.edges.map((edge) => {
