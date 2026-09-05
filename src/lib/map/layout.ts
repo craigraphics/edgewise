@@ -108,6 +108,38 @@ export function edgePath(from: Point, to: Point): string {
   return `M ${start.x} ${start.y} C ${start.x} ${start.y + drop * 0.42}, ${end.x} ${end.y - drop * 0.42}, ${end.x} ${end.y}`;
 }
 
+/**
+ * The band-coloured bar down a card's leading edge.
+ *
+ * It is narrower than the card's corner radius, so its left edge is not a
+ * straight line — it has to follow the card's own top-left and bottom-left
+ * arcs, or the band colour leaves the box it belongs to.
+ *
+ * The version this replaced got the arcs wrong in a way worth recording: an
+ * SVG arc between two points admits two centres, and the sweep flag picks
+ * which. It asked for the sweep that puts the centre on the *outside* of the
+ * corner, so instead of hugging the card the arc bulged away from it and drew a
+ * wedge of band colour sticking out past the card's own outline at both
+ * corners. It read as a rendering fault in the map rather than as a design.
+ *
+ * So the arc is stated by its endpoints instead of trusted to a flag: the bar's
+ * top-right corner is exactly where the card's corner circle crosses
+ * `ACCENT_WIDTH`, which is what `inset` is.
+ */
+export function accentPath(): string {
+  const r = NODE_RADIUS;
+  /* Where the corner circle, centred (r, r), crosses x = ACCENT_WIDTH. */
+  const inset = r - Math.round(Math.sqrt(r * r - (r - ACCENT_WIDTH) ** 2) * 1000) / 1000;
+  const bottom = NODE_HEIGHT - inset;
+  return [
+    `M ${ACCENT_WIDTH} ${inset}`,
+    `A ${r} ${r} 0 0 0 0 ${r}`,
+    `L 0 ${NODE_HEIGHT - r}`,
+    `A ${r} ${r} 0 0 0 ${ACCENT_WIDTH} ${bottom}`,
+    'Z',
+  ].join(' ');
+}
+
 export function layoutGraph(graph: ConceptGraph): MapLayout {
   const ids = new Set(graph.nodes.map((node) => node.id));
   const minRow = Math.min(...graph.nodes.map((node) => node.row));
