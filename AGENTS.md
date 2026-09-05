@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 233 tests: pure logic, plus the token contrast assertions
+pnpm test             # 257 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -864,6 +864,83 @@ modes are `useState` on a client component. Every switch would need wrapping in
 `startTransition`, and the `::view-transition` overlay would sit over the voice
 halo and the map's pointer handling for the duration. `AnimatePresence` gets the
 same crossfade without either.
+
+### The overture — `/intro`, the argument as a sequence
+
+The product's premise has only ever been *stated*: a first-run dialog says
+twenty-three ideas each rest on the ones before them, and asks someone to
+believe it before they have seen anything. But the graph is not a claim needing
+assertion — it is a shape, and a shape can be shown. `/intro` builds the map in
+front of you in prerequisite order, then flies to the one idea a gap sits under
+and shows what is stacked on top of it.
+
+Five acts, scroll-scrubbed:
+
+| | |
+|---|---|
+| **one** | One node, alone, most of the screen. *"It starts with one idea."* |
+| **chain** | Every layer arriving in prerequisite order, the edge drawn before the box lands on it, camera pulling back the whole way |
+| **terrain** | The whole map, held still, bands named down the left edge |
+| **block** | A dive to the lead node, everything else receding — then back out onto its cone |
+| **turn** | *"10 later ideas rest on it"*, and the way in |
+
+#### It is one function of one number
+
+`src/lib/map/overture.ts` takes `t`, the scroll progress, and returns the
+camera, every node's and edge's reveal state, and which sentence is being said.
+That is not tidiness, it is what makes the thing trustworthy:
+
+- **No second clock**, so it cannot drift out of sync with itself, and scrubbing
+  backwards runs the sequence in reverse as faithfully as forwards.
+- **Nobody is held hostage** — no autoplay, no hijacked scroll. Stopping halfway
+  leaves a composed frame rather than a half-finished animation.
+- **It is testable without a browser**, which is the only reason a five-act
+  cinematic can be trusted not to lose a node in the middle of act two.
+
+The tests are about the argument, not the arithmetic: layers reveal in strictly
+increasing order; an edge is always drawn before the node it points at; every
+node has arrived before the wide shot claims to show the whole subject; the
+frame you land on is already composed; no two captions are at full strength at
+once; and — the one that has caught the most — **the camera never jumps**, which
+is checked by walking the whole scroll in thousandths and asserting the frame
+never moves more than a fiftieth of what is on screen.
+
+#### Nothing here decides anything
+
+The layout, the states, the lead node and the count all come from the same code
+the real map uses. `overtureModel` sets the marks the story is told against and
+`leadNode`/`downstreamOf` do the rest, so the closing line's number is computed
+rather than written down. A page that hard-codes "10" ends up claiming something
+the graph stopped saying three edits ago.
+
+Those marks are chosen, and the reason is tone: **an empty map's lead is the
+root**, so telling the story against a blank learner would open the fourth act
+by informing a first-time visitor that they know nothing, in forty-point type.
+It is told instead about someone who has the foundations and one gap under them
+— the classic one, where "a neuron is like a brain cell" has been standing in
+for a mechanism for years. There is a test asserting the dive never lands on the
+root.
+
+#### The bug worth keeping
+
+**`motion` writes its own `transform-origin`.** The camera is one CSS transform
+on one group — content coordinates in, stage coordinates out — and setting
+`transformOrigin` by hand next to `x`/`y`/`scale` is silently overwritten with
+the default `50% 50%`. So the camera scaled about the middle of the *drawing*
+rather than about the content origin, and every shot at any zoom but 1x was a
+few hundred units off to one side.
+
+It never looked broken. It looked like compositions that would not quite
+centre — the kind of thing that gets called a taste problem and tweaked at
+forever. The fix is `originX: 0, originY: 0` (motion's own props) plus
+`transform-box: view-box`. Three carefully-judged framing decisions made before
+finding it turned out to be judgements about a broken camera, and had to be made
+again.
+
+#### Reduced motion
+
+Not a degraded version of the film — the same argument as a page. A still map
+and the five sentences in order, with the same link at the end.
 
 ### The motion lab — `/lab`, a POC and not the product
 
