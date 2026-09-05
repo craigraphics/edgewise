@@ -604,3 +604,231 @@
         animation: none;
     }
 }
+
+/* ==========================================================================
+ * The motion lab — /lab only. POC, not shipped behaviour.
+ *
+ * Everything below is prefixed `lab-` and is used by nothing outside
+ * `src/components/lab/`. It deliberately breaks the product's own motion rule
+ * that nothing overshoots and only two things loop, because the question the
+ * lab exists to answer is whether that rule is costing the map more personality
+ * than it is buying it composure. Judge them on the map, then move the ones
+ * that earn it into the real motion system and delete the rest.
+ *
+ * The one rule that is NOT up for debate here is reduced motion: the block at
+ * the end of this section switches all of it off, exactly as the shipped
+ * system does.
+ * ========================================================================== */
+
+:root {
+    /*
+     * A spring as an easing curve rather than as a physics simulation, so it
+     * works on plain CSS transitions and on SVG attributes that `motion`
+     * cannot drive. One overshoot, ~16%, then settled.
+     */
+    --lab-spring: linear(
+        0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121,
+        1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991,
+        0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1
+    );
+    --lab-step: 90ms;
+}
+
+/*
+ * The reveal, rebuilt: a node arrives slightly low, slightly small and out of
+ * focus, then resolves. The blur is what makes it read as *coming into view*
+ * rather than as sliding in from somewhere, which matters because nothing on
+ * this map is meant to have come from anywhere else.
+ */
+@keyframes lab-settle {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.94);
+        filter: blur(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+    }
+}
+
+.lab-settle {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: lab-settle 620ms var(--lab-spring) both;
+}
+
+/*
+ * An edge drawing itself. `pathLength="1"` normalises every curve to a unit
+ * length, so one dash pattern covers all 33 of them regardless of how long
+ * they actually are — and the starting offset is set inline as +1 or -1, which
+ * is what makes an edge draw towards its prerequisite or away from it.
+ */
+@keyframes lab-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.lab-draw {
+    stroke-dasharray: 1;
+    animation: lab-draw 420ms var(--ease) both;
+}
+
+/*
+ * Current along a lit edge. Direction without arrowheads: 33 arrowheads on a
+ * map this dense is a thicket, and the movement says the same thing in a way
+ * that survives being small.
+ */
+@keyframes lab-flow {
+    to {
+        stroke-dashoffset: var(--lab-flow-end);
+    }
+}
+
+.lab-flow {
+    stroke-dasharray: 3 10;
+    animation: lab-flow 1.1s linear infinite;
+}
+
+/*
+ * The lead node, as sonar rather than as a static glow. Two rings out of
+ * phase, travelling outwards and fading — an invitation that repeats, which is
+ * the one thing on this map that genuinely is asking to be clicked.
+ */
+@keyframes lab-sonar {
+    from {
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 0;
+        transform: scale(1.14);
+    }
+}
+
+.lab-sonar {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: lab-sonar 2.8s var(--ease) infinite;
+}
+
+/*
+ * A node opening up what rests on it.
+ *
+ * The wave travels outward through the dependants in prerequisite order, one
+ * step at a time, because that is what actually happened: marking this solid
+ * did not light up a region, it unblocked a chain. The delay is set inline per
+ * node from the cascade.
+ */
+@keyframes lab-ripple {
+    0% {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    30% {
+        opacity: 0.85;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+}
+
+.lab-ripple {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: lab-ripple 720ms var(--ease) both;
+}
+
+/* A state change sweeping round the glyph, like a dial completing. */
+@keyframes lab-sweep {
+    from {
+        stroke-dashoffset: 1;
+        opacity: 1;
+    }
+    to {
+        stroke-dashoffset: 0;
+        opacity: 0;
+    }
+}
+
+.lab-sweep {
+    stroke-dasharray: 1;
+    animation: lab-sweep 620ms var(--ease) both;
+}
+
+/*
+ * The pool of light under a focused cone.
+ *
+ * A light pool rather than a darkening scrim, deliberately. Dimming the map to
+ * spotlight one path makes the rest look switched off, and on a map of what
+ * someone does not know yet, "switched off" is the wrong word for every idea
+ * they have not reached.
+ */
+.lab-pool {
+    transition:
+        opacity 420ms var(--ease),
+        cx 520ms var(--ease),
+        cy 520ms var(--ease);
+}
+
+/*
+ * The aurora: a slow wash of the band colours behind the map.
+ *
+ * It sits under an opaque card on every node, so it cannot touch a label's
+ * measured contrast — the thing it can cost is calm, which is the judgement
+ * this lab is asking for.
+ */
+.lab-aurora span {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    /*
+     * Very low, and lower than it first looked right at. At half opacity the
+     * wash stopped being atmosphere and became the subject: the map read as
+     * sitting on a lava lamp, and the light pool — which is meant to say where
+     * you are looking — had nothing left to say it against.
+     */
+    opacity: 0.14;
+    animation: lab-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes lab-drift {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(6%, -8%, 0) scale(1.25);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lab-settle,
+    .lab-draw,
+    .lab-flow,
+    .lab-sonar,
+    .lab-sweep,
+    .lab-aurora span {
+        animation: none;
+        stroke-dashoffset: 0;
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+
+    /* Frozen at its first frame the ripple is a ring left sitting on a node. */
+    .lab-ripple {
+        animation: none;
+        opacity: 0;
+    }
+
+    .lab-aurora span {
+        opacity: 0.1;
+    }
+
+    .lab-pool {
+        transition: none;
+    }
+}

@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 224 tests: pure logic, plus the token contrast assertions
+pnpm test             # 233 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -864,6 +864,79 @@ modes are `useState` on a client component. Every switch would need wrapping in
 `startTransition`, and the `::view-transition` overlay would sit over the voice
 halo and the map's pointer handling for the duration. `AnimatePresence` gets the
 same crossfade without either.
+
+### The motion lab — `/lab`, a POC and not the product
+
+The map was judged "good but a little boring", and the fair reading of that is
+that the motion system was written to be composed and succeeded at it. So
+`/lab` is where the opposite case gets made: the same graph, the same states,
+the same layout, the same tokens — **only the drawing differs** — with eight
+effects that can each be switched on and off while looking at it.
+
+It is a separate route and a separate renderer (`src/components/lab/`).
+`concept-map.tsx` is untouched, because the shipped map is the artefact the
+whole thing is being judged on and an experiment that can break it is an
+experiment nobody runs honestly. It is not linked from the header: a testing
+harness in the main navigation is a mistake this project has already made once.
+It also carries a local learner model, so nothing done in there can change what
+the real map says about anybody.
+
+What is **shared** rather than copied is everything that decides what is true —
+the layout maths, the state rules, the relations, the new cascade traversal. An
+effect that needed its own idea of the graph would be an effect saying something
+the graph does not.
+
+| Effect | What it is saying |
+|---|---|
+| Cascade | The cone lights outward a step at a time, so the chain resolves in front of you rather than arriving whole |
+| Current | Which way an edge points, without 33 arrowheads on a crowded map |
+| Light pool | Where you are looking |
+| Magnetism | The map is live. Says nothing about the graph — pure personality |
+| Press | The box took the click |
+| Camera glide | You did not teleport; selecting travels to the node and deselecting comes back out |
+| Unlock wave | Marking an idea solid opened a chain, and the wave travels through the dependants in order |
+| Aurora | Mood only |
+
+Two of those are the ones worth arguing about. **Cascade** is the only effect
+here that carries information a still picture cannot: `focusOn` can say which
+nodes are on a path through this one, and nothing but time can say in what
+order. **Magnetism** and **Aurora** are honestly decorative, and are labelled as
+such in the panel next to their own switches, so the judgement being made is "is
+that worth it" rather than "do I like it".
+
+#### The rules it deliberately breaks, and the one it does not
+
+`--lab-spring` overshoots, and the sonar, the current and the aurora all loop —
+both of which the shipped system forbids, on the stated grounds that a springy
+interface reads as pleased with itself while telling someone what they do not
+know. That claim has never been tested against the alternative. This is the
+test.
+
+What it does not break is reduced motion. Every `lab-` animation is switched
+off under `prefers-reduced-motion`, the same as the shipped ones, and the panel
+says so when it detects the setting.
+
+#### Two things measured while building it
+
+- **The aurora was first built at 0.5 opacity and was wrong.** It stopped being
+  atmosphere and became the subject — the map read as sitting on a lava lamp,
+  and the light pool had nothing left to say "you are looking here" against. It
+  is 0.14 now. Worth keeping because it is the failure mode of this whole
+  direction in miniature: an effect that is individually pleasant and collapses
+  the thing it sits behind.
+- **Magnetism at its first strength was invisible.** Measured: a 1.5% scale and
+  a 1px lean on the nearest node, which is not personality, it is noise. The
+  lean is now capped at 6 units against a 20-unit gap between neighbouring
+  cards, so two nodes leaning towards each other still cannot touch. A map whose
+  boxes can overlap has stopped being a drawing of the graph.
+
+#### `cascadeFrom` — `src/lib/map/cascade.ts`
+
+Pure, and tested against `focusOn` rather than on its own: the two must always
+agree about membership, or the map animates one set of relationships and then
+leaves a different one lit. The tests also hold the direction honest — an edge
+never lights before both of its ends, and an edge only counts as upward when
+both ends are prerequisites of the focused node.
 
 ### The band rail, dropped after seeing it
 
