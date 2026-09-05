@@ -18,6 +18,7 @@ import {
   fitCamera,
   fitScale,
   layoutGraph,
+  lerpCamera,
   panBounds,
   viewBoxFor,
   zoomAt,
@@ -373,5 +374,26 @@ describe('accentPath', () => {
     const ys = points().map((point) => point.y);
     expect(Math.min(...ys)).toBeLessThan(NODE_RADIUS);
     expect(Math.max(...ys)).toBeGreaterThan(NODE_HEIGHT - NODE_RADIUS);
+  });
+});
+
+describe('lerpCamera', () => {
+  const from = { x: 0, y: 0, scale: 0.5 };
+  const to = { x: 200, y: 100, scale: 2 };
+
+  it('returns the ends unchanged', () => {
+    expect(lerpCamera(from, to, 0)).toEqual(from);
+    expect(lerpCamera(from, to, 1).x).toBeCloseTo(to.x, 6);
+    expect(lerpCamera(from, to, 1).scale).toBeCloseTo(to.scale, 6);
+  });
+
+  /* Zoom is multiplicative: half way between 0.5x and 2x is 1x, not 1.25x. */
+  it('interpolates scale geometrically', () => {
+    expect(lerpCamera(from, to, 0.5).scale).toBeCloseTo(1, 6);
+  });
+
+  it('interpolates position linearly', () => {
+    expect(lerpCamera(from, to, 0.25).x).toBeCloseTo(50, 6);
+    expect(lerpCamera(from, to, 0.25).y).toBeCloseTo(25, 6);
   });
 });

@@ -285,6 +285,22 @@ export function cameraShowing(camera: Camera, target: Point, content: Size, pane
   );
 }
 
+/**
+ * A camera part-way between two others.
+ *
+ * Scale is interpolated geometrically rather than linearly, because zoom is
+ * multiplicative: half way between 0.5x and 2x is 1x, not 1.25x. Interpolated
+ * the arithmetic way, a glide between two scales spends most of its time at the
+ * zoomed-out end and then rushes, which reads as the map lurching.
+ */
+export function lerpCamera(from: Camera, to: Camera, t: number): Camera {
+  return {
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t,
+    scale: from.scale * (to.scale / from.scale) ** t,
+  };
+}
+
 /** The `viewBox` for a camera. */
 export function viewBoxFor(camera: Camera, pane: Size): string {
   const width = pane.width / camera.scale;
