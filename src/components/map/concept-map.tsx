@@ -10,7 +10,6 @@ import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
 import { focusOn } from '@/lib/graph/relations';
 import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/graph/types';
 import {
-  ACCENT_WIDTH,
   type Camera,
   type FitMode,
   GLYPH_X,
@@ -21,6 +20,7 @@ import {
   NODE_HEIGHT,
   NODE_RADIUS,
   NODE_WIDTH,
+  accentPath,
   cameraShowing,
   clampCamera,
   edgePath,
@@ -725,9 +725,3 @@ const STATE_LABEL: Record<NodeState, string> = {
   unexplored: 'Not looked at',
 };
 
-/** The rounded leading-edge bar, clipped to the card's own top-left and
- *  bottom-left corners so it does not square off a rounded box. */
-function accentPath(): string {
-  const r = NODE_RADIUS;
-  return `M 0 ${r} A ${r} ${r} 0 0 1 ${r} 0 L ${ACCENT_WIDTH} 0 L ${ACCENT_WIDTH} ${NODE_HEIGHT} L ${r} ${NODE_HEIGHT} A ${r} ${r} 0 0 1 0 ${NODE_HEIGHT - r} Z`;
-}

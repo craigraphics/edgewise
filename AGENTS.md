@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 219 tests: pure logic, plus the token contrast assertions
+pnpm test             # 224 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -501,7 +501,7 @@ viewport, which is what actually catches it.
 
 **Run it after a resize, not only after a load.** The bug that motivated this was
 invisible on a fresh load at every width and appeared only when a window that
-had been wider was made narrower. See "Two bugs this pass created" below.
+had been wider was made narrower. See "Bugs this pass created" below.
 
 ### What it found, and what fixed it
 
@@ -786,10 +786,10 @@ arrow keys, type-ahead, escape or focus return — and is a real `Menu`.
 
 That is a correctness fix, not a restyle.
 
-### Two bugs this pass created and then found
+### Bugs this pass created and then found
 
-Worth keeping, because both are the same class: **a CSS property silently
-overriding an SVG attribute or a flex rule.**
+The first two are the same class: **a CSS property silently overriding an SVG
+attribute or a flex rule.** The last two shipped and were reported.
 
 1. **The reveal collapsed the map.** `edgewise-settle` animated a CSS
    `transform` on the same group that carried the node's positioning
@@ -822,10 +822,27 @@ overriding an SVG attribute or a flex rule.**
    zero. It also only ever ran on a freshly loaded page, and this failure only
    appears after a resize. Both gaps are closed above.
 
+4. **The band accent hung off the corners of every card.** Also reported —
+   *"the tile border breaks away from the container in strange ways."* The bar
+   is narrower than the card's corner radius, so its left edge has to follow the
+   card's own corner arcs. `accentPath` asked for those arcs with the sweep flag
+   that puts the centre on the **outside** of the corner, and an SVG arc between
+   two points admits two centres — so instead of hugging the card the arc bulged
+   away from it and drew a wedge of band colour sticking out past the card's
+   outline, top-left and bottom-left, on all 23 nodes.
+
+   The path now states the arc by its endpoints — the bar's corner sits exactly
+   where the card's corner circle crosses `ACCENT_WIDTH` — and lives in
+   `src/lib/map/layout.ts` with the rest of the geometry, so it is testable. The
+   test asserts what actually broke: every point the path names is inside the
+   card, and the two it shares with the corner radius sit on that circle.
+
 Neither of the first two was visible in the code and both were obvious in a
 screenshot. The third was invisible in both, and only a measurement aimed at the
 right quantity would have found it — which is this project's oldest lesson,
-turning up again.
+turning up again. The fourth was the reverse of the third: plainly visible on
+screen at any size, and passed over anyway because nothing was measuring the
+shape of the drawing itself.
 
 ### Motion
 

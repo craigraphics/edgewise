@@ -3,11 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { GRAPH } from '@/lib/graph/load';
 
 import {
+  ACCENT_WIDTH,
   LABEL_SIZE,
   LABEL_WIDTH,
   LEGIBLE_SCALE,
   MAX_ZOOM,
   MIN_ZOOM,
+  NODE_HEIGHT,
+  NODE_RADIUS,
+  accentPath,
   cameraShowing,
   clampCamera,
   clampZoom,
@@ -323,5 +327,51 @@ describe('truncate', () => {
     for (const concept of GRAPH.nodes) {
       expect(textWidth(truncate(concept.label, 50, LABEL_SIZE), LABEL_SIZE)).toBeLessThanOrEqual(50);
     }
+  });
+});
+
+describe('accentPath', () => {
+  /*
+   * The bar shipped with its corner arcs sweeping the wrong way, which put the
+   * arc's centre outside the corner and drew a wedge of band colour hanging off
+   * the card at the top-left and bottom-left. It looked like a broken renderer,
+   * which is the one thing the map cannot afford to look like.
+   *
+   * A path is a string, so the check is on the numbers in it: every point it
+   * names must be inside the card, and the two it shares with the card's corner
+   * radius must sit exactly on that circle.
+   */
+  const points = () =>
+    [...accentPath().matchAll(/(-?[\d.]+) (-?[\d.]+)(?= [A-Z]|$)/g)].map(([, x, y]) => ({
+      x: Number(x),
+      y: Number(y),
+    }));
+
+  it('names points, all of them inside the card', () => {
+    const named = points();
+    expect(named.length).toBeGreaterThanOrEqual(4);
+    for (const point of named) {
+      expect(point.x).toBeGreaterThanOrEqual(0);
+      expect(point.x).toBeLessThanOrEqual(ACCENT_WIDTH);
+      expect(point.y).toBeGreaterThanOrEqual(0);
+      expect(point.y).toBeLessThanOrEqual(NODE_HEIGHT);
+    }
+  });
+
+  it('meets the card corner exactly where the radius crosses the bar', () => {
+    const corners = points().filter((point) => point.x === ACCENT_WIDTH);
+    expect(corners).toHaveLength(2);
+    for (const corner of corners) {
+      /* Distance from the nearer corner circle's centre is the radius. */
+      const centreY = corner.y < NODE_HEIGHT / 2 ? NODE_RADIUS : NODE_HEIGHT - NODE_RADIUS;
+      const distance = Math.hypot(corner.x - NODE_RADIUS, corner.y - centreY);
+      expect(distance).toBeCloseTo(NODE_RADIUS, 2);
+    }
+  });
+
+  it('runs the full height of the card between the corners', () => {
+    const ys = points().map((point) => point.y);
+    expect(Math.min(...ys)).toBeLessThan(NODE_RADIUS);
+    expect(Math.max(...ys)).toBeGreaterThan(NODE_HEIGHT - NODE_RADIUS);
   });
 });
