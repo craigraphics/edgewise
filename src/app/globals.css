@@ -832,3 +832,20 @@
         transition: none;
     }
 }
+
+/*
+ * The overture's vignette — /intro only.
+ *
+ * The map is drawn much larger than the stage for most of the sequence, so
+ * without this it is a diagram cropped by the window edge. Falling away at the
+ * borders is what makes the same drawing read as a window onto somewhere
+ * larger, which is the claim the camera is making the whole way through.
+ */
+.overture-vignette {
+    background:
+        radial-gradient(ellipse 78% 62% at 50% 42%, transparent 35%, var(--surface-0) 100%),
+        /* The bottom third is where the words are. Deep enough that a caption
+           never has to compete with a node behind it, shallow enough that the
+           drawing still runs off the bottom of the frame rather than stopping. */
+        linear-gradient(to top, var(--surface-0) 16%, transparent 46%);
+}
