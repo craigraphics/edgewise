@@ -25,12 +25,17 @@ design of the same idea — walkthrough-first, map internal, text-only, Google
 free tier only. Do not follow it. Its cost analysis and its list of what
 transfers from the sibling project are still accurate.
 
-## Start here if you are new
+## Start here
 
-`docs/handover.md` — where things stand, what is in flight, which decisions are
-deliberate, what is still open for the owner to decide, and the traps that have
-already cost time. This file is the design record; that one is the state of
-play.
+**Read `docs/handover.md` before doing anything.** Where things stand, what is
+in flight, which decisions are deliberate and should not be casually reverted,
+what is waiting on the owner rather than on you, and the traps that have already
+cost time. This file is the design record; that one is the state of play, and
+acting on this one without it is how work gets redone.
+
+Claude Code loads both automatically — `CLAUDE.md` imports them. Other agents
+read this file by convention but will not follow the import, so open the
+handover yourself.
 
 ## Status
 
