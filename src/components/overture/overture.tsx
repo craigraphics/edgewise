@@ -30,6 +30,9 @@ import {
   ACTS,
   CAPTIONS,
   type Caption,
+  HANDOFF,
+  ILLUSTRATIVE_LABEL,
+  illustrativeFrom,
   blockProgress,
   cameraAt,
   captionOpacity,
@@ -38,6 +41,7 @@ import {
   overtureModel,
   progressIn,
 } from '@/lib/map/overture';
+import { EDGE_OUT_OF_CONE } from '@/lib/map/focus';
 import { wrapLabel } from '@/lib/map/text';
 import { cn } from '@/lib/utils';
 
@@ -230,6 +234,7 @@ export function Overture({ graph }: Props) {
           />
         ))}
 
+        <Illustrative t={scrollYProgress} />
         <BandStrip graph={graph} t={scrollYProgress} />
         <ActRail t={scrollYProgress} />
         <ScrollHint t={scrollYProgress} />
@@ -241,7 +246,7 @@ export function Overture({ graph }: Props) {
 
 /* -------------------------------------------------------------------------- */
 
-function OvertureEdge({
+export function OvertureEdge({
   d,
   layer,
   maxLayer,
@@ -258,11 +263,12 @@ function OvertureEdge({
 }) {
   const window = edgeWindow(layer, maxLayer);
   const draw = useTransform(t, (value) => progressIn(value, window));
+  /* Edges are the one thing that may recede — they carry no text. */
   const opacity = useTransform(t, (value) => {
     const arrived = progressIn(value, window) > 0 ? 1 : 0;
     const dive = blockProgress(value);
     const base = satisfied ? 0.42 : 0.16;
-    return arrived * (inCone ? base + dive * 0.5 : base * (1 - dive * 0.82));
+    return arrived * (inCone ? base + dive * 0.5 : base * (1 - dive * (1 - EDGE_OUT_OF_CONE)));
   });
 
   return (
@@ -276,7 +282,7 @@ function OvertureEdge({
   );
 }
 
-function OvertureNode({
+export function OvertureNode({
   node,
   minRow,
   maxLayer,
@@ -299,15 +305,17 @@ function OvertureNode({
   const origin = originOf(node, minRow);
   const window = nodeWindow(node.layer, maxLayer);
 
-  const opacity = useTransform(t, (value) => {
-    const arrived = progressIn(value, window);
-    const dive = blockProgress(value);
-    /* During the dive everything outside the cone recedes rather than
-       disappearing: the point being made is that the rest is still there,
-       waiting on this one. */
-    const recede = isLead || inCone ? 1 : 1 - dive * 0.86;
-    return arrived * recede;
-  });
+  /*
+   * Arrival only. The dive does NOT fade the rest of the map — see
+   * `src/lib/map/focus.ts`: a node dropped to a fraction of its opacity is a
+   * node whose label is no longer readable, and on a map of what somebody has
+   * not reached yet, disappearing reads as excluded rather than as ahead.
+   *
+   * The cone is raised instead: a ring on each of its nodes, the edges between
+   * them brightened, and everything else's edges softened.
+   */
+  const opacity = useTransform(t, (value) => progressIn(value, window));
+  const coneRing = useTransform(t, (value) => (isLead || !inCone ? 0 : blockProgress(value) * 0.6));
 
   /* Arrives a touch small and settles, which reads as landing on the end of
      the edge that was just drawn to it. */
@@ -344,6 +352,17 @@ function OvertureNode({
           </motion.g>
         ) : null}
 
+        <motion.rect
+          x={-2.5}
+          y={-2.5}
+          width={NODE_WIDTH + 5}
+          height={NODE_HEIGHT + 5}
+          rx={NODE_RADIUS + 2}
+          fill="none"
+          stroke={colour}
+          strokeWidth={1.25}
+          style={{ opacity: coneRing }}
+        />
         <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx={NODE_RADIUS} className="fill-surface-1" />
         {style.tint > 0 ? (
           <rect
@@ -384,7 +403,7 @@ function OvertureNode({
 
 /* -------------------------------------------------------------------------- */
 
-function CaptionBlock({
+export function CaptionBlock({
   caption,
   t,
   lead,
@@ -497,18 +516,53 @@ function ScrollHint({ t }: { t: MotionValue<number> }) {
   );
 }
 
-/** The way in. Present from the start as a quiet link, and the whole point of
- *  the page by the end. Nobody is ever trapped in the film. */
+/**
+ * The badge, for as long as one real node is singled out.
+ *
+ * The sequence points at `What a 'neuron' is` and says ten things depend on it.
+ * Both are true of the graph and neither is true of the person reading, and the
+ * only thing standing between those two readings is this label. It stays up for
+ * the whole of the dive rather than appearing once, because a disclaimer you
+ * have already scrolled past is not a disclaimer.
+ */
+function Illustrative({ t }: { t: MotionValue<number> }) {
+  const from = illustrativeFrom();
+  const opacity = useTransform(t, (value) => progressIn(value, [from, from + 0.02]));
+
+  return (
+    <motion.div style={{ opacity }} className="absolute top-5 left-5 sm:left-12">
+      <span className="border-border/70 bg-surface-1/80 text-muted-foreground rounded-full border px-3 py-1 text-2xs font-medium tracking-[0.14em] uppercase backdrop-blur-sm">
+        {ILLUSTRATIVE_LABEL}
+      </span>
+    </motion.div>
+  );
+}
+
+/**
+ * The way in — a promise, not a result.
+ *
+ * The last thing said is the product's own sharpest sentence rather than a
+ * finding about the viewer, because a finding is precisely what has not been
+ * earned yet. What the sequence has shown is that understanding has a shape and
+ * that a gap in it costs everything above; what it offers is to find where
+ * yours is. Those are different claims and this is where the second one starts.
+ *
+ * The Skip link is present from the first frame. Nobody is ever trapped in the
+ * film.
+ */
 function Way({ t }: { t: MotionValue<number> }) {
   const quiet = useTransform(t, (value) => 1 - progressIn(value, [0.86, 0.93]));
-  const loud = useTransform(t, (value) => progressIn(value, [0.9, 0.96]));
+  const loud = useTransform(t, (value) => progressIn(value, [0.945, 0.99]));
 
   return (
     <>
       <motion.div style={{ opacity: quiet }} className="absolute top-5 right-5 sm:right-12">
+        {/* Carries its own surface. Now that nothing on the map dims, a bare
+            link lands on top of a fully-lit node card and both become
+            unreadable — which the dimming had been hiding. */}
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/60 rounded-md px-2 py-1 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="border-border/70 bg-surface-1/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring/60 rounded-full border px-3 py-1 text-sm backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           Skip
         </Link>
@@ -516,12 +570,16 @@ function Way({ t }: { t: MotionValue<number> }) {
 
       <motion.div
         style={{ opacity: loud }}
-        className="absolute inset-x-0 bottom-[8%] flex justify-center"
+        className="absolute inset-x-0 bottom-[14%] flex flex-col items-center px-6 text-center"
       >
+        <p className="font-display max-w-2xl text-balance text-2xl leading-[1.15] font-medium tracking-tight sm:text-4xl">
+          {HANDOFF.line}
+        </p>
+        <p className="text-muted-foreground mt-4 max-w-lg text-base leading-relaxed">{HANDOFF.sub}</p>
         {/* A link rather than a Button with `asChild`: shadcn here is on Base
             UI, which has no `asChild`. */}
-        <Link href="/" className={cn(buttonVariants({ size: 'touch' }), 'pointer-events-auto')}>
-          Find my starting point
+        <Link href="/" className={cn(buttonVariants({ size: 'touch' }), 'pointer-events-auto mt-7')}>
+          {HANDOFF.action}
           <ArrowRightIcon />
         </Link>
       </motion.div>
@@ -551,11 +609,16 @@ function Still({ graph, lead, rests }: { graph: ConceptGraph; lead: ConceptNode;
         ))}
       </div>
       <p className="text-muted-foreground mt-10 text-base leading-relaxed">
-        {graph.nodes.length} ideas. The one this example stops at is{' '}
-        <span className="text-foreground font-medium">{lead.label}</span>.
+        {graph.nodes.length} ideas. In the example above, the one somebody stops at is{' '}
+        <span className="text-foreground font-medium">{lead.label}</span>, and {rests} later ideas
+        depend on it.
       </p>
+      <p className="font-display mt-10 text-2xl leading-[1.15] font-medium tracking-tight">
+        {HANDOFF.line}
+      </p>
+      <p className="text-muted-foreground mt-3 text-base leading-relaxed">{HANDOFF.sub}</p>
       <Link href="/" className={cn(buttonVariants({ size: 'touch' }), 'mt-8')}>
-        Find my starting point
+        {HANDOFF.action}
         <ArrowRightIcon />
       </Link>
     </div>

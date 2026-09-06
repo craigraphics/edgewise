@@ -45,8 +45,9 @@ export function LabControls({
       <header className="space-y-1">
         <h1 className="font-display text-xl font-medium">Motion lab</h1>
         <p className="text-muted-foreground text-sm">
-          The same graph, the same states, the same layout — only the drawing differs. Turn one off
-          and see whether the map lost anything it was using.
+          The same graph, the same states, the same layout — only the drawing differs. Each effect
+          carries the claim it makes and the one thing allowed to fire it in the product. Turn one
+          off and see whether the map lost anything it was using.
         </p>
       </header>
 
@@ -88,7 +89,11 @@ export function LabControls({
                 <span className="text-sm font-medium">{effect.name}</span>
               </span>
               <span className="text-muted-foreground mt-1.5 block text-xs leading-relaxed">
-                {effect.says}
+                {effect.claim}
+              </span>
+              <span className="text-muted-foreground/80 mt-2 block text-2xs leading-relaxed">
+                <span className="text-foreground/70 font-medium tracking-wide uppercase">Fires on </span>
+                {effect.trigger}
               </span>
             </button>
           </li>

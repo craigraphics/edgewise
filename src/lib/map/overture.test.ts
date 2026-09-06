@@ -11,7 +11,11 @@ import {
   actAt,
   cameraAt,
   captionOpacity,
+  HANDOFF,
+  PRELUDE,
+  PRELUDE_END,
   edgeWindow,
+  illustrativeFrom,
   layerBase,
   nodeWindow,
   overtureModel,
@@ -260,5 +264,102 @@ describe('the marks the dive is told against', () => {
     for (const prerequisite of lead.prerequisites) {
       expect(stateOf(model, prerequisite)).toBe('known');
     }
+  });
+});
+
+describe('the sequence never claims to have diagnosed anyone', () => {
+  /*
+   * The most valuable finding of the whole review, and the one this file is
+   * here to stop coming back.
+   *
+   * The sequence used to say "One of them is where you stop", spotlight a
+   * specific node, and close with "which is why so much of the rest has felt
+   * slippery" — to a visitor who had not answered a single question. On a
+   * product whose own written risk assessment puts tone ahead of model quality,
+   * that converts the whole thing from help into a verdict before the offer has
+   * even been made.
+   */
+  const PRESUMES = [
+    /\byou\s+stop\b/i,
+    /\byour\s+(gap|blockage|map is|understanding stops)\b/i,
+    /\bhas\s+felt\b/i,
+    /\byou\s+(are|have been)\s+(missing|stuck)\b/i,
+    /\bwhere\s+you\s+stop\b/i,
+  ];
+
+  it('never tells the viewer something about themselves it cannot know', () => {
+    for (const caption of [...CAPTIONS, ...PRELUDE, HANDOFF]) {
+      const text = [caption.line, 'sub' in caption ? caption.sub : '', 'kicker' in caption ? caption.kicker : '']
+        .filter(Boolean)
+        .join(' ');
+      for (const pattern of PRESUMES) {
+        expect(pattern.test(text), `"${text}" matches ${pattern}`).toBe(false);
+      }
+    }
+  });
+
+  /*
+   * The dive singles out one real node from the graph. Every word said over it
+   * has to be marked as an example, or the picture is making the claim the
+   * words were careful not to.
+   */
+  it('marks every caption said over a spotlit node as illustrative', () => {
+    const dive = ACTS.find((act) => act.id === 'block')!.start;
+    for (const caption of CAPTIONS) {
+      if (caption.at[1] <= dive) continue;
+      expect(caption.illustrative, `"${caption.line}" is said over the dive`).toBe(true);
+    }
+  });
+
+  it('does not label the acts before the dive as an example, because they are the real graph', () => {
+    const dive = ACTS.find((act) => act.id === 'block')!.start;
+    for (const caption of CAPTIONS) {
+      if (caption.at[1] > dive) continue;
+      expect(caption.illustrative).toBeUndefined();
+    }
+  });
+
+  it('shows the badge for the whole time a node is singled out', () => {
+    const dive = ACTS.find((act) => act.id === 'block')!.start;
+    expect(illustrativeFrom()).toBeLessThanOrEqual(dive + 0.02);
+  });
+
+  /* The ending is an offer, not a result. */
+  it('closes on what the product will do rather than on what it has found', () => {
+    expect(HANDOFF.line).toContain('cannot ask a good question');
+    expect(HANDOFF.sub).toMatch(/no score/i);
+    expect(HANDOFF.sub).toMatch(/don.t know/i);
+  });
+});
+
+describe('the first-run prelude', () => {
+  /*
+   * It stops before the dive on purpose. Singling out one node is the part that
+   * has to be earned by somebody's answers, so the thing shown in the first ten
+   * seconds makes the structural argument and then offers — it never
+   * illustrates a gap at a person who has not spoken.
+   */
+  it('ends before the act that singles out a node', () => {
+    expect(PRELUDE_END).toBeLessThanOrEqual(ACTS.find((act) => act.id === 'block')!.start);
+  });
+
+  it('shows the whole map before it finishes', () => {
+    for (const node of GRAPH.nodes) {
+      expect(nodeWindow(node.layer, MAX_LAYER)[1]).toBeLessThanOrEqual(PRELUDE_END);
+    }
+  });
+
+  it('never marks anything as an example, because it never singles anything out', () => {
+    for (const caption of PRELUDE) expect(caption.illustrative).toBeUndefined();
+  });
+
+  it('is composed on the frame it opens on, like the long version', () => {
+    expect(captionOpacity(0, PRELUDE[0])).toBe(1);
+  });
+
+  it('says its last line while the map is still on screen', () => {
+    const last = PRELUDE[PRELUDE.length - 1];
+    expect(last.at[1]).toBeLessThanOrEqual(PRELUDE_END);
+    expect(captionOpacity(PRELUDE_END - 0.05, last)).toBeGreaterThan(0.5);
   });
 });

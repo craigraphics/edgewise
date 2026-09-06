@@ -226,6 +226,22 @@ export type Caption = {
   line: string;
   sub?: string;
   size: 'hero' | 'lead';
+  /**
+   * Set on every caption said while a specific node is singled out.
+   *
+   * The sequence used to say "One of them is where you stop", spotlight a node
+   * and conclude "which is why so much of the rest has felt slippery" — to
+   * somebody who had not said a word. That is a verdict delivered before the
+   * diagnosis, on a product whose largest recorded risk is being diagnosed
+   * feeling like being graded. The reasoning that the marks were only an
+   * illustration existed in a comment in this file and never reached the
+   * screen.
+   *
+   * So the flag drives a visible ILLUSTRATIVE MAP badge, and
+   * `overture.test.ts` asserts both that every caption over a spotlit node
+   * carries it and that no caption anywhere claims to know the viewer's state.
+   */
+  illustrative?: boolean;
 };
 
 export const CAPTIONS: Caption[] = [
@@ -257,18 +273,97 @@ export const CAPTIONS: Caption[] = [
   },
   {
     at: [0.69, 0.83],
-    line: 'One of them is where you stop.',
-    sub: 'Not the hardest one. The earliest one you never quite got — everything after it has been built on a gap.',
+    kicker: 'An example',
+    line: 'Somebody stops here.',
+    sub: 'Not at the hardest idea — at the earliest one they never quite got. Everything after it was built on the gap.',
+    size: 'lead',
+    illustrative: true,
+  },
+  {
+    at: [0.87, 0.965],
+    kicker: 'In this example — {lead}',
+    line: '{rests} later ideas depend on it.',
+    sub: 'That is the shape of a gap: not one missing fact, but everything standing on it.',
+    size: 'hero',
+    illustrative: true,
+  },
+];
+
+/**
+ * The handoff, which is a promise rather than a finding.
+ *
+ * It closes on the product's own sharpest sentence — the one the first-run
+ * dialog has always opened with — because that is the honest version of what
+ * this sequence has just shown: not "here is your gap", but "you cannot ask a
+ * good question about something you do not understand yet, so this works out
+ * the question first".
+ */
+export const HANDOFF = {
+  line: 'You cannot ask a good question about something you do not understand yet.',
+  sub: 'So this finds the question first. Two minutes. No score — “I don’t know” is the most useful answer there is.',
+  action: 'Find my starting point',
+};
+
+/**
+ * The short version, for a first visit.
+ *
+ * Same timeline, same graph, same functions — only the driver changes: `/intro`
+ * scrubs `t` from the scroll, this runs it on a clock over about twenty-two
+ * seconds and stops before the dive. That matters because the two cannot then
+ * drift: there is one description of how the map assembles, and both readings
+ * of it are the same code.
+ *
+ * It stops at the terrain deliberately. The long sequence's fourth act singles
+ * out a node, and singling one out is the part that has to be earned by
+ * answers — so the thing shown to somebody in their first ten seconds makes the
+ * structural argument and then offers, rather than illustrating a gap at them
+ * before they have said anything.
+ */
+export const PRELUDE_END = 0.6;
+
+export const PRELUDE: Caption[] = [
+  {
+    /* Starts before zero so the opening frame is already composed, exactly as
+       the long version's does. */
+    at: [-0.06, 0.2],
+    line: 'AI makes more sense as a chain of ideas.',
+    size: 'hero',
+  },
+  {
+    at: [0.24, 0.44],
+    line: 'Twenty-three of them, each resting on the ones before it.',
     size: 'lead',
   },
   {
-    at: [0.87, 1],
-    kicker: '{lead}',
-    line: '{rests} later ideas rest on it.',
-    sub: 'Which is why so much of the rest has felt slippery. Two minutes of questions finds yours.',
+    at: [0.46, 0.6],
+    line: 'We will find the first link worth strengthening.',
+    sub: 'A few questions, spoken or typed. Two minutes. Nothing is scored.',
     size: 'hero',
   },
 ];
+
+/**
+ * A cone standing for "no cone" — the whole drawing.
+ *
+ * `cameraAt` needs one for its closing keyframes even when nothing is being
+ * singled out, and the prelude never reaches those keyframes. Passing the whole
+ * content is the honest stand-in: it is what the camera would frame if the
+ * subject were everything.
+ */
+export function emptyCone(content: Size): { centre: Point; size: Size } {
+  return {
+    centre: { x: content.width / 2, y: content.height / 2 },
+    size: { width: content.width, height: content.height },
+  };
+}
+
+/** The badge shown for the whole time a single node is singled out. */
+export const ILLUSTRATIVE_LABEL = 'Illustrative map';
+
+/** When the badge is on screen: from the first illustrative caption onwards. */
+export function illustrativeFrom(): number {
+  return Math.min(...CAPTIONS.filter((caption) => caption.illustrative).map((caption) => caption.at[0]));
+}
 
 /** Fades a caption in over the first 18% of its window and out over the last. */
 export function captionOpacity(t: number, caption: Caption): number {

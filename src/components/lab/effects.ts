@@ -1,87 +1,68 @@
 /**
- * The eight effects the lab is asking about, and what each one is FOR.
+ * The five effects that survived review, and what each one is allowed to mean.
  *
- * The blurb is not decoration. This product's rule is that motion has to say
- * something true — the shipped map allows exactly two loops, on the grounds
- * that each answers a question continuously — so an effect that cannot finish
- * the sentence "this moves because…" is one to delete rather than to tune.
- * Writing the sentence down next to the switch is how that judgement gets made
- * while looking at the thing rather than afterwards.
+ * This was a shelf of eight. Three are gone — magnetism, press and aurora —
+ * because none of them helped anyone read the graph, and two of them worked
+ * against the composure the interface is deliberately built for. "Harmless" was
+ * the strongest case for keeping press, and harmless is not a reason.
+ *
+ * What is left carries two fields that did not exist before, and they are the
+ * point of the file:
+ *
+ * - `claim` — what the movement asserts. Motion in this product is an argument,
+ *   and an effect that cannot finish "this moves because…" is decoration on a
+ *   diagram somebody is going to make decisions about.
+ * - `trigger` — the ONLY thing allowed to fire it in the product. This is the
+ *   guardrail. The unlock wave is honest exactly when a learner's own
+ *   explanation moved a node and dishonest the moment it fires because they
+ *   were taught something, and the difference between those two is a wiring
+ *   decision somebody will make in a hurry six months from now. Writing it next
+ *   to the effect is cheaper than discovering it.
  */
 
-export type EffectId =
-  | 'cascade'
-  | 'flow'
-  | 'pool'
-  | 'magnet'
-  | 'press'
-  | 'glide'
-  | 'ripple'
-  | 'aurora';
+export type EffectId = 'cascade' | 'flow' | 'pool' | 'glide' | 'ripple';
 
 export type Effects = Record<EffectId, boolean>;
 
-export const EFFECTS: { id: EffectId; name: string; says: string }[] = [
+export const EFFECTS: { id: EffectId; name: string; claim: string; trigger: string }[] = [
   {
     id: 'cascade',
     name: 'Cascade',
-    says: 'The cone lights outward a step at a time, so you watch the chain resolve instead of being handed it.',
+    claim: 'These ideas rest on each other in this order — watch the chain resolve rather than be handed it.',
+    trigger: 'Hover or selection. Changes no state, no glyph and no mark, and reverses when the pointer leaves.',
   },
   {
     id: 'flow',
     name: 'Current',
-    says: 'Which way an edge points, without putting 33 arrowheads on a crowded map.',
+    claim: 'This edge points that way.',
+    trigger: 'Drawn only on edges already inside the focused cone. Never implies traversal or progress.',
   },
   {
     id: 'pool',
     name: 'Light pool',
-    says: 'Where you are looking. A pool of the band colour rather than a scrim, because dimming reads as switched off.',
-  },
-  {
-    id: 'magnet',
-    name: 'Magnetism',
-    says: 'The map is live and responds to you. Says nothing about the graph — pure personality, and the first thing to cut if it reads as fidgety.',
-  },
-  {
-    id: 'press',
-    name: 'Press',
-    says: 'The box took the click. Overshoots on release, which the shipped motion system forbids everywhere.',
+    claim: 'You are looking here.',
+    trigger: 'Follows the focused node. Additive light, never a scrim — nothing is dimmed to produce it.',
   },
   {
     id: 'glide',
     name: 'Camera glide',
-    says: 'You did not teleport. The map moved and you can see where from, so the drawing stays one continuous place.',
+    claim: 'You did not teleport; this is the same drawing, moved.',
+    trigger: 'Selection and deselection. Moves the camera only — never a node relative to another node.',
   },
   {
     id: 'ripple',
     name: 'Unlock wave',
-    says: 'Marking an idea solid opened a chain, not a region — so the wave travels through the dependants in order.',
-  },
-  {
-    id: 'aurora',
-    name: 'Aurora',
-    says: 'Mood only. Sits behind opaque cards so it cannot touch a label’s measured contrast; what it can cost is calm.',
+    claim: 'Marking this solid opened a chain, and here is the chain.',
+    trigger:
+      'ONLY a node transitioning to `known` through explain-back. Must never fire because the walkthrough covered a node: being taught something does not move the map, and a wave that says it did is the product contradicting its own central rule.',
   },
 ];
 
-export const ALL_ON: Effects = {
-  cascade: true,
-  flow: true,
-  pool: true,
-  magnet: true,
-  press: true,
-  glide: true,
-  ripple: true,
-  aurora: true,
-};
-
+export const ALL_ON: Effects = { cascade: true, flow: true, pool: true, glide: true, ripple: true };
 export const ALL_OFF: Effects = {
   cascade: false,
   flow: false,
   pool: false,
-  magnet: false,
-  press: false,
   glide: false,
   ripple: false,
-  aurora: false,
 };

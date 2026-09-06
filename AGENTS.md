@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 257 tests: pure logic, plus the token contrast assertions
+pnpm test             # 283 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -864,6 +864,131 @@ modes are `useState` on a client component. Every switch would need wrapping in
 `startTransition`, and the `::view-transition` overlay would sit over the voice
 halo and the map's pointer handling for the duration. `AnimatePresence` gets the
 same crossfade without either.
+
+### What an outside design review changed
+
+A second model reviewed `/`, `/intro` and `/lab` without repo access. Three of
+its findings held, and two of those were things nobody working on this had seen.
+
+#### Dimming was an accessibility failure, not a style
+
+Focus used to drop everything outside the cone to 22% opacity. Measured against
+the real tokens that is **1.62:1** in light and 1.84:1 in dark — under the 3:1
+floor for a non-text graphic, on labels placed at 17.66:1 and then multiplied by
+0.22 at runtime.
+
+The part worth keeping is that **no opacity fixes it**. At 0.65 — barely dimmed
+at all — the muted foreground that every `unexplored` node uses, which is most
+of an unmarked map, is still at 2.79:1. Recede and legible are not both
+available on one dial, so the fix had to be structural: nothing recedes, the
+focused path is *raised* instead — a ring on its nodes, brighter and heavier
+edges, and only edges allowed to soften, because an edge carries no text.
+
+There is a second reason that would matter even if the numbers had passed. This
+is a map of what somebody does not know yet. Making the parts they have not
+reached disappear says excluded rather than ahead, and removes the comparison
+the view exists to support.
+
+`src/lib/map/focus.ts` holds the treatment and `focus.test.ts` holds the rule:
+**focus must never lower a label's contrast**. Reintroducing a dim fails there.
+
+**Why the existing contrast tests missed it.** `globals.test.ts` measures the
+design — every label against the card it sits on. The defect was in the runtime,
+where the whole group got an opacity the tokens never saw. Third time this
+project has shipped something because the measurement was aimed at the wrong
+quantity.
+
+#### `/intro` was delivering a verdict to someone who had not spoken
+
+It said "One of them is where you stop", spotlit a real node, and closed with
+"which is why so much of the rest has felt slippery" — to a first-time visitor.
+On a product whose own risk assessment puts *being diagnosed feeling like being
+graded* ahead of model quality, that converts the whole thing from help into an
+assessment before the offer has been made.
+
+The reasoning that the marks were only an illustration existed in a comment in
+`overture.ts` and never reached the screen. That is the failure, restated: the
+honesty was in the source and the claim was in the interface.
+
+Now the dive is captioned "An example / Somebody stops here", a persistent
+**ILLUSTRATIVE MAP** badge is up for the whole time a node is singled out, and
+the sequence closes on the product's own sentence — *"You cannot ask a good
+question about something you do not understand yet"* — followed by the offer
+rather than by a finding.
+
+`overture.test.ts` asserts both halves: every caption said over a spotlit node
+is marked illustrative, and **no caption anywhere matches a list of phrases that
+presume the viewer's state**. The old copy fails that test.
+
+#### What was refuted
+
+Two findings did not survive contact with the source, both because the reviewer
+could not read it:
+
+- *"Abandon the 640vh scroll as the primary entry."* `/intro` is not the entry
+  and nothing links to it. The recommendation inside it — a short first-run
+  version — was good and was built, but as an addition.
+- *"The CTA returns after a long, mostly faded sequence."* Measured, the longest
+  caption-free stretch anywhere is 0.053 of the scroll and it is in act two.
+
+Also disputed and kept: **"Start here — 22 ideas rest on this" is not a
+verdict.** It names the graph, never the person, and it is true in both states —
+with no marks the lead node is the root, so it says "start at the beginning".
+The proposed replacement traded a true specific sentence for a vague one.
+
+### The prelude — the first ten seconds
+
+`src/components/overture/prelude.tsx`. The same map assembling in the same
+prerequisite order, three sentences, about twenty-two seconds, skippable from
+the first frame — then the welcome dialog, which carries the parts that cannot
+be shown: the three-step flow and the two rules nobody would guess.
+
+One gate and one storage key for both. Two separately dismissed first-run
+screens is two modals in a row, and dismissing one would bring the other back on
+the next visit.
+
+**It stops before the dive.** Singling out a node is the part that has to be
+earned by answers, so the thing shown in somebody's first ten seconds makes the
+structural argument and then offers.
+
+It shares the timeline rather than copying it: `/intro` scrubs `t` from the
+scroll, the prelude runs the identical functions on a clock. One description of
+how the map assembles, two readings of it, no drift.
+
+Two things found by running it:
+
+- **The first painted frame was uncomposed.** The camera was seeded on the next
+  animation tick, so the opening shot appeared for one frame as a small box in
+  the corner. `overture.test.ts` already asserted the opening frame is composed;
+  that was true of the timeline and not of the pixels. It is now set in the same
+  layout pass that measures the stage.
+- **A background tab would skip the whole thing.** Timing from a fixed start
+  timestamp means the first frame after somebody switches to the tab carries the
+  entire wall-clock gap, so the sequence completes instantly and they meet the
+  dialog having been shown nothing. Time is accumulated from clamped frame
+  deltas instead, so a paused tab pauses the sequence.
+
+### The lab, after review — five effects, each with a trigger
+
+Down from eight. Magnetism and aurora went because neither helped anyone read
+the graph and both worked against the composure the interface is built for;
+press went because "harmless" is not a reason to keep something.
+
+Each surviving effect now carries two fields, and they are the point:
+
+- **`claim`** — what the movement asserts. An effect that cannot finish "this
+  moves because…" is decoration on a diagram people make decisions from.
+- **`trigger`** — the only thing allowed to fire it in the product.
+
+The trigger field exists because of the sharpest thing in the review: **the
+unlock wave is honest exactly when a learner's own explanation moved a node, and
+dishonest the moment it fires because they were taught something.** That is a
+wiring decision somebody will make in a hurry later, so it is now structural
+rather than documented — `src/lib/map/unlock.ts` takes the model before and
+after and works out whether anything actually became `known`. Wiring the wave to
+"the walkthrough covered a node" produces no wave, because covering changes no
+state, and there is a test that walks the entire twenty-three-step teaching
+order asserting exactly that.
 
 ### The overture — `/intro`, the argument as a sequence
 

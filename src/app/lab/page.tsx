@@ -8,6 +8,7 @@ import { LabControls } from '@/components/lab/lab-controls';
 import { LabMap, type Ripple } from '@/components/lab/lab-map';
 import { ALL_OFF, ALL_ON, type EffectId } from '@/components/lab/effects';
 import { emptyModel, leadNode, stateOf } from '@/lib/graph/frontier';
+import { unlockedBy } from '@/lib/map/unlock';
 import { GRAPH } from '@/lib/graph/load';
 import type { ConceptNode, LearnerModel } from '@/lib/graph/types';
 
@@ -50,14 +51,28 @@ export default function LabPage() {
     setEffects((current) => ({ ...current, [id]: !current[id] }));
   }, []);
 
+  /*
+   * Marking here stands in for an explain-back holding up — the only thing in
+   * the product that may move a node. The wave is fired from the transition
+   * rather than from the click: `unlockedBy` compares the model before and
+   * after, so wiring this to anything that does not actually change a state
+   * (the walkthrough covering a node, say) produces no wave at all. See
+   * `src/lib/map/unlock.ts` for why that guard is structural rather than a
+   * comment.
+   */
   const mark = useCallback(() => {
     if (!target) return;
-    setModel((current) => ({
-      ...current,
-      states: { ...current.states, [target.id]: 'known' },
-    }));
-    setRipple((current) => ({ id: target.id, key: (current?.key ?? 0) + 1 }));
-  }, [target]);
+    /* Computed outside the updater: a state updater may run twice under
+       StrictMode, and firing the wave from inside one would fire it twice. */
+    const after = {
+      ...model,
+      states: { ...model.states, [target.id]: 'known' as const },
+    };
+    if (unlockedBy(model, after, target.id)) {
+      setRipple((current) => ({ id: target.id, key: (current?.key ?? 0) + 1 }));
+    }
+    setModel(after);
+  }, [model, target]);
 
   const reset = useCallback(() => {
     setModel(emptyModel(GRAPH));

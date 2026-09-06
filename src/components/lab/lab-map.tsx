@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { type MotionValue, animate, motion, useMotionValue, useTransform } from 'motion/react';
+import { animate, motion } from 'motion/react';
 
 import { NodeGlyph } from '@/components/map/node-glyph';
 import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
@@ -30,6 +30,7 @@ import {
   viewBoxFor,
   zoomAt,
 } from '@/lib/map/layout';
+import { FOCAL_SCALE, edgeStyle } from '@/lib/map/focus';
 import { wrapLabel } from '@/lib/map/text';
 import { cn } from '@/lib/utils';
 
@@ -57,11 +58,10 @@ const STATE_STYLE: Record<NodeState, { accent: number; tint: number; muted: bool
   unexplored: { accent: 0.3, tint: 0, muted: true },
 };
 
-const DIMMED = 0.24;
+/* Focus is additive here too; see `src/lib/map/focus.ts` for the measurement
+   that removed the dim. Only edges recede. */
 /** How long one step of a cascade takes. Matches `--lab-step` in the CSS. */
 const STEP_MS = 90;
-/** How far a node feels the cursor, in content units — about one row gap. */
-const MAGNET_REACH = 220;
 /** The scale a selected node is brought to, if the map is further out than it. */
 const SELECTED_SCALE = 1.15;
 
@@ -119,30 +119,6 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
   useEffect(() => {
     cameraRef.current = camera;
   }, [camera]);
-
-  /* ---- the cursor, as motion values ------------------------------------ */
-
-  /*
-   * Kept OUT of React state deliberately. Magnetism reads the cursor on every
-   * pointer move; as state that is 23 node components re-rendering per frame
-   * for an effect that only ever changes a transform. Motion values write
-   * straight to the DOM and leave the tree alone.
-   */
-  const pointerX = useMotionValue(-9999);
-  const pointerY = useMotionValue(-9999);
-  const pointerOn = useMotionValue(0);
-
-  const trackPointer = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const box = paneRef.current?.getBoundingClientRect();
-      const current = cameraRef.current;
-      if (!box || !current) return;
-      pointerX.set(current.x + (event.clientX - box.left) / current.scale);
-      pointerY.set(current.y + (event.clientY - box.top) / current.scale);
-      pointerOn.set(1);
-    },
-    [pointerOn, pointerX, pointerY],
-  );
 
   /* ---- focus, and the cascade over it ---------------------------------- */
 
@@ -290,7 +266,6 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      trackPointer(event);
       const started = drag.current;
       if (!started || started.pointerId !== event.pointerId) return;
       moveCamera(
@@ -306,7 +281,7 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
         false,
       );
     },
-    [content, moveCamera, pane, trackPointer],
+    [content, moveCamera, pane],
   );
 
   const endDrag = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -328,26 +303,8 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      onPointerLeave={() => pointerOn.set(0)}
       className="relative min-h-0 min-w-0 flex-1 touch-none overflow-hidden"
     >
-      {effects.aurora ? (
-        <div className="lab-aurora pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          {bands.slice(0, 4).map((band, index) => (
-            <span
-              key={band}
-              style={{
-                background: `var(--band-${band})`,
-                width: `${30 + index * 8}%`,
-                height: `${30 + index * 8}%`,
-                left: `${[6, 58, 24, 70][index]}%`,
-                top: `${[10, 4, 58, 62][index]}%`,
-                animationDelay: `${index * -6}s`,
-              }}
-            />
-          ))}
-        </div>
-      ) : null}
 
       {camera ? (
         <svg viewBox={viewBoxFor(camera, pane)} className="relative block h-full w-full" role="group">
@@ -390,10 +347,10 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
                   strokeLinecap="round"
                   className={cn(
                     'transition-[opacity,stroke-width] duration-[--dur] ease-[--ease]',
-                    satisfied ? 'stroke-foreground/38' : 'stroke-foreground/12',
+                    lit ? 'stroke-foreground/70' : satisfied ? 'stroke-foreground/38' : 'stroke-foreground/12',
                   )}
-                  strokeWidth={lit ? 2.2 : satisfied ? 1.6 : 1.1}
-                  opacity={cascade ? (lit ? 1 : DIMMED) : 1}
+                  strokeWidth={edgeStyle({ focused: Boolean(cascade), inCone: lit, satisfied }).width}
+                  opacity={edgeStyle({ focused: Boolean(cascade), inCone: lit, satisfied }).opacity}
                   style={{ transitionDelay: `${lit ? stepOf(cascade?.edges.get(edge.id)?.step) : 0}ms` }}
                 />
               );
@@ -459,7 +416,6 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
                 node={node}
                 minRow={minRow}
                 state={stateOf(model, node.id)}
-                effects={effects}
                 isLead={lead?.id === node.id}
                 leadWeight={leadWeight}
                 isSelected={selectedId === node.id}
@@ -468,9 +424,6 @@ export function LabMap({ graph, model, effects, selectedId, onSelect, revealKey,
                 revealDelay={node.layer * 70}
                 rippleDelay={wave?.has(node.id) ? stepOf(wave.get(node.id)) : null}
                 rippleKey={ripple?.key ?? 0}
-                pointerX={pointerX}
-                pointerY={pointerY}
-                pointerOn={pointerOn}
                 onSelect={onSelect}
                 onHover={setHoveredId}
               />
@@ -486,7 +439,6 @@ type NodeProps = {
   node: ConceptNode;
   minRow: number;
   state: NodeState;
-  effects: Effects;
   isLead: boolean;
   leadWeight: number;
   isSelected: boolean;
@@ -497,9 +449,6 @@ type NodeProps = {
   revealDelay: number;
   rippleDelay: number | null;
   rippleKey: number;
-  pointerX: MotionValue<number>;
-  pointerY: MotionValue<number>;
-  pointerOn: MotionValue<number>;
   onSelect: (node: ConceptNode) => void;
   onHover: (id: string | null) => void;
 };
@@ -508,7 +457,6 @@ function LabNode({
   node,
   minRow,
   state,
-  effects,
   isLead,
   leadWeight,
   isSelected,
@@ -517,9 +465,6 @@ function LabNode({
   revealDelay,
   rippleDelay,
   rippleKey,
-  pointerX,
-  pointerY,
-  pointerOn,
   onSelect,
   onHover,
 }: NodeProps) {
@@ -527,32 +472,6 @@ function LabNode({
   const colour = `var(--band-${node.band})`;
   const lines = useMemo(() => wrapLabel(node.label, LABEL_WIDTH, LABEL_SIZE), [node.label]);
   const origin = originOf(node, minRow);
-  const centre = { x: origin.x + NODE_WIDTH / 2, y: origin.y + NODE_HEIGHT / 2 };
-
-  /*
-   * Magnetism: a node leans a little towards the cursor and lifts as it gets
-   * close, falling off with the square of the distance so the effect is local.
-   * The pull is capped well under half a row gap — a map whose nodes move far
-   * enough to change what is next to what would be lying about the layout.
-   */
-  const reach = effects.magnet ? MAGNET_REACH : 0;
-  const pull = useTransform<number, number>([pointerX, pointerY, pointerOn], ([px, py, on]) => {
-    if (!on || reach === 0) return 0;
-    const distance = Math.hypot(px - centre.x, py - centre.y);
-    return distance > reach ? 0 : on * (1 - distance / reach) ** 2;
-  });
-  /*
-   * The lean is capped at 6 units and the gap between two neighbouring cards is
-   * 20, so two nodes leaning towards each other still cannot touch. A map whose
-   * boxes can overlap is a map that has stopped being a drawing of the graph.
-   */
-  const x = useTransform<number, number>([pull, pointerX], ([amount, px]) =>
-    Math.max(-6, Math.min(6, (px - centre.x) * 0.09 * amount)),
-  );
-  const y = useTransform<number, number>([pull, pointerY], ([amount, py]) =>
-    Math.max(-6, Math.min(6, (py - centre.y) * 0.09 * amount)),
-  );
-  const scale = useTransform(pull, (amount) => 1 + amount * 0.06);
 
   /* One sweep when the state changes, and only when it changes. */
   const previous = useRef(state);
@@ -563,20 +482,13 @@ function LabNode({
     setSweep((count) => count + 1);
   }, [state]);
 
-  /* Nothing recedes until something is actually being asked about. */
-  const dimmed = focusActive && litDelay === null;
+  /* Nothing recedes at all any more — the cone is raised instead. `focusActive`
+     still decides whether to draw the ring. */
+  const inCone = litDelay !== null;
 
   return (
     <g transform={`translate(${origin.x}, ${origin.y})`}>
-      <motion.g
-        style={{
-          x,
-          y,
-          scale,
-          transformBox: 'fill-box',
-          transformOrigin: 'center',
-        }}
-      >
+      <g>
         <motion.g
           data-node={node.id}
           tabIndex={0}
@@ -585,8 +497,8 @@ function LabNode({
           onClick={() => onSelect(node)}
           onPointerEnter={() => onHover(node.id)}
           onPointerLeave={() => onHover(null)}
-          whileTap={effects.press ? { scale: 0.955 } : undefined}
-          transition={{ type: 'spring', stiffness: 620, damping: 17, mass: 0.7 }}
+          animate={{ scale: isSelected ? FOCAL_SCALE : 1 }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
           className="outline-none"
         >
@@ -594,7 +506,6 @@ function LabNode({
             className="lab-settle transition-opacity duration-[--dur] ease-[--ease]"
             style={{
               animationDelay: `${revealDelay}ms`,
-              opacity: dimmed ? DIMMED : 1,
               transitionDelay: `${litDelay ?? 0}ms`,
             }}
           >
@@ -687,6 +598,21 @@ function LabNode({
               ))}
             </text>
 
+            {focusActive && inCone && !isSelected ? (
+              <rect
+                x={-2.5}
+                y={-2.5}
+                width={NODE_WIDTH + 5}
+                height={NODE_HEIGHT + 5}
+                rx={NODE_RADIUS + 2}
+                fill="none"
+                stroke={colour}
+                strokeWidth={1.25}
+                strokeOpacity={0.55}
+                aria-hidden
+              />
+            ) : null}
+
             {isSelected ? (
               <rect
                 x={-4}
@@ -732,7 +658,7 @@ function LabNode({
             ) : null}
           </g>
         </motion.g>
-      </motion.g>
+      </g>
     </g>
   );
 }
