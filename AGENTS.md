@@ -25,6 +25,13 @@ design of the same idea — walkthrough-first, map internal, text-only, Google
 free tier only. Do not follow it. Its cost analysis and its list of what
 transfers from the sibling project are still accurate.
 
+## Start here if you are new
+
+`docs/handover.md` — where things stand, what is in flight, which decisions are
+deliberate, what is still open for the owner to decide, and the traps that have
+already cost time. This file is the design record; that one is the state of
+play.
+
 ## Status
 
 Steps 1–8 are done. The product works end to end: diagnose, map, walk through,
