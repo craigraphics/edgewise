@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { browserListener, LISTEN_ERROR_COPY, type Listener } from '@/lib/voice/listener';
+import { browserListener, LISTEN_ERROR_COPY, LISTENER_TIMING, type Listener } from '@/lib/voice/listener';
+import { needsMicrophoneHandover } from '@/lib/voice/platform';
 import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
 
 /**
@@ -33,6 +34,8 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
   /** What recognition has settled on so far this turn. */
   const finalText = useRef('');
+  /** Whether this turn already reported a reason, so the fallback stays quiet. */
+  const failed = useRef(false);
   /*
    * Held in a ref because the listener's callbacks are registered once per
    * `start` and would otherwise close over a stale `onFinalTranscript` — an
@@ -49,7 +52,11 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
   useEffect(() => {
     speaker.current = browserSpeaker();
-    listener.current = browserListener();
+    listener.current = browserListener({
+      // On a handset the microphone cannot be opened in the same breath as the
+      // tutor's voice stopping. See `needsMicrophoneHandover`.
+      handoverMs: needsMicrophoneHandover() ? LISTENER_TIMING.HANDOVER_MS : 0,
+    });
     setSupported({ speak: speaker.current.available, listen: listener.current.available });
 
     try {
@@ -73,6 +80,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     setSpeaking(false);
 
     finalText.current = '';
+    failed.current = false;
     setInterim('');
     setError(null);
     setListening(true);
@@ -88,7 +96,10 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
       },
       onError: (reason) => {
         // "no speech" is not an error worth showing when they simply paused.
-        if (reason !== 'no-speech') setError(LISTEN_ERROR_COPY[reason]);
+        if (reason !== 'no-speech') {
+          failed.current = true;
+          setError(LISTEN_ERROR_COPY[reason]);
+        }
       },
       onEnd: () => {
         setListening(false);
@@ -96,7 +107,21 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
         const heard = finalText.current.trim();
         finalText.current = '';
-        if (heard) submit.current(heard);
+        if (heard) return submit.current(heard);
+
+        /*
+         * A turn that heard nothing must say so.
+         *
+         * It used to close the microphone and do nothing at all — no answer, no
+         * message, no error — which from the learner's side is indistinguishable
+         * from the product ignoring them, and is exactly what an Android session
+         * looked like. Whatever the cause, somebody who spoke and was not heard
+         * has to be told, or they will keep talking at a closed microphone.
+         *
+         * Suppressed when an error was already reported: that message is more
+         * specific than this one and has just been put on screen.
+         */
+        if (!failed.current) setError(LISTEN_ERROR_COPY['no-speech']);
       },
     });
   }, []);

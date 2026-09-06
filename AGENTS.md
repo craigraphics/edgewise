@@ -25,6 +25,18 @@ design of the same idea — walkthrough-first, map internal, text-only, Google
 free tier only. Do not follow it. Its cost analysis and its list of what
 transfers from the sibling project are still accurate.
 
+## Start here
+
+**Read `docs/handover.md` before doing anything.** Where things stand, what is
+in flight, which decisions are deliberate and should not be casually reverted,
+what is waiting on the owner rather than on you, and the traps that have already
+cost time. This file is the design record; that one is the state of play, and
+acting on this one without it is how work gets redone.
+
+Claude Code loads both automatically — `CLAUDE.md` imports them. Other agents
+read this file by convention but will not follow the import, so open the
+handover yourself.
+
 ## Status
 
 Steps 1–8 are done. The product works end to end: diagnose, map, walk through,
@@ -45,6 +57,10 @@ explain back. **It has never been in front of anyone but the owner.**
        curriculum. Open since day one; 23 nodes encoding one person's model.
 - [ ] 11. Re-record the calibration fixtures through the real speech path — the
        whole baseline is on written text, and the product is voice-first.
+- [ ] 14. **Verify voice on a real Android handset.** The Android failures are
+       fixed against a test that models Chrome for Android's documented
+       behaviour; nobody has held a phone. Use the deployed URL, not the LAN
+       address — see "Android" under Voice.
 - [x] 12. Error boundaries, per-browser daily cap, deploy
 - [ ] 13. Record in the sibling spec that it is superseded
 
@@ -294,6 +310,93 @@ Three gotchas already handled, all silent failures:
 ⚠️ **Chrome's recognition is not on-device** — audio goes to Google. The spec
 calls this path "free, no server cost", which is true of money and not of
 privacy. The UI says so before the microphone opens.
+
+### Android: the whole voice design rests on an API Android does not implement
+
+Reported from real use — *"phones do not record the audio of the user, I can
+listen to the audio from the browser though."* Output working and input not is
+the whole shape of it: `speechSynthesis` is real on Android, and
+`SpeechRecognition` hands off to the platform recogniser.
+
+**Chrome for Android ignores `continuous`.** The platform recogniser is one-shot
+and stops at the first endpoint it detects. So "the pause window is ours, not
+Chrome's" — the fix that came out of real use and the reason the listener has a
+silence window at all — **does not hold there**. The recogniser stops on its
+own, mid-answer, several times per turn.
+
+Restarting it is the only way through, and `onend` already did restart. Four
+things went wrong around that, and **every one of them was silent**: no error,
+no exception, just a turn where someone spoke and nothing was registered. That
+is the failure mode to hold onto — on Android this product looked like it was
+ignoring people.
+
+1. **The last result arrives on the way out.** Android commonly delivers a final
+   result between `stop()` and `onend`. `finish()` fired `onEnd` at the moment
+   it asked the recogniser to stop, so that result was thrown away — and, since
+   the recogniser was still live and its `onresult` was unguarded, it landed in
+   the *next* turn. Closing now waits for the recogniser's own `onend`, with a
+   `CLOSING_MS` deadline so one that never ends cannot hang the turn.
+2. **The restart ran inside `onend`.** Android needs the input back before it
+   will take it again; a same-tick restart either throws `InvalidStateError` or
+   succeeds and comes straight back. It is scheduled, `RESTART_MS` later.
+3. **`start()` throwing left the turn open.** It reported `failed` and never
+   delivered `onEnd`, so the interface sat on "Listening…" over a microphone
+   that was never opened. **Every `start` now owes exactly one `onEnd`** —
+   including the no-API and insecure-origin paths — and there is a test per
+   route through the file saying so.
+4. **The level meter was competing for the microphone.** `use-mic-level.ts`
+   opens its own `getUserMedia` capture alongside recognition; its comment said
+   "Chrome runs both on one microphone without complaint", which was measured on
+   a desktop. On a handset they compete for one input through the platform audio
+   stack and **the loser gets silence, not an error**. The meter is decoration
+   and the recognition is the answer, so on a phone the meter does not open.
+
+Two more that are about the handover rather than the recogniser:
+
+- **`speechSynthesis.cancel()` returns before Android releases audio focus.** The
+  hands-free loop speaks and then listens; a recogniser started inside that
+  window opens against an output device still winding down, hears nothing, and
+  ends on its own timeout. There is a `HANDOVER_MS` beat now, **on handsets
+  only** — the desktop path is in use and working, and this project does not
+  change validated behaviour without a measurement.
+- **An insecure origin is not a blocked permission.** Chrome refuses the
+  microphone off HTTPS and reports `service-not-allowed`, which the old copy
+  rendered as "the microphone is blocked for this site" and sent you to a
+  setting that is not the problem. It is exactly what happens when you open
+  `pnpm dev` on a phone over `http://<laptop>:3000` to test voice, which is the
+  only place anyone meets it. **Test voice on the deployed URL, not the LAN
+  address.**
+
+#### The rule underneath all of it: a voice turn never ends silently
+
+Whatever the cause, a turn that heard nothing now says so. It used to close the
+microphone and do nothing at all — no answer, no message, no error — which from
+the learner's side is indistinguishable from being ignored, and is what an
+Android session looked like end to end. `use-voice.ts` reports the existing
+`no-speech` copy when a turn settles with an empty transcript and nothing more
+specific to say.
+
+#### Testable without a phone — `src/lib/voice/listener.test.ts`
+
+`listener.ts` is a factory over `window.SpeechRecognition`, so a fake recogniser
+driven by the test can model each of these behaviours exactly: ending itself
+mid-answer, withholding interim results, delivering its final result after
+`stop()`, refusing to start, never firing `onend`. 20 tests, no browser.
+
+**It immediately caught a bug in the fix.** The first draft reseeded the silence
+window on every restart, so the delay would not eat into someone's thinking
+time — which made the window unreachable whenever the recogniser was ending
+instantly, the exact case it exists to catch. A microphone held by something
+else would have restarted for ever and never closed the turn. Measured in the
+test: 33 recognisers over 8 seconds and `onEnd` never delivered. The gaps come
+out of the window now.
+
+**Still not verified on a real handset.** These are the documented behaviours of
+Chrome for Android modelled in a test, which is a different and weaker thing
+than a phone. `src/lib/voice/platform.ts` is a user-agent sniff, which is the
+wrong tool for almost everything and the only tool available for these two
+points — neither is feature-detectable, and the microphone conflict shows up as
+silence rather than an error.
 
 ### The opening and the closing are both scripted
 
@@ -1316,6 +1419,11 @@ cap. **Add a real store before this sees serious traffic.**
 - **`FREE_TURN_CAP` is 25**, sized for placement. Interruptions and explanations
   now share that allowance. The walk itself is free, so this is less urgent than
   expected — but a talkative session will still hit it.
+- **Voice on Android is fixed against a model, not a phone.** The listener now
+  handles the one-shot recogniser, the result that lands on the way out, and the
+  microphone the level meter was stealing — all covered by
+  `listener.test.ts` — but every one of those is Chrome for Android's
+  *documented* behaviour reproduced in a fake. Hold a phone before believing it.
 - **Provider overload is now distinguished from quota** (`isOverloadError`).
   Google returns "experiencing high demand" as a plain API error affecting every
   model at once, so the fallback chain cannot route around it. Telling someone
