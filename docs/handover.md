@@ -162,7 +162,14 @@ map.
 4. **Which lab effects graduate into the product?** Cascade, light pool and
    camera glide are the strongest case. Current and the unlock wave are close.
    The wave must only ever be wired to explain-back.
-5. **The validation gate has still never been run on anyone but the owner.**
+5. **Voice on Android is fixed but unverified on hardware.** The listener was
+   rebuilt as a turn-scoped state machine against Chrome for Android's one-shot
+   recogniser, and `src/lib/voice/listener.test.ts` models each failure — but a
+   test that reproduces documented behaviour is not a phone. The check is: open
+   the **deployed** URL on an Android handset (not `http://<laptop>:3000`, which
+   is an insecure origin and refuses the microphone), answer three questions out
+   loud, and confirm all three register. Detail under "Android" in `AGENTS.md`.
+6. **The validation gate has still never been run on anyone but the owner.**
    This is the oldest open item in the project and none of this work touches it.
    Everything here is a guess about a stranger until then.
 
@@ -185,6 +192,11 @@ map.
   `buttonVariants()` on a `<Link>`.
 - **A JSX `{/* */}` comment cannot sit beside a sibling element** inside a
   ternary branch. Merge it into the preceding plain comment.
+- **A comment saying "Chrome does X without complaint" means desktop Chrome.**
+  `use-mic-level.ts` opened a second microphone capture alongside recognition on
+  that basis. True where it was measured; on Android the two compete for one
+  input and recognition loses, silently. Fourth time a measurement in this
+  project was aimed at the wrong quantity — this time the wrong *device*.
 - **Tests that measure the design do not measure the runtime.**
   `globals.test.ts` asserted 11.60:1 while the interface multiplied it by 0.22.
   This is the third time this project has shipped something because the

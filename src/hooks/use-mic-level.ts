@@ -2,15 +2,23 @@
 
 import { useEffect, useState } from 'react';
 
+import { meterMaySharePlatformMicrophone } from '@/lib/voice/platform';
+
 /**
  * How loudly the learner is talking, 0–1, while the microphone is open.
  *
  * The Web Speech API reports words and nothing else — it has no amplitude, no
  * levels, no events between results. So this opens its own capture alongside
- * recognition purely to measure. Chrome runs both on one microphone without
- * complaint, and the second stream is the only way to show someone that they
- * are being heard *while* they are still mid-sentence rather than a second
+ * recognition purely to measure. Desktop Chrome runs both on one microphone
+ * without complaint, and the second stream is the only way to show someone that
+ * they are being heard *while* they are still mid-sentence rather than a second
  * later when a word lands.
+ *
+ * On a handset it does not, and the cost of finding out is the whole turn: the
+ * platform recogniser and this capture compete for one input, and the loser
+ * gets silence rather than an error. So on a phone this does not open at all —
+ * see `meterMaySharePlatformMicrophone`. The meter is decoration; the
+ * recognition is the answer, and a decoration is never allowed to cost one.
  *
  * Nothing measured here leaves the browser. Recognition already sends the audio
  * to Google and the UI says so; this adds no new exposure, only a meter.
@@ -47,7 +55,7 @@ export function useMicLevel(active: boolean): number {
   const [level, setLevel] = useState(0);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || !meterMaySharePlatformMicrophone()) return;
 
     let stopped = false;
     let frame = 0;
