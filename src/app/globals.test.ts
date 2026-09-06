@@ -59,7 +59,7 @@ const BANDS = GRAPH.bands.map((band) => band.id);
  * duplication is deliberate and the comment is the warning.
  */
 const NODE_STATES = [
-  { id: 'known', tint: 0.14, tintLight: 0.11, label: 'foreground' as const },
+  { id: 'known', tint: 0.1, tintLight: 0.08, label: 'foreground' as const },
   { id: 'shaky', tint: 0, tintLight: 0, label: 'foreground' as const },
   { id: 'blocked', tint: 0, tintLight: 0, label: 'foreground' as const },
   { id: 'unexplored', tint: 0, tintLight: 0, label: 'muted-foreground' as const },
@@ -88,7 +88,7 @@ describe('map node labels', () => {
   it('is nearly independent of which band a node belongs to', () => {
     for (const theme of THEMES) {
       const card = colour(theme, 'surface-1');
-      const tint = theme === 'dark' ? 0.14 : 0.11;
+      const tint = theme === 'dark' ? 0.1 : 0.08;
       const ratios = BANDS.map((band) =>
         contrastRatio(colour(theme, 'foreground'), composite(colour(theme, `band-${band}`), card, tint)),
       );

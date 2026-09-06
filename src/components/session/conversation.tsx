@@ -193,8 +193,15 @@ export function Conversation({
               <span className="min-w-0">
                 <span className="block text-base font-medium">{lead.node.label}</span>
                 <span className="text-muted-foreground mt-1 block text-base leading-relaxed">
+                  {/*
+                   * Structure only. This card is on screen before a single
+                   * question has been answered, so "why so much of the rest
+                   * probably feels slippery" was an interpretation of somebody
+                   * we had not met — the same unearned verdict the intro used
+                   * to make, in a smaller typeface.
+                   */}
                   {lead.resting > 0
-                    ? `${lead.resting} of the later ideas rest on this one, which is why so much of the rest probably feels slippery.`
+                    ? `${lead.resting} of the later ideas build on this one.`
                     : lead.node.subtitle}
                 </span>
               </span>
@@ -205,6 +212,17 @@ export function Conversation({
     );
   }
 
+  /*
+   * The pinned turn is the tutor's most recent one, and only while it is still
+   * the live question. Once the session is done the closing belongs in the
+   * transcript with everything else — there is nothing left to answer, so
+   * nothing left to hold still.
+   */
+  const lastTutor = [...messages].reverse().find((message) => message.role !== 'user');
+  const pinned = status !== 'done' && lastTutor ? lastTutor : null;
+  const current = pinned?.content ?? null;
+  const history = pinned ? messages.filter((message) => message !== pinned) : messages;
+
   return (
     // The shell sizes this now; it fills whatever the panel gives it.
     <VoiceHalo
@@ -212,8 +230,41 @@ export function Conversation({
       level={micLevel}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-        {messages.map((message, index) =>
+      {/*
+       * The question being asked sits OUTSIDE the scroll container.
+       *
+       * This project's own layout rule — what you look at while listening does
+       * not move — held for the progress line and the current concept and not
+       * for the one thing the learner is actually being asked. The transcript
+       * grows, the pane scrolls to its end, and a long turn puts the top of the
+       * question above the fold: somebody had to scroll up to find out what
+       * they were answering. That is the single worst thing this panel could
+       * do.
+       *
+       * So the live turn is pinned here, and only what came before it scrolls.
+       */}
+      {current ? (
+        <div className="border-border/60 mb-4 shrink-0 border-b pb-4">
+          <p className="font-display text-read edgewise-rise max-w-[60ch]">{current}</p>
+        </div>
+      ) : null}
+
+      {/*
+       * The transcript only claims the spare room once there is a transcript.
+       *
+       * Bottom-anchored from the first turn, the composer sat six hundred
+       * pixels below the question with nothing in between — so the two things
+       * somebody needs at once, what they were asked and where to answer it,
+       * were at opposite ends of the panel. With history it behaves the usual
+       * way and the composer stays put at the bottom.
+       */}
+      <div
+        className={cn(
+          'min-h-0 space-y-6 overflow-y-auto pr-1',
+          history.length > 0 && 'flex-1',
+        )}
+      >
+        {history.map((message, index) =>
           message.role === 'user' ? (
             /*
              * The learner's own words, set back and set quieter. Not a bubble:
@@ -309,6 +360,21 @@ export function Conversation({
                 I don&rsquo;t know
               </Button>
 
+              {/*
+               * Why it helps, next to the button rather than in a paragraph
+               * somewhere.
+               *
+               * Styled as the alternative to a disabled Send, it still read as
+               * the thing you press when you have failed at the real one. It is
+               * the most useful answer anybody gives here — it is information,
+               * not an absence of it — and the sentence saying so has to be
+               * within a glance of the control, at the moment somebody is
+               * deciding whether to guess instead.
+               */}
+              <span className="text-muted-foreground order-last w-full text-2xs sm:order-none sm:w-auto">
+                helps me find where to begin
+              </span>
+
               {voice.speaking ? (
                 <Button size="touch" variant="ghost" onClick={voice.stopSpeaking}>
                   Stop reading
@@ -329,16 +395,20 @@ export function Conversation({
               {voice.supported.listen && voice.enabled ? (
                 <Button
                   size="touch"
-                  className="ml-auto w-10 px-0"
+                  className="ml-auto"
                   variant={voice.listening ? 'default' : 'outline'}
                   onClick={voice.listening ? voice.stopListening : voice.listen}
                   // Stopping stays available even mid-request; only starting is
                   // held back while a turn is in flight.
                   disabled={busy && !voice.listening}
-                  aria-label={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
                   title={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
                 >
                   {voice.listening ? <Square className="fill-current" /> : <AudioLines />}
+                  {/* Labelled, not an icon on its own. Answering out loud is a
+                      different route through the product rather than a
+                      preference, and an unlabelled glyph makes it look like a
+                      setting somebody else has already decided about. */}
+                  {voice.listening ? 'Stop and send' : 'Answer out loud'}
                 </Button>
               ) : null}
             </div>
@@ -364,16 +434,23 @@ function VoiceToggle({ voice }: { voice: ReturnType<typeof useVoice> }) {
 
   return (
     <div className="mt-2.5 flex items-center gap-2">
-      <button
-        type="button"
+      {/*
+       * A labelled control, not a text link.
+       *
+       * Reading the questions aloud is a different route through the product
+       * for anybody who finds a screen of text hard going, and at 2xs muted
+       * text it looked like a preference somebody else had already settled. It
+       * stays secondary — it is not the main action — but it is now the same
+       * kind of object as the buttons above it.
+       */}
+      <Button
+        variant="outline"
+        size="sm"
         onClick={voice.toggle}
-        className={cn(
-          'text-2xs transition-colors duration-[--dur-fast]',
-          voice.enabled ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-        )}
+        className="text-muted-foreground hover:text-foreground"
       >
         {voice.enabled ? 'Turn the voice off' : 'Read the questions aloud'}
-      </button>
+      </Button>
 
       {/*
        * Chrome's recognition is not on-device — the audio goes to Google — and

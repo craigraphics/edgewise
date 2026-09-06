@@ -1,7 +1,11 @@
 'use client';
 
-import { Dialog, DialogPanel } from '@/components/ui/dialog';
+import { useState } from 'react';
+
+import { Prelude } from '@/components/overture/prelude';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogPanel } from '@/components/ui/dialog';
+import { GRAPH } from '@/lib/graph/load';
 import { useHydrated, usePersisted, writePersisted } from '@/lib/persisted';
 
 /**
@@ -28,9 +32,27 @@ const KEY = 'edgewise.welcome.v1';
 export function Welcome() {
   const hydrated = useHydrated();
   const seen = usePersisted(KEY);
+  /*
+   * One first visit, two parts, one gate.
+   *
+   * The prelude makes the premise visible — the map assembling in prerequisite
+   * order — and the dialog then carries the parts that cannot be shown: the
+   * three-step flow, and the two rules nobody would guess (being taught
+   * something does not tick it off; asking for it simpler is the most useful
+   * thing here).
+   *
+   * They share this component and this key deliberately. Two separately
+   * dismissed first-run screens is two modals in a row, and a visitor who
+   * dismissed one of them would meet the other again on their next visit.
+   */
+  const [showedPrelude, setShowedPrelude] = useState(false);
 
   // Nothing renders until storage has been read, so it cannot flash on a return visit.
   if (!hydrated || seen) return null;
+
+  if (!showedPrelude) {
+    return <Prelude graph={GRAPH} onDone={() => setShowedPrelude(true)} />;
+  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && writePersisted(KEY, 'seen')}>

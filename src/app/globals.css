@@ -289,6 +289,19 @@
 }
 
 /*
+ * The one breakpoint that is a product decision rather than a device size.
+ *
+ * Below it the panel is a sheet over the map; above it the two sit side by
+ * side. It is named because it has to agree with `SHEET_QUERY` in
+ * `use-media.ts` — the layout is chosen in JavaScript and drawn in CSS, and
+ * when those two numbers drifted apart the panel rendered on top of the map
+ * rather than beside it. One name, one value, both sides.
+ */
+@theme {
+    --breakpoint-panel: 1100px;
+}
+
+/*
  * The motion system: one set of durations, one curve, used everywhere.
  *
  * Nothing overshoots and nothing bounces. This interface tells someone what
@@ -831,4 +844,21 @@
     .lab-pool {
         transition: none;
     }
+}
+
+/*
+ * The overture's vignette — /intro only.
+ *
+ * The map is drawn much larger than the stage for most of the sequence, so
+ * without this it is a diagram cropped by the window edge. Falling away at the
+ * borders is what makes the same drawing read as a window onto somewhere
+ * larger, which is the claim the camera is making the whole way through.
+ */
+.overture-vignette {
+    background:
+        radial-gradient(ellipse 78% 62% at 50% 42%, transparent 35%, var(--surface-0) 100%),
+        /* The bottom third is where the words are. Deep enough that a caption
+           never has to compete with a node behind it, shallow enough that the
+           drawing still runs off the bottom of the frame rather than stopping. */
+        linear-gradient(to top, var(--surface-0) 16%, transparent 46%);
 }

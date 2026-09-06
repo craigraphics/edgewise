@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 233 tests: pure logic, plus the token contrast assertions
+pnpm test             # 291 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -526,7 +526,8 @@ The tablet number was the bad one: the panel where every interaction happens sat
 2. **What you look at while listening does not move.** The progress line and the
    current concept sit outside their scroll containers on purpose.
 3. **Panel first in the DOM.** When the two stack on a tablet, you land on the
-   part you act in.
+   part you act in. *(The stacking threshold is now 1100, not 1280 — see "The
+   breakpoint was measured on the wrong machine".)*
 4. **The map scales to its pane down to a 760px floor, then scrolls.** Fixed
    size clipped the right-hand column mid-node and read as a broken drawing;
    unlimited scaling drops the 10.5px labels below legibility on a tablet.
@@ -864,6 +865,293 @@ modes are `useState` on a client component. Every switch would need wrapping in
 `startTransition`, and the `::view-transition` overlay would sit over the voice
 halo and the map's pointer handling for the duration. `AnimatePresence` gets the
 same crossfade without either.
+
+### The second review — hierarchy while answering
+
+The first review was about the map. This one was about the flow, and it found
+three things that were defects against rules this file already states.
+
+#### "0 of 23 solid" was a score
+
+It sat in the header from the first frame, beside a circular indicator, before
+anybody had answered anything. **This file's own risk list says "Never a score,
+never a count."** The first thing a learner met was a tally of what they did not
+have.
+
+A count is fair once it describes something they have actually done. Before
+then the header says **Finding a place to begin**. The same sentence had leaked
+into the pre-answer lead card too — *"which is why so much of the rest probably
+feels slippery"*, shown to somebody who had answered nothing — and is now
+structural only: *"22 of the later ideas build on this one."*
+
+#### The question could scroll out of view
+
+*"What you look at while listening does not move"* held for the progress line
+and the current concept, and not for the one thing the learner was being asked.
+Everything lived in one scroll container which auto-scrolled to its end, so a
+long turn put the top of the question above the fold and somebody had to scroll
+up to find out what they were answering.
+
+The live turn is now pinned outside the scroll container and only the history
+moves. The composer also stops being bottom-anchored while there is no history:
+question and answer field were six hundred pixels apart on the first turn, which
+is the two things somebody needs at once at opposite ends of the panel.
+
+#### One "I don't know" ended the session, and then interpreted their life
+
+Deterministic, and correct as far as the traversal goes: a single "I don't know"
+on the root leaves the root not-known, `nextToAsk` will not descend past a node
+in that state, and nothing else is askable. The problem was everything around
+it. The ending did not say why it had stopped, so it read as the product
+breaking its own promise of "a few questions" — and the closing then told the
+learner *"which is why so much of the rest has probably felt slippery"* on the
+strength of one answer.
+
+`src/lib/session/closing.ts` now splits the sentence in two. The structural half
+— *"eleven of the later ideas rest on this one"* — is always said, because it is
+true the moment the frontier is known and it is the thing a chat assistant
+structurally cannot tell anybody. The interpretive half is held back until at
+least three answers are behind it, and the one-answer case says plainly why it
+was enough: *"That one answer is enough, because everything else on the map
+rests on it."* Tested, including that the interpretation never appears without
+the structure that grounds it.
+
+#### The breakpoint was measured on the wrong machine
+
+`SHEET_QUERY` was `max-width: 1279px`. A 14-inch laptop reports about **1230**
+CSS pixels of viewport, so the two-column layout never appeared on the most
+common screen this will ever be used on: everybody got the sheet, and a sheet at
+full desktop width reads as a phone pattern stretched — which is exactly how it
+was described in review, and I had put that finding down to the reviewer's
+window until measuring `innerWidth` on a maximised one.
+
+It is 1100 now, the panel went from 22rem to 28rem, and the number is named
+once: `--breakpoint-panel` in `globals.css`, matched by `SHEET_QUERY`. **Moving
+one without the other renders the panel on top of the map**, which is what
+happened in between — the layout is chosen in JavaScript and drawn in CSS, and
+nothing had been holding those two numbers together.
+
+#### Two colour systems, one signal
+
+Four state glyphs, six topic-family hues and a blue focus ring were competing on
+twenty-three small cards, and only one of those vocabularies is about the
+learner. The band accents dropped from 1 / 0.75 / 0.55 / 0.3 to 0.72 / 0.5 /
+0.36 / 0.2 and the `known` tint from 0.14 to 0.10. **State is the signal; the
+band is grouping**, quiet enough to be noticed on purpose and not before, with
+the `6 parts` control there for anybody who wants it.
+
+Edges went the other way — `/38` and `/12` to `/50` and `/22`. At the old values
+the dependency structure was nearly invisible in dark mode and the map read as a
+wireframe of floating cards, which loses the only thing the drawing is for.
+
+#### Three states, not one layout showing everything
+
+While somebody is answering, the mode switch and the legend recede to 45% and
+come back on hover or focus. Nothing is removed: a control that vanishes is one
+they then have to hunt for, and offering "Teach me everything" at full strength
+beside a half-answered question is an invitation to abandon it.
+
+### What an outside design review changed
+
+A second model reviewed `/`, `/intro` and `/lab` without repo access. Three of
+its findings held, and two of those were things nobody working on this had seen.
+
+#### Dimming was an accessibility failure, not a style
+
+Focus used to drop everything outside the cone to 22% opacity. Measured against
+the real tokens that is **1.62:1** in light and 1.84:1 in dark — under the 3:1
+floor for a non-text graphic, on labels placed at 17.66:1 and then multiplied by
+0.22 at runtime.
+
+The part worth keeping is that **no opacity fixes it**. At 0.65 — barely dimmed
+at all — the muted foreground that every `unexplored` node uses, which is most
+of an unmarked map, is still at 2.79:1. Recede and legible are not both
+available on one dial, so the fix had to be structural: nothing recedes, the
+focused path is *raised* instead — a ring on its nodes, brighter and heavier
+edges, and only edges allowed to soften, because an edge carries no text.
+
+There is a second reason that would matter even if the numbers had passed. This
+is a map of what somebody does not know yet. Making the parts they have not
+reached disappear says excluded rather than ahead, and removes the comparison
+the view exists to support.
+
+`src/lib/map/focus.ts` holds the treatment and `focus.test.ts` holds the rule:
+**focus must never lower a label's contrast**. Reintroducing a dim fails there.
+
+**Why the existing contrast tests missed it.** `globals.test.ts` measures the
+design — every label against the card it sits on. The defect was in the runtime,
+where the whole group got an opacity the tokens never saw. Third time this
+project has shipped something because the measurement was aimed at the wrong
+quantity.
+
+#### `/intro` was delivering a verdict to someone who had not spoken
+
+It said "One of them is where you stop", spotlit a real node, and closed with
+"which is why so much of the rest has felt slippery" — to a first-time visitor.
+On a product whose own risk assessment puts *being diagnosed feeling like being
+graded* ahead of model quality, that converts the whole thing from help into an
+assessment before the offer has been made.
+
+The reasoning that the marks were only an illustration existed in a comment in
+`overture.ts` and never reached the screen. That is the failure, restated: the
+honesty was in the source and the claim was in the interface.
+
+Now the dive is captioned "An example / Somebody stops here", a persistent
+**ILLUSTRATIVE MAP** badge is up for the whole time a node is singled out, and
+the sequence closes on the product's own sentence — *"You cannot ask a good
+question about something you do not understand yet"* — followed by the offer
+rather than by a finding.
+
+`overture.test.ts` asserts both halves: every caption said over a spotlit node
+is marked illustrative, and **no caption anywhere matches a list of phrases that
+presume the viewer's state**. The old copy fails that test.
+
+#### What was refuted
+
+Two findings did not survive contact with the source, both because the reviewer
+could not read it:
+
+- *"Abandon the 640vh scroll as the primary entry."* `/intro` is not the entry
+  and nothing links to it. The recommendation inside it — a short first-run
+  version — was good and was built, but as an addition.
+- *"The CTA returns after a long, mostly faded sequence."* Measured, the longest
+  caption-free stretch anywhere is 0.053 of the scroll and it is in act two.
+
+Also disputed and kept: **"Start here — 22 ideas rest on this" is not a
+verdict.** It names the graph, never the person, and it is true in both states —
+with no marks the lead node is the root, so it says "start at the beginning".
+The proposed replacement traded a true specific sentence for a vague one.
+
+### The prelude — the first ten seconds
+
+`src/components/overture/prelude.tsx`. The same map assembling in the same
+prerequisite order, three sentences, about twenty-two seconds, skippable from
+the first frame — then the welcome dialog, which carries the parts that cannot
+be shown: the three-step flow and the two rules nobody would guess.
+
+One gate and one storage key for both. Two separately dismissed first-run
+screens is two modals in a row, and dismissing one would bring the other back on
+the next visit.
+
+**It stops before the dive.** Singling out a node is the part that has to be
+earned by answers, so the thing shown in somebody's first ten seconds makes the
+structural argument and then offers.
+
+It shares the timeline rather than copying it: `/intro` scrubs `t` from the
+scroll, the prelude runs the identical functions on a clock. One description of
+how the map assembles, two readings of it, no drift.
+
+Two things found by running it:
+
+- **The first painted frame was uncomposed.** The camera was seeded on the next
+  animation tick, so the opening shot appeared for one frame as a small box in
+  the corner. `overture.test.ts` already asserted the opening frame is composed;
+  that was true of the timeline and not of the pixels. It is now set in the same
+  layout pass that measures the stage.
+- **A background tab would skip the whole thing.** Timing from a fixed start
+  timestamp means the first frame after somebody switches to the tab carries the
+  entire wall-clock gap, so the sequence completes instantly and they meet the
+  dialog having been shown nothing. Time is accumulated from clamped frame
+  deltas instead, so a paused tab pauses the sequence.
+
+### The lab, after review — five effects, each with a trigger
+
+Down from eight. Magnetism and aurora went because neither helped anyone read
+the graph and both worked against the composure the interface is built for;
+press went because "harmless" is not a reason to keep something.
+
+Each surviving effect now carries two fields, and they are the point:
+
+- **`claim`** — what the movement asserts. An effect that cannot finish "this
+  moves because…" is decoration on a diagram people make decisions from.
+- **`trigger`** — the only thing allowed to fire it in the product.
+
+The trigger field exists because of the sharpest thing in the review: **the
+unlock wave is honest exactly when a learner's own explanation moved a node, and
+dishonest the moment it fires because they were taught something.** That is a
+wiring decision somebody will make in a hurry later, so it is now structural
+rather than documented — `src/lib/map/unlock.ts` takes the model before and
+after and works out whether anything actually became `known`. Wiring the wave to
+"the walkthrough covered a node" produces no wave, because covering changes no
+state, and there is a test that walks the entire twenty-three-step teaching
+order asserting exactly that.
+
+### The overture — `/intro`, the argument as a sequence
+
+The product's premise has only ever been *stated*: a first-run dialog says
+twenty-three ideas each rest on the ones before them, and asks someone to
+believe it before they have seen anything. But the graph is not a claim needing
+assertion — it is a shape, and a shape can be shown. `/intro` builds the map in
+front of you in prerequisite order, then flies to the one idea a gap sits under
+and shows what is stacked on top of it.
+
+Five acts, scroll-scrubbed:
+
+| | |
+|---|---|
+| **one** | One node, alone, most of the screen. *"It starts with one idea."* |
+| **chain** | Every layer arriving in prerequisite order, the edge drawn before the box lands on it, camera pulling back the whole way |
+| **terrain** | The whole map, held still, bands named down the left edge |
+| **block** | A dive to the lead node, everything else receding — then back out onto its cone |
+| **turn** | *"10 later ideas rest on it"*, and the way in |
+
+#### It is one function of one number
+
+`src/lib/map/overture.ts` takes `t`, the scroll progress, and returns the
+camera, every node's and edge's reveal state, and which sentence is being said.
+That is not tidiness, it is what makes the thing trustworthy:
+
+- **No second clock**, so it cannot drift out of sync with itself, and scrubbing
+  backwards runs the sequence in reverse as faithfully as forwards.
+- **Nobody is held hostage** — no autoplay, no hijacked scroll. Stopping halfway
+  leaves a composed frame rather than a half-finished animation.
+- **It is testable without a browser**, which is the only reason a five-act
+  cinematic can be trusted not to lose a node in the middle of act two.
+
+The tests are about the argument, not the arithmetic: layers reveal in strictly
+increasing order; an edge is always drawn before the node it points at; every
+node has arrived before the wide shot claims to show the whole subject; the
+frame you land on is already composed; no two captions are at full strength at
+once; and — the one that has caught the most — **the camera never jumps**, which
+is checked by walking the whole scroll in thousandths and asserting the frame
+never moves more than a fiftieth of what is on screen.
+
+#### Nothing here decides anything
+
+The layout, the states, the lead node and the count all come from the same code
+the real map uses. `overtureModel` sets the marks the story is told against and
+`leadNode`/`downstreamOf` do the rest, so the closing line's number is computed
+rather than written down. A page that hard-codes "10" ends up claiming something
+the graph stopped saying three edits ago.
+
+Those marks are chosen, and the reason is tone: **an empty map's lead is the
+root**, so telling the story against a blank learner would open the fourth act
+by informing a first-time visitor that they know nothing, in forty-point type.
+It is told instead about someone who has the foundations and one gap under them
+— the classic one, where "a neuron is like a brain cell" has been standing in
+for a mechanism for years. There is a test asserting the dive never lands on the
+root.
+
+#### The bug worth keeping
+
+**`motion` writes its own `transform-origin`.** The camera is one CSS transform
+on one group — content coordinates in, stage coordinates out — and setting
+`transformOrigin` by hand next to `x`/`y`/`scale` is silently overwritten with
+the default `50% 50%`. So the camera scaled about the middle of the *drawing*
+rather than about the content origin, and every shot at any zoom but 1x was a
+few hundred units off to one side.
+
+It never looked broken. It looked like compositions that would not quite
+centre — the kind of thing that gets called a taste problem and tweaked at
+forever. The fix is `originX: 0, originY: 0` (motion's own props) plus
+`transform-box: view-box`. Three carefully-judged framing decisions made before
+finding it turned out to be judgements about a broken camera, and had to be made
+again.
+
+#### Reduced motion
+
+Not a degraded version of the film — the same argument as a page. A still map
+and the five sentences in order, with the same link at the end.
 
 ### The motion lab — `/lab`, a POC and not the product
 

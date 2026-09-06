@@ -1,6 +1,7 @@
 'use client';
 
 import { ModeSwitch, type Mode } from '@/components/shell/mode-switch';
+import { cn } from '@/lib/utils';
 import { ProgressRing } from '@/components/shell/progress-ring';
 import { ToolsMenu } from '@/components/shell/tools-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -28,6 +29,8 @@ type Props = {
   order: readonly ConceptNode[];
   lead: ConceptNode | null;
   marking: boolean;
+  /** Mid-diagnosis: the mode switch stands down so the question has the room. */
+  answering?: boolean;
   onLeaveMarking: () => void;
   tools: { label: string; onSelect: () => void; separated?: boolean }[];
 };
@@ -40,6 +43,7 @@ export function AppHeader({
   order,
   lead,
   marking,
+  answering = false,
   onLeaveMarking,
   tools,
 }: Props) {
@@ -88,7 +92,16 @@ export function AppHeader({
           <ModeSwitch
             value={mode}
             onChange={onModeChange}
-            className="order-last w-full sm:order-none sm:ml-auto sm:w-auto"
+            className={cn(
+              'order-last w-full transition-opacity duration-[--dur-slow] ease-[--ease] sm:order-none sm:ml-auto sm:w-auto',
+              /*
+               * Recedes mid-answer rather than disappearing. Offering "Teach me
+               * everything" at full strength beside a question somebody is
+               * halfway through answering is an invitation to abandon it, and a
+               * control that vanishes is one they then have to hunt for.
+               */
+              answering && 'opacity-45 focus-within:opacity-100 hover:opacity-100',
+            )}
           />
         )}
 
@@ -120,15 +133,36 @@ export function Position({
   lead: ConceptNode | null;
   className?: string;
 }) {
+  /*
+   * "0 of 23 solid" is a score, and this product does not have one.
+   *
+   * It was on screen from the first frame, next to a circular indicator, before
+   * anybody had answered anything — so the first thing a learner met was a
+   * tally of what they did not have. The risk this product has always named as
+   * the most likely thing to kill it is being diagnosed feeling like being
+   * graded, and a running count in the header is the most direct way to produce
+   * that feeling.
+   *
+   * The count is a fair thing to show once it describes something the learner
+   * has actually done. Before then it says what is happening instead.
+   */
+  const placed = solid.size > 0;
+
   return (
     <div className={`min-w-0 items-center gap-2.5 ${className ?? 'flex'}`}>
       <ProgressRing graph={graph} solid={solid} order={order} />
       <p className="text-muted-foreground min-w-0 truncate text-xs">
-        <span className="text-foreground tabular font-medium">
-          {solid.size} of {graph.nodes.length}
-        </span>{' '}
-        solid
-        {lead ? (
+        {placed ? (
+          <>
+            <span className="text-foreground tabular font-medium">
+              {solid.size} of {graph.nodes.length}
+            </span>{' '}
+            solid
+          </>
+        ) : (
+          <span className="text-foreground font-medium">Finding a place to begin</span>
+        )}
+        {lead && placed ? (
           <>
             {' · next: '}
             <span className="text-foreground font-medium">{lead.label}</span>

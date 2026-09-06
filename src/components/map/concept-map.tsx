@@ -30,6 +30,7 @@ import {
   viewBoxFor,
   zoomAt,
 } from '@/lib/map/layout';
+import { FOCAL_SCALE, edgeStyle } from '@/lib/map/focus';
 import { wrapLabel } from '@/lib/map/text';
 import { cn } from '@/lib/utils';
 
@@ -66,16 +67,29 @@ import { cn } from '@/lib/utils';
  * `accent` is the opacity of the band-coloured bar down the leading edge, and
  * `tint` is how much of the band washes into the card. Only `known` gets a
  * tint: a settled idea should look filled in, and nothing else should.
+ *
+ * The accents were louder — 1 / 0.75 / 0.55 / 0.3 — and the map was running two
+ * colour systems at once: four state glyphs, six topic-family hues, plus a blue
+ * focus ring. Three vocabularies competing on twenty-three small cards, when
+ * only one of them is about the learner. **State is the signal; the band is
+ * grouping**, so the band is now quiet enough to be noticed on purpose and not
+ * before. The `6 parts` control is where somebody goes when they want it.
  */
 const STATE_STYLE: Record<NodeState, { accent: number; tint: number; muted: boolean }> = {
-  known: { accent: 1, tint: 0.14, muted: false },
-  shaky: { accent: 0.75, tint: 0, muted: false },
-  blocked: { accent: 0.55, tint: 0, muted: false },
-  unexplored: { accent: 0.3, tint: 0, muted: true },
+  known: { accent: 0.72, tint: 0.1, muted: false },
+  shaky: { accent: 0.5, tint: 0, muted: false },
+  blocked: { accent: 0.36, tint: 0, muted: false },
+  unexplored: { accent: 0.2, tint: 0, muted: true },
 };
 
-/** How far the unrelated part of the map recedes while something is focused. */
-const DIMMED = 0.22;
+/**
+ * Focus is additive; see `src/lib/map/focus.ts`.
+ *
+ * This used to be `DIMMED = 0.22`, applied to every node group outside the
+ * focused cone. Measured against the real tokens that put a label at 1.62:1 in
+ * light and 1.84:1 in dark — a map whose unfocused half was, in the literal
+ * sense, unreadable. Nothing recedes now except edges.
+ */
 
 type Props = {
   graph: ConceptGraph;
@@ -371,7 +385,7 @@ export function ConceptMap({
                  */
                 const satisfied = stateOf(model, edge.from) === 'known';
                 const lit = focus?.edges.has(edge.id) ?? false;
-                const opacity = focus ? (lit ? 1 : DIMMED) : 1;
+                const style = edgeStyle({ focused: Boolean(focus), inCone: lit, satisfied });
 
                 return (
                   <path
@@ -380,10 +394,20 @@ export function ConceptMap({
                     strokeLinecap="round"
                     className={cn(
                       'transition-[opacity,stroke-width] duration-[--dur] ease-[--ease]',
-                      satisfied ? 'stroke-foreground/38' : 'stroke-foreground/12',
+                      /* Lit edges brighten as well as thicken. Raising the path
+                         is the whole mechanism now that nothing is lowered. */
+                      /*
+                       * Raised from /38 and /12. At those values the
+                       * dependency structure was almost invisible in dark mode
+                       * and the map read as a wireframe of floating cards —
+                       * which loses the one thing the drawing is for. An
+                       * unsatisfied edge still has to read as waiting rather
+                       * than as absent.
+                       */
+                      lit ? 'stroke-foreground/75' : satisfied ? 'stroke-foreground/50' : 'stroke-foreground/22',
                     )}
-                    strokeWidth={lit ? 2.2 : satisfied ? 1.6 : 1.1}
-                    opacity={opacity}
+                    strokeWidth={style.width}
+                    opacity={style.opacity}
                   />
                 );
               })}
@@ -401,7 +425,9 @@ export function ConceptMap({
                   isSelected={selectedId === node.id}
                   isHighlighted={highlightedId === node.id && selectedId !== node.id}
                   isCovered={covered?.has(node.id) ?? false}
-                  dimmed={Boolean(focus) && !focus!.nodes.has(node.id)}
+                  focused={Boolean(focus)}
+                  isFocus={focusId === node.id}
+                  inCone={focus?.nodes.has(node.id) ?? false}
                   revealDelay={quiet ? null : node.layer * 30}
                   index={index}
                   onSelect={onSelect}
@@ -467,7 +493,12 @@ type NodeProps = {
   isSelected: boolean;
   isHighlighted: boolean;
   isCovered: boolean;
-  dimmed: boolean;
+  /** Whether anything at all is focused. */
+  focused: boolean;
+  /** Whether this node is the one being asked about. */
+  isFocus: boolean;
+  /** Whether this node is on a path through the focused one. */
+  inCone: boolean;
   revealDelay: number | null;
   index: number;
   onSelect?: (node: ConceptNode) => void;
@@ -485,7 +516,9 @@ function MapNode({
   isSelected,
   isHighlighted,
   isCovered,
-  dimmed,
+  focused,
+  isFocus,
+  inCone,
   revealDelay,
   onSelect,
   onHover,
@@ -536,14 +569,57 @@ function MapNode({
       onFocus={() => onFocus(node.id)}
       onPointerEnter={() => onHover(node.id)}
       onPointerLeave={() => onHover(null)}
-      opacity={dimmed ? DIMMED : 1}
+      /*
+       * No opacity here, deliberately and permanently — see `focus.ts`. A node
+       * outside the focused cone is not less relevant to the person reading the
+       * map; it is the part they have not got to yet, and hiding it removes the
+       * comparison the view exists to support.
+       */
       className={cn(
-        'transition-opacity duration-[--dur] ease-[--ease] outline-none',
+        'transition-transform duration-[--dur] ease-[--ease] outline-none',
         onSelect && 'cursor-pointer',
         revealDelay !== null && 'edgewise-settle',
       )}
       style={revealDelay !== null ? { animationDelay: `${revealDelay}ms` } : undefined}
     >
+    {/*
+     * The focal lift gets its own group.
+     *
+     * The group above carries the reveal animation, which moves a CSS
+     * transform — and a second CSS transform on the same element replaces it
+     * rather than composing with it. That is the bug that collapsed all 23
+     * nodes onto the origin once already, so the split is not tidiness.
+     */}
+    <g
+      className="transition-transform duration-[--dur] ease-[--ease]"
+      style={{
+        transformBox: 'fill-box',
+        transformOrigin: 'center',
+        transform: isFocus ? `scale(${FOCAL_SCALE})` : undefined,
+      }}
+    >
+      {/*
+       * On a path through the focused node.
+       *
+       * A quiet ring in the band colour rather than everything else fading:
+       * the cone is raised, nothing is pushed down. It sits under the selected
+       * and highlighted rings so the three emphases still read in order.
+       */}
+      {focused && inCone && !isFocus ? (
+        <rect
+          x={-2.5}
+          y={-2.5}
+          width={NODE_WIDTH + 5}
+          height={NODE_HEIGHT + 5}
+          rx={NODE_RADIUS + 2}
+          fill="none"
+          stroke={colour}
+          strokeWidth={1.25}
+          strokeOpacity={0.55}
+          aria-hidden
+        />
+      ) : null}
+
       {/*
        * The lead node.
        *
@@ -713,6 +789,7 @@ function MapNode({
           {leadWeight > 0 ? `Start here — ${leadWeight} ideas rest on this` : 'Start here'}
         </text>
       ) : null}
+    </g>
     </g>
     </g>
   );
