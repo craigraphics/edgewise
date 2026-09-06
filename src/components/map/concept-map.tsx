@@ -67,12 +67,19 @@ import { cn } from '@/lib/utils';
  * `accent` is the opacity of the band-coloured bar down the leading edge, and
  * `tint` is how much of the band washes into the card. Only `known` gets a
  * tint: a settled idea should look filled in, and nothing else should.
+ *
+ * The accents were louder — 1 / 0.75 / 0.55 / 0.3 — and the map was running two
+ * colour systems at once: four state glyphs, six topic-family hues, plus a blue
+ * focus ring. Three vocabularies competing on twenty-three small cards, when
+ * only one of them is about the learner. **State is the signal; the band is
+ * grouping**, so the band is now quiet enough to be noticed on purpose and not
+ * before. The `6 parts` control is where somebody goes when they want it.
  */
 const STATE_STYLE: Record<NodeState, { accent: number; tint: number; muted: boolean }> = {
-  known: { accent: 1, tint: 0.14, muted: false },
-  shaky: { accent: 0.75, tint: 0, muted: false },
-  blocked: { accent: 0.55, tint: 0, muted: false },
-  unexplored: { accent: 0.3, tint: 0, muted: true },
+  known: { accent: 0.72, tint: 0.1, muted: false },
+  shaky: { accent: 0.5, tint: 0, muted: false },
+  blocked: { accent: 0.36, tint: 0, muted: false },
+  unexplored: { accent: 0.2, tint: 0, muted: true },
 };
 
 /**
@@ -389,7 +396,15 @@ export function ConceptMap({
                       'transition-[opacity,stroke-width] duration-[--dur] ease-[--ease]',
                       /* Lit edges brighten as well as thicken. Raising the path
                          is the whole mechanism now that nothing is lowered. */
-                      lit ? 'stroke-foreground/70' : satisfied ? 'stroke-foreground/38' : 'stroke-foreground/12',
+                      /*
+                       * Raised from /38 and /12. At those values the
+                       * dependency structure was almost invisible in dark mode
+                       * and the map read as a wireframe of floating cards —
+                       * which loses the one thing the drawing is for. An
+                       * unsatisfied edge still has to read as waiting rather
+                       * than as absent.
+                       */
+                      lit ? 'stroke-foreground/75' : satisfied ? 'stroke-foreground/50' : 'stroke-foreground/22',
                     )}
                     strokeWidth={style.width}
                     opacity={style.opacity}

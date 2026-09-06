@@ -22,6 +22,7 @@ import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
 import { useLearnerModel } from '@/lib/learner/store';
 import { useSessionConfig } from '@/lib/session/config';
+import { cn } from '@/lib/utils';
 import { useSession } from '@/lib/session/use-session';
 import { useWalkthrough } from '@/lib/walkthrough/store';
 
@@ -125,6 +126,23 @@ export default function Page() {
 
   const snap = snapOverride ?? (phone ? 'full' : 'half');
   const presenting = presentingRequested && view === 'mark';
+
+  /*
+   * Three states, not one layout that shows everything at once.
+   *
+   * While somebody is answering, the header's mode switch, the legend and the
+   * band key were all at full strength alongside the question — so the map and
+   * the chrome were negotiating with the thing the learner was meant to be
+   * doing. The order of attention during a diagnosis is: the question, the
+   * reassurance, the answer, and only then the map.
+   *
+   * Nothing is removed, because a control that vanishes is a control somebody
+   * has to hunt for. The legend recedes and comes back on hover or focus; the
+   * mode switch is not offered mid-answer, because switching away is what the
+   * Start over action is for and an idle choice next to a question invites
+   * leaving it.
+   */
+  const answering = view === 'session' && started && session.status !== 'done';
 
   /* Opening a node is an act of reading, so the sheet comes up to meet it —
      done here, where the opening happens, rather than in an effect watching
@@ -267,6 +285,7 @@ export default function Page() {
           order={order}
           lead={lead}
           marking={view === 'mark'}
+          answering={answering}
           onLeaveMarking={() => setView('session')}
           tools={[
             { label: 'Mark by hand (for testing)', onSelect: () => setView('mark') },
@@ -287,7 +306,7 @@ export default function Page() {
 
       <div
         ref={regionRef}
-        className="relative mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 xl:gap-6 xl:px-6"
+        className="relative mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 panel:gap-6 panel:px-6"
       >
         <section
           aria-label="Concept map"
@@ -301,7 +320,7 @@ export default function Page() {
            * the map region could not shrink below the map — and narrowing the
            * window pushed the panel off the right-hand edge and cut it in half.
            */
-          className="absolute inset-0 flex min-h-0 min-w-0 flex-col px-4 pt-3 sm:px-6 xl:relative xl:inset-auto xl:flex-1 xl:px-0"
+          className="absolute inset-0 flex min-h-0 min-w-0 flex-col px-4 pt-3 sm:px-6 panel:relative panel:inset-auto panel:flex-1 panel:px-0"
         >
           {/*
            * The legend, above the map rather than below it.
@@ -312,7 +331,17 @@ export default function Page() {
            * explained the marks. It also explained the six bands and not the
            * four states, which are what the product is actually about.
            */}
-          {presenting ? null : <MapLegend graph={GRAPH} className="shrink-0 pb-2" />}
+          {presenting ? null : (
+            <MapLegend
+              graph={GRAPH}
+              className={cn(
+                'shrink-0 pb-2 transition-opacity duration-[--dur-slow] ease-[--ease]',
+                /* Quiet while answering, full strength the moment somebody
+                   looks at it. Recedes; never disappears. */
+                answering && 'opacity-45 focus-within:opacity-100 hover:opacity-100',
+              )}
+            />
+          )}
 
           <div className={hydrated ? 'contents' : 'contents opacity-0'}>
             <ConceptMap
@@ -361,8 +390,12 @@ export default function Page() {
         ) : (
           /* `relative` so the voice halo, raised from inside the conversation,
              lights this panel's edges — including the divider it shares with
-             the map — rather than the content box it is declared in. */
-          <aside className="border-border relative flex min-h-0 w-[22rem] min-w-0 shrink-0 flex-col border-l py-4 pl-6 2xl:w-[26rem]">
+             the map — rather than the content box it is declared in.
+
+             Widened from 22rem: the conversation is the thing being done and
+             the map is context for it, so the panel gets the room a paragraph
+             of the tutor's voice actually needs. */
+          <aside className="border-border relative flex min-h-0 w-[28rem] min-w-0 shrink-0 flex-col border-l py-4 pl-6 2xl:w-[32rem]">
             <PanelBody view={view} selectedId={selectedId}>
               {panel}
             </PanelBody>

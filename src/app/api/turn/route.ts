@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { decide, ModelUnavailableError } from '@/lib/agent/decide';
 import { SETTLES, type Decision, type SettledState } from '@/lib/agent/schema';
 import { settle } from '@/lib/agent/verdict';
-import { downstreamOf, leadNode, nextToAsk, withMark } from '@/lib/graph/frontier';
+import { leadNode, nextToAsk, withMark } from '@/lib/graph/frontier';
+import { closingFor, nothingToAsk } from '@/lib/session/closing';
 import { GRAPH } from '@/lib/graph/load';
 import { nodeState, type LearnerModel, type NodeState } from '@/lib/graph/types';
 import { isWhitelisted, MODELS } from '@/lib/models';
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     const opening = nextToAsk(GRAPH, learner);
     if (!opening) {
       const lead = leadNode(GRAPH, learner);
-      return NextResponse.json({ done: true, say: nothingToAsk(learner), nodeId: lead?.id ?? null });
+      return NextResponse.json({ done: true, say: nothingToAsk(GRAPH, learner), nodeId: lead?.id ?? null });
     }
 
     return NextResponse.json({
@@ -196,7 +197,7 @@ export async function POST(request: Request) {
       // the single most important sentence in the product, and leaving it to
       // the cheapest model on the list produced vague endings like "we have
       // reached the limit of where we need to be for this part".
-      closing: upcoming === null ? closingFor(nextLearner) : null,
+      closing: upcoming === null ? closingFor(GRAPH, nextLearner) : null,
       // `unclear` is internal bookkeeping; the client stores marks, not verdicts.
       mark: settledState ? { nodeId: current.id, state: settledState } : null,
       misconception,
@@ -218,49 +219,6 @@ export async function POST(request: Request) {
 
 const OPENING =
   "Let's work out where your understanding of this currently sits — there are no right answers here, and \"I don't know\" is genuinely useful. Starting somewhere near the bottom:";
-
-const NOTHING_LEFT = "There's nothing left for me to ask about — you've got the whole map.";
-
-/**
- * Opening a session with nothing left to ask.
- *
- * Separate copy from the closing, and separate for two reasons. Nothing has
- * been asked yet, so "that gives me what I needed" would be a lie. And the
- * condition is much weaker than it sounds: `nextToAsk` considers only
- * `unexplored` nodes, so this fires as soon as every node the frontier has
- * opened carries any mark at all — which is emphatically not the same as
- * knowing the whole map. Saying "you've got the whole map" to someone holding
- * three of twenty-three read as the app being broken, and fairly.
- */
-function nothingToAsk(learner: LearnerModel): string {
-  const lead = leadNode(GRAPH, learner);
-  if (!lead) return NOTHING_LEFT;
-
-  const resting = downstreamOf(GRAPH, lead.id).length;
-  const rests = resting > 0 ? ` — ${resting} of the later ideas rest on it` : '';
-
-  return `Everything I would have asked about already has a mark on the map, so there is nothing new to place. ${lead.label} is still the place to start from${rests}. It is highlighted for you.`;
-}
-
-/**
- * What the map now says, in one sentence.
- *
- * Names the frontier and what rests on it, because "you do not have this yet"
- * is uninteresting and "nine later ideas are waiting on it" is the thing a chat
- * assistant structurally cannot tell you. Framed as a starting point, never as
- * a gap — the wording here is load-bearing for whether the whole exercise reads
- * as useful or as a report card.
- */
-function closingFor(learner: LearnerModel): string {
-  const lead = leadNode(GRAPH, learner);
-  if (!lead) return NOTHING_LEFT;
-
-  const resting = downstreamOf(GRAPH, lead.id).length;
-
-  return resting > 0
-    ? `That gives me what I needed. Looking at the map: ${lead.label} is the place to start from — ${resting} of the later ideas rest on it, which is why so much of the rest has probably felt slippery. It is highlighted for you.`
-    : `That gives me what I needed. Looking at the map: ${lead.label} is the place to start from. It is highlighted for you.`;
-}
 
 /** Narrows a verdict to the three that actually settle a node. */
 function isSettling(verdict: Decision['verdict']): verdict is SettledState {

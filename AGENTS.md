@@ -88,7 +88,7 @@ knows the subject and will read the map as legible when a learner would not.
 ```bash
 pnpm dev              # localhost:3000
 pnpm validate-graph   # DAG invariants — run after ANY edit to content/graph.json
-pnpm test             # 283 tests: pure logic, plus the token contrast assertions
+pnpm test             # 291 tests: pure logic, plus the token contrast assertions
 pnpm lint             # clean — keep it that way
 pnpm calibrate        # THE assessor canary — see below. Costs ~$0.008/run.
 pnpm typecheck
@@ -526,7 +526,8 @@ The tablet number was the bad one: the panel where every interaction happens sat
 2. **What you look at while listening does not move.** The progress line and the
    current concept sit outside their scroll containers on purpose.
 3. **Panel first in the DOM.** When the two stack on a tablet, you land on the
-   part you act in.
+   part you act in. *(The stacking threshold is now 1100, not 1280 — see "The
+   breakpoint was measured on the wrong machine".)*
 4. **The map scales to its pane down to a 760px floor, then scrolls.** Fixed
    size clipped the right-hand column mid-node and read as a broken drawing;
    unlimited scaling drops the 10.5px labels below legibility on a tablet.
@@ -864,6 +865,91 @@ modes are `useState` on a client component. Every switch would need wrapping in
 `startTransition`, and the `::view-transition` overlay would sit over the voice
 halo and the map's pointer handling for the duration. `AnimatePresence` gets the
 same crossfade without either.
+
+### The second review — hierarchy while answering
+
+The first review was about the map. This one was about the flow, and it found
+three things that were defects against rules this file already states.
+
+#### "0 of 23 solid" was a score
+
+It sat in the header from the first frame, beside a circular indicator, before
+anybody had answered anything. **This file's own risk list says "Never a score,
+never a count."** The first thing a learner met was a tally of what they did not
+have.
+
+A count is fair once it describes something they have actually done. Before
+then the header says **Finding a place to begin**. The same sentence had leaked
+into the pre-answer lead card too — *"which is why so much of the rest probably
+feels slippery"*, shown to somebody who had answered nothing — and is now
+structural only: *"22 of the later ideas build on this one."*
+
+#### The question could scroll out of view
+
+*"What you look at while listening does not move"* held for the progress line
+and the current concept, and not for the one thing the learner was being asked.
+Everything lived in one scroll container which auto-scrolled to its end, so a
+long turn put the top of the question above the fold and somebody had to scroll
+up to find out what they were answering.
+
+The live turn is now pinned outside the scroll container and only the history
+moves. The composer also stops being bottom-anchored while there is no history:
+question and answer field were six hundred pixels apart on the first turn, which
+is the two things somebody needs at once at opposite ends of the panel.
+
+#### One "I don't know" ended the session, and then interpreted their life
+
+Deterministic, and correct as far as the traversal goes: a single "I don't know"
+on the root leaves the root not-known, `nextToAsk` will not descend past a node
+in that state, and nothing else is askable. The problem was everything around
+it. The ending did not say why it had stopped, so it read as the product
+breaking its own promise of "a few questions" — and the closing then told the
+learner *"which is why so much of the rest has probably felt slippery"* on the
+strength of one answer.
+
+`src/lib/session/closing.ts` now splits the sentence in two. The structural half
+— *"eleven of the later ideas rest on this one"* — is always said, because it is
+true the moment the frontier is known and it is the thing a chat assistant
+structurally cannot tell anybody. The interpretive half is held back until at
+least three answers are behind it, and the one-answer case says plainly why it
+was enough: *"That one answer is enough, because everything else on the map
+rests on it."* Tested, including that the interpretation never appears without
+the structure that grounds it.
+
+#### The breakpoint was measured on the wrong machine
+
+`SHEET_QUERY` was `max-width: 1279px`. A 14-inch laptop reports about **1230**
+CSS pixels of viewport, so the two-column layout never appeared on the most
+common screen this will ever be used on: everybody got the sheet, and a sheet at
+full desktop width reads as a phone pattern stretched — which is exactly how it
+was described in review, and I had put that finding down to the reviewer's
+window until measuring `innerWidth` on a maximised one.
+
+It is 1100 now, the panel went from 22rem to 28rem, and the number is named
+once: `--breakpoint-panel` in `globals.css`, matched by `SHEET_QUERY`. **Moving
+one without the other renders the panel on top of the map**, which is what
+happened in between — the layout is chosen in JavaScript and drawn in CSS, and
+nothing had been holding those two numbers together.
+
+#### Two colour systems, one signal
+
+Four state glyphs, six topic-family hues and a blue focus ring were competing on
+twenty-three small cards, and only one of those vocabularies is about the
+learner. The band accents dropped from 1 / 0.75 / 0.55 / 0.3 to 0.72 / 0.5 /
+0.36 / 0.2 and the `known` tint from 0.14 to 0.10. **State is the signal; the
+band is grouping**, quiet enough to be noticed on purpose and not before, with
+the `6 parts` control there for anybody who wants it.
+
+Edges went the other way — `/38` and `/12` to `/50` and `/22`. At the old values
+the dependency structure was nearly invisible in dark mode and the map read as a
+wireframe of floating cards, which loses the only thing the drawing is for.
+
+#### Three states, not one layout showing everything
+
+While somebody is answering, the mode switch and the legend recede to 45% and
+come back on hover or focus. Nothing is removed: a control that vanishes is one
+they then have to hunt for, and offering "Teach me everything" at full strength
+beside a half-answered question is an invitation to abandon it.
 
 ### What an outside design review changed
 

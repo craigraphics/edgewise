@@ -289,6 +289,19 @@
 }
 
 /*
+ * The one breakpoint that is a product decision rather than a device size.
+ *
+ * Below it the panel is a sheet over the map; above it the two sit side by
+ * side. It is named because it has to agree with `SHEET_QUERY` in
+ * `use-media.ts` — the layout is chosen in JavaScript and drawn in CSS, and
+ * when those two numbers drifted apart the panel rendered on top of the map
+ * rather than beside it. One name, one value, both sides.
+ */
+@theme {
+    --breakpoint-panel: 1100px;
+}
+
+/*
  * The motion system: one set of durations, one curve, used everywhere.
  *
  * Nothing overshoots and nothing bounces. This interface tells someone what
