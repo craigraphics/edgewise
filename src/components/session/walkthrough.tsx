@@ -211,7 +211,9 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         ) : null}
       </div>
 
-      <div ref={scroller} className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+      {/* Keep a usable reading area when the fixed controls exceed a short
+          viewport. The outer guide then scrolls the controls into view too. */}
+      <div ref={scroller} className="min-h-32 flex-1 space-y-4 overflow-y-auto pr-1">
         {step.body.map((paragraph) => (
           <p key={paragraph} className="font-display text-read max-w-[60ch]">
             {paragraph}

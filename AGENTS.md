@@ -1524,3 +1524,25 @@ an unfinished explanation. Explanation requests abort on unmount and time out
 at 45 seconds; a delayed result after reset cannot recreate old marks. The toy
 model names its limitations, including that adjusting weights here is manual
 and nothing is training. See `docs/playable-map.md` for verification and limits.
+
+### Side-panel scroll correction and experiment handoffs — 2026-09-11
+
+The owner found that lower side-panel content was unreachable. The inspector
+and idle conversation both nested a scrolling child inside the scrolling guide;
+the outer panel and its padding had no scroll range. Static content now has its
+natural height and the guide is its single scroll owner. The guide keeps a stable
+scrollbar gutter. The walkthrough deliberately retains a separate reading area,
+but it now has a 128px minimum: at 720×450 it previously collapsed to 0px beneath
+the fixed controls. The outer guide can scroll to those controls when necessary.
+
+Earlier checks emphasized horizontal overflow. The regression check must also
+reach the final control/last response after expansion and resizing. Browser
+checks now verify actual wheel scrolling and End-key reachability, including an
+open explanation at 320×568, 390×600, 720×450, 1100×600, and 1440×720. A long
+mocked explanation response remains reachable, with learner marks unchanged.
+323 tests, lint, typecheck, and the production Webpack build pass.
+
+The owner requested prompts only for the next experiments. Ten standalone
+handoffs are in `docs/experiment-prompts/`; `docs/experiment-handoffs.md` contains
+the complete pack. They cover the other ten concepts in graph layers 0–3, with
+tokenization first. No tokenizer or other new experiment was implemented here.

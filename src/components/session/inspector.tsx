@@ -81,7 +81,9 @@ export function Inspector({
   const state = stateOf(model, node.id);
 
   return (
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+    // The guide owns scrolling, including its padding. A second scroller here
+    // strands the lower controls when the pointer is outside this inner box.
+    <div className="shrink-0 space-y-4 pr-1">
       <div>
         <div className="flex items-start justify-between gap-2">
           {/*

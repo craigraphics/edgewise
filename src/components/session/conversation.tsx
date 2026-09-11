@@ -129,8 +129,8 @@ export function Conversation({
 
   if (status === 'idle') {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="shrink-0">
+        <div>
           <p className="eyebrow">Find your starting point</p>
           <h2 className="font-display mt-5 text-[clamp(2rem,3.1vw,3rem)] leading-[1.08] tracking-tight">
             {firstTime ? <>Read the explainers.<br /><em>Still not clicking?</em></> : <>Your map,<br /><em>ready to revisit.</em></>}
