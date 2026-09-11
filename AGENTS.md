@@ -1502,3 +1502,25 @@ explains its automatic microphone handoff before opt-in.
 These changes are a proposal, not evidence of improved conversion. The real
 learner validation gate remains open. Browser accessibility-tree and keyboard
 checks do not replace a VoiceOver/NVDA session or physical-phone voice testing.
+
+### Playable map proposal — 2026-09-11
+
+On `proposal/playable-map`, after `proposal/recognition-first`. The owner asked
+for the proposed focused neighbourhood and playable neuron to be implemented.
+The first map view now shows one concept and its immediate prerequisite and
+dependant links; Full map and List remain available. This changes the default
+presentation, not the graph or what any mark claims.
+
+The neuron experiment uses two fixed inputs, two adjustable weights, a fixed
+bias, and ReLU. Predict → run → inspect the arithmetic → optionally explain it
+back. It is deliberately a choice alongside the diagnostic, not a prerequisite
+for it. The experiment has no learner-model access. Only the existing assessor
+and upgrade path can earn a mark; hand marking remains explicit facilitator work.
+This follows the recorded objection to dishonest unlock waves: downstream
+concepts keep their actual states. No points, locked levels, or fabricated mastery.
+
+Weights/results survive view changes, and returning from the experiment keeps
+an unfinished explanation. Explanation requests abort on unmount and time out
+at 45 seconds; a delayed result after reset cannot recreate old marks. The toy
+model names its limitations, including that adjusting weights here is manual
+and nothing is training. See `docs/playable-map.md` for verification and limits.

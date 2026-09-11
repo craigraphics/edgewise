@@ -42,6 +42,8 @@ type Props = {
   onMark: (nodeId: string, state: NodeState) => void;
   onClose: () => void;
   onSelect?: (id: string) => void;
+  onPlay?: () => void;
+  explainRequest?: number;
 };
 
 /**
@@ -73,7 +75,7 @@ export function Inspector({
   config,
   onEarned,
   onMark,
-  onClose, onSelect,
+  onClose, onSelect, onPlay, explainRequest = 0,
 }: Props) {
   const blocked = downstreamOf(graph, node.id);
   const state = stateOf(model, node.id);
@@ -109,6 +111,8 @@ export function Inspector({
         <h2 id="concept-title" tabIndex={-1} className="font-display mt-3 text-2xl font-semibold outline-none">{node.label}</h2>
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
+
+      {!marking && !presenting && node.id === 'neuron' && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>Try the neuron experiment</Button>}
 
       {!presenting && <div className="starting-point">
         <p className="eyebrow">What connects here</p>
@@ -199,7 +203,7 @@ export function Inspector({
        * someone else's flow rather than something they chose.
        */}
       {!marking && !presenting && (reveal || covered) ? (
-        <ExplainBack node={node} state={state} config={config} onEarned={onEarned} />
+        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 ? 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.' : undefined} node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
 

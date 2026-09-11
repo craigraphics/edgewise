@@ -1,3 +1,7 @@
+> **Playable proposal, 2026-09-11:** Continue on `proposal/playable-map`.
+> Read `docs/playable-map.md` for the focused map, neuron experiment, and checks.
+> The recognition-first proposal below is included in this branch.
+
 > **Current proposal, 2026-09-11:** On `proposal/recognition-first`, read
 > `docs/recognition-first-review.md` and the final section of `AGENTS.md` first.
 > They supersede the entry gate, mobile sheet, and progress ring decisions below.

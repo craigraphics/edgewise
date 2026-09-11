@@ -26,6 +26,7 @@ type Props = {
   onConfigure: () => void;
   onExplore: () => void;
   onWalk: () => void;
+  onPlay: () => void;
   draft: string;
   onDraftChange: (value: string) => void;
   /** The node the map is pointing at, and what rests on it. */
@@ -52,7 +53,7 @@ export function Conversation({
   firstTime,
   onStart,
   onAnswer,
-  onReset, onRetry, onConfigure, onExplore, onWalk, draft, onDraftChange,
+  onReset, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
   lead,
 }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -141,6 +142,7 @@ export function Conversation({
             {firstTime ? 'Find my starting point' : lead ? 'Continue from my map' : 'Revisit the walkthrough'} <ArrowRightIcon />
           </Button>
           <p className="text-muted-foreground mt-3 text-sm">Speak or type. No maths or code. “I don’t know” is a useful place to start.</p>
+          <button onClick={onPlay} className="mt-4 min-h-11 w-full text-left text-sm underline underline-offset-4">Or take a neuron apart →</button>
           {!firstTime && lead && <button onClick={onExplore} className="starting-point mt-6 w-full text-left">
             <span className="eyebrow">A place to explore</span>
             <span className="font-display mt-2 block text-xl">{lead.node.label}</span>

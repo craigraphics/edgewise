@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConceptMap } from '@/components/map/concept-map';
+import { useNeuronExperiment } from '@/components/experiments/neuron-experiment';
+import { FocusedMap } from '@/components/map/focused-map';
 import { ConceptList } from '@/components/map/concept-list';
 import { MapLegend } from '@/components/map/legend';
 import { AppHeader } from '@/components/shell/header';
@@ -32,25 +34,33 @@ export default function Page() {
   const compact = useMedia(SHEET_QUERY);
   const [view, setView] = useState<View>('session');
   const [surface, setSurface] = useState<'map' | 'guide'>('guide');
-  const [mapFormat, setMapFormat] = useState<'diagram' | 'list' | null>(null);
+  const [mapFormat, setMapFormat] = useState<'focus' | 'diagram' | 'list' | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [walkNodeId, setWalkNodeId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [draft, setDraft] = useState('');
+  const experiment = useNeuronExperiment();
+  const [practice, setPractice] = useState(false);
+  const [explainRequest, setExplainRequest] = useState(0);
   const panelRef = useRef<HTMLElement>(null);
   const returnFocus = useRef<Element | null>(null);
   const covered = useMemo(() => coveredBy(GRAPH, walk.position), [walk.position]);
   const lead = leadNode(GRAPH, model);
   const selected = GRAPH.nodes.find(node => node.id === selectedId) ?? null;
   const started = Object.values(model.states).some(state => state !== 'unexplored') || walk.position > 0;
-  const format = mapFormat ?? (compact ? 'list' : 'diagram');
+  const format = mapFormat ?? (view === 'mark' ? (compact ? 'list' : 'diagram') : 'focus');
   const leadDetail = lead ? { node: lead, state: stateOf(model, lead.id), resting: downstreamOf(GRAPH, lead.id).length } : null;
   const highlighted = view === 'session' ? session.nodeId : view === 'walk' ? walkNodeId : null;
 
+  const playing = practice && selected?.id === 'neuron' && format === 'focus';
+  const focusNode = selected ?? GRAPH.nodes.find(node => node.id === highlighted) ?? lead ?? GRAPH.nodes[0];
+
+  const latestModel = useRef(model);
+  useEffect(() => { latestModel.current = model; }, [model]);
   const earn = useCallback((id: string, earned: NodeState) => {
-    mark(id, upgrade(stateOf(model, id), earned));
-  }, [mark, model]);
+    mark(id, upgrade(stateOf(latestModel.current, id), earned));
+  }, [mark]);
 
   const openNode = useCallback((id: string) => {
     if (!selectedId) returnFocus.current = document.activeElement;
@@ -58,12 +68,33 @@ export default function Page() {
     setSurface('guide');
   }, [selectedId]);
 
+  const playNeuron = () => {
+    setView('session');
+    setPresenting(false);
+    openNode('neuron');
+    setPractice(true);
+    setMapFormat('focus');
+    setSurface('map');
+    requestAnimationFrame(() => {
+      const title = document.getElementById('neuron-lab-title');
+      title?.focus();
+      title?.scrollIntoView({ block: 'start' });
+    });
+  };
+
+  const explainExperiment = () => {
+    setSelectedId('neuron');
+    setExplainRequest(request => request + 1);
+    setSurface('guide');
+  };
+
   const closeNode = useCallback(() => {
     setSelectedId(null);
     if (compact) setSurface('map');
     requestAnimationFrame(() => {
       const target = returnFocus.current;
-      if (target instanceof HTMLElement || target instanceof SVGElement) target.focus({ preventScroll: true });
+      if (target?.isConnected && (target instanceof HTMLElement || target instanceof SVGElement)) target.focus({ preventScroll: true });
+      else document.getElementById('concept-map')?.focus({ preventScroll: true });
     });
   }, [compact]);
 
@@ -82,6 +113,10 @@ export default function Page() {
     resetMarks();
     session.reset();
     setDraft('');
+    setSelectedId(null);
+    setPractice(false);
+    experiment.reset();
+    setExplainRequest(0);
   };
 
   useEffect(() => {
@@ -122,9 +157,9 @@ export default function Page() {
         {(['session', 'map', 'walk'] as const).map(item => <button
           key={item}
           aria-pressed={item === 'map' ? surface === 'map' : surface === 'guide' && view === item}
-          onClick={() => item === 'map' ? setSurface('map') : changeView(item)}
+          onClick={() => item === 'map' ? setSurface('map') : item === 'session' && selected ? setSurface('guide') : changeView(item)}
           className={cn('min-h-12 flex-1 border-b-2 text-sm font-medium', (item === 'map' ? surface === 'map' : surface === 'guide' && view === item) ? 'border-foreground' : 'text-muted-foreground border-transparent')}
-        >{item === 'map' ? 'Your map' : item === 'walk' ? 'Walkthrough' : 'Conversation'}</button>)}
+        >{item === 'map' ? 'Your map' : item === 'walk' ? 'Walkthrough' : selected ? 'This idea' : 'Conversation'}</button>)}
       </nav>}
       <main className="workspace mx-auto grid min-h-0 w-full max-w-[100rem] flex-1 panel:grid-cols-[minmax(0,1fr)_minmax(380px,440px)]">
         <section
@@ -133,8 +168,9 @@ export default function Page() {
         >
           {selected ? <Inspector
             key={selected.id} graph={GRAPH} node={selected} model={model} marking={view === 'mark'} presenting={presenting}
-            reveal={view !== 'session' || session.status === 'idle' || session.status === 'done'} covered={covered.has(selected.id)}
+            reveal={(practice && selected.id === 'neuron') || view !== 'session' || session.status === 'idle' || session.status === 'done'} covered={covered.has(selected.id)}
             config={config} onEarned={earn} onMark={mark} onClose={closeNode} onSelect={openNode}
+            onPlay={playNeuron} explainRequest={selected.id === 'neuron' ? explainRequest : 0}
           /> : view === 'walk' ? <Walkthrough graph={GRAPH} model={model} config={config} onNodeChange={setWalkNodeId} onEarned={earn} /> : view === 'mark' ? (
             <div className="space-y-4">
               <p className="eyebrow">Facilitator tools</p>
@@ -148,7 +184,7 @@ export default function Page() {
             onStart={() => session.start(model.states)} onAnswer={text => session.answer(text, model.states)}
             onRetry={session.retry} onConfigure={() => setSettingsOpen(true)}
             onExplore={() => { if (lead) openNode(lead.id); else changeView('walk'); }}
-            onWalk={() => changeView('walk')}
+            onWalk={() => changeView('walk')} onPlay={playNeuron}
             lead={leadDetail} onReset={reset}
           />}
         </section>
@@ -156,18 +192,18 @@ export default function Page() {
           {!presenting && <>
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="eyebrow">A field guide to AI</p>
-                <h1 className="font-display mt-1 text-2xl font-medium">Ideas build on ideas.</h1>
+                <p className={cn("eyebrow", playing && "hidden sm:block")}>A field guide to AI</p>
+                <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing ? "The neuron, up close." : "Ideas build on ideas."}</h1>
               </div>
               <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
-                {(['diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => setMapFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'diagram' ? 'Map' : 'List'}</button>)}
+                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => setMapFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
               </div>
             </div>
-            <p className="text-muted-foreground mb-4 text-sm">{format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
-            <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />
+            <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
+            {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
           </>}
-          {hydrated && (format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
-          {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} experiment={experiment} playing={practice && focusNode.id === 'neuron'} onSelect={openNode} onPlay={playNeuron} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
         </section>
       </main>
     </div>
