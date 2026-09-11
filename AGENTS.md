@@ -1552,3 +1552,54 @@ are not permission to share it for new experiments. Use separate worktrees for
 concurrent sessions. Base experiment branches/PRs on the proposal while it is
 unmerged, and on updated `main` after it merges. Verify the active branch before
 editing and committing; push only the session's own branch.
+
+### Tokenizer playground — 2026-09-11
+
+On `experiment/01-tokenizer`, branched from `main` after the playable-map
+proposal merged. An experiment on the `tokens` node, built to the same rule as
+the neuron: change something, inspect the consequence, optionally explain it.
+See `docs/tokenizer-playground.md` for the verification table and limits.
+
+**A real encoding, named on screen.** `js-tiktoken` 1.0.21 pinned, `cl100k_base`,
+in a Web Worker in the browser. No key, no request — measured: typing produced
+zero fetches, zero XHRs, no resource loads. The panel states what the count is
+not: not universal, not a word count, not Gemini billing, not Edgewise's own
+assessor. A load failure says so and offers retry; there is no fallback count,
+because a fabricated number is exactly the lesson this node exists to correct.
+
+**Byte fragments are shown as bytes.** A byte-level encoding puts part of a
+character in a token. Those render as `bytes E8 AA` with their own IDs rather
+than `�`. Tidying the display would misrepresent the mechanism being taught.
+
+**The examples compute their results, and that immediately paid.** The node's
+authored explanation asks why a model miscounts the r's in "strawberry". In
+"How many r's are in strawberry?" the piece is ` strawberry`, a **single** token
+(73700) — so the folk claim that strawberry is three tokens is wrong in that
+position. Hardcoding it would have taught a false specific on the node about not
+trusting surface claims.
+
+**Marks are untouched by everything here.** No learner-model access. Typing,
+selecting, resetting and finishing leave the stored model unchanged, checked
+before and after. The follow-up question opens the existing `ExplainBack` with an
+empty field and a disabled submit; only the existing assessed path can raise this
+concept.
+
+**The fixtures are held to the vocabulary, not to the encoder.** IDs and bytes
+are asserted against `bpe_ranks` decoded independently in the test, so the
+expectations and the implementation cannot be wrong in the same way. This is the
+"test the wrapper against itself" trap, closed deliberately.
+
+**The 28px chips.** Measured at 320px, the example buttons came out at 28px under
+`size="sm"` — below the 40px floor this file records for finger targets. They are
+`size="touch"` now. Sixth time a defect in this project was found by measuring
+rather than reading, and the rule it broke was already written down.
+
+**Worker construction moved out of the effect body.** The first version called
+`setState` synchronously in an effect when `new Worker` threw, which fails
+`react-hooks/set-state-in-effect`. The worker is now built on first use inside
+the debounce callback, so a browser that cannot start it reports through the same
+asynchronous path as one that fails later — a better shape, not just a lint fix.
+
+**One invitation per view.** The focused map's general neuron invitation now
+stands down on `tokens`, where that node's own experiment is the offer. Both
+rendered together before, stacking two unrelated calls to action.

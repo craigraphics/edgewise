@@ -1,3 +1,8 @@
+> **Tokenizer playground, 2026-09-11:** On `experiment/01-tokenizer`, branched
+> from merged `main`. A real `cl100k_base` tokenizer on the `tokens` node, local
+> to the browser. Read `docs/tokenizer-playground.md` for what was verified and
+> what was not. Its PR targets `main`.
+
 > **Scroll fix:** The guide owns scrolling for static
 > side-panel content; the walkthrough reading area cannot collapse to zero.
 > See the side-panel scroll correction in `AGENTS.md`.
