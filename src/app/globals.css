@@ -930,6 +930,11 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
     background: color-mix(in oklch, var(--band-language) 7%, var(--surface-0));
 }
 .playable-invitation-language:hover { background: color-mix(in oklch, var(--band-language) 12%, var(--surface-0)); }
+.playable-invitation-foundations {
+    border-color: var(--band-foundations);
+    background: color-mix(in oklch, var(--band-foundations) 7%, var(--surface-0));
+}
+.playable-invitation-foundations:hover { background: color-mix(in oklch, var(--band-foundations) 12%, var(--surface-0)); }
 .neuron-lab {
     padding: clamp(1rem, 2.5vw, 1.75rem);
     border: 1px solid var(--border);
@@ -1007,4 +1012,41 @@ fieldset:disabled .neuron-choice { cursor: default; }
     border: 1px solid var(--border);
     border-radius: .75rem;
     background: var(--surface-2);
+}
+
+.predictor-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.predictor-split {
+    padding: .75rem 1rem;
+    border-left: 2px solid var(--band-foundations);
+    background: var(--surface-2);
+}
+.predictor-row {
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.predictor-slider { min-height: 2.75rem; accent-color: var(--band-foundations); cursor: pointer; width: 100%; }
+.predictor-slider:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; border-radius: .25rem; }
+.predictor-rule, .predictor-undetermined, .predictor-clash {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.predictor-rule {
+    border-color: var(--band-foundations);
+    background: color-mix(in oklch, var(--band-foundations) 7%, var(--surface-0));
+}
+.predictor-readout {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    font-size: .875rem;
+    line-height: 1.6;
 }

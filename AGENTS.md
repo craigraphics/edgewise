@@ -1603,3 +1603,93 @@ asynchronous path as one that fails later — a better shape, not just a lint fi
 **One invitation per view.** The focused map's general neuron invitation now
 stands down on `tokens`, where that node's own experiment is the offer. Both
 rendered together before, stacking two unrelated calls to action.
+
+### Learning from examples — a real fit, not a prewritten answer — 2026-09-11
+
+On `experiment/02-learning-from-examples`, branched from `main` after the
+tokenizer merged. An experiment on `prediction-from-examples`, built to the same
+rule as the neuron and the tokenizer: change something, inspect the consequence,
+optionally explain it. See `docs/learning-from-examples.md` for the verification
+table and the limits.
+
+**The model is fitted, not chosen.** `src/lib/experiments/regression.ts` runs
+ordinary least squares over whatever examples are in the list. No button selects
+a prepared result; every number on screen — the two parameters, each row's
+prediction and miss, the average and worst miss, and the answer at a new
+distance — is computed from those examples. Editing a time to 45 moved the rule
+from `12.9 + 2.92d` to `32.6 + 1.15d`, measured in the browser.
+
+**The fit is a snapshot, deliberately.** Changing a label changes nothing until
+"Learn from these examples" is pressed, and until then the panel says so in
+words: *"The examples have changed. The rule below still comes from the old
+ones."* While stale the line is removed from the drawing and the prediction is
+withheld rather than recomputed. A rule that moved the instant you typed would
+hide the one step this node is about.
+
+**Who chose what is stated, because it is the lesson.** We chose the family — one
+straight line. The examples chose the two numbers. That sentence is at the top of
+the panel, not in the optional algebra, and the closing question is the node's
+own: *"If nobody typed the final rule, where did this model's predictions come
+from?"*
+
+**An underdetermined fit is reported, never filled in.** Two cases: fewer than
+two complete examples, and every example at the same distance. Both leave the
+slope genuinely undetermined — every rate fits equally well — so `fitLine`
+returns `status: 'undetermined'` with the reason and the panel says which.
+Inventing a slope, or dividing by a near-zero spread and printing whatever came
+out, would teach the exact thing this node exists to correct. There is no path
+that can produce `NaN`, and a test asserts it over the awkward datasets.
+
+**The contradiction is reachable in one tap and is not discarded.** "Two answers
+for 9 km" puts the same input in twice with different observed times. One rule
+returns one number for one distance, so both duplicates get the same prediction
+and at least one must miss; the callout says the rule sits between them, and both
+misses show on their rows. The residuals are equal and opposite, which is
+asserted rather than described.
+
+**The four presets are the four cases.** Inexact, exact, contradictory, and
+undetermined — and a test holds each preset to being the case it claims, so
+editing the numbers later cannot quietly turn "exactly on a line" into something
+that no longer is.
+
+**The fixtures are held to least squares, not to the function that produced
+them.** The noisy case checks that nudging either parameter off the answer makes
+the total squared error larger, and that the residuals sum to zero and are
+orthogonal to the input. Asserting the encoder against itself is the trap the
+tokenizer work closed; the same trap is closed here by a different route.
+
+**Nothing here touches the map.** The component has no learner-model access.
+Editing, fitting, resetting, and reading predictions at new distances all leave
+storage untouched, read before and after. One real explanation was then checked
+through the existing API and marked **only** `prediction-from-examples` Solid —
+verified by reading stored state, which held exactly that one entry.
+
+**Half-typed rows are excluded, not guessed at.** A number field can genuinely be
+empty (`number | null`), and a row missing either value says so and is left out
+of the fit. The alternative — snapping a cleared field to zero — would silently
+add an observation nobody made.
+
+**Round half away from zero.** `Math.round` breaks ties towards positive
+infinity, so a miss of −2.45 and one of +2.45 printed as different sizes in the
+same column. The magnitude is rounded and the sign put back.
+
+**The per-concept branching became a lookup table.** The shell branched on
+`'neuron'`, then on `'neuron' | 'tokens'`, in five places. A third made that
+unreadable, so `src/lib/experiments/registry.ts` holds the ids and the four
+strings the shell needs, and `FocusedMap` takes one `onPlay`/`onExplain` pair
+instead of one per experiment. That is fewer conditionals than before, not more;
+adding a fourth still means writing its component and rendering it explicitly. A
+test holds every id to being a real graph node and every prompt to asking for a
+mechanism without grading.
+
+**No animation at all in this panel**, so reduced motion has nothing to suppress
+— confirmed by reading `document.getAnimations()` with the experiment open.
+
+**The `Input` primitive is 32px.** Below the 40px finger target this file
+records, so the number fields carry `h-10` explicitly. Measured at 320px: every
+control in this panel is at least 40px.
+
+**Dragging is never the only way.** The new distance has a native range slider
+*and* a number field, and the slider's `aria-valuetext` carries the prediction so
+a screen reader hears the consequence once per committed change rather than on
+every frame. Nothing on the drawing is draggable.

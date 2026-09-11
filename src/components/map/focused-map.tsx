@@ -4,21 +4,38 @@ import { ArrowDown, ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { NodeGlyph } from './node-glyph';
 import { NeuronExperiment, type useNeuronExperiment } from '@/components/experiments/neuron-experiment';
 import { TokenizerExperiment, type useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
+import { PredictorExperiment, type usePredictorExperiment } from '@/components/experiments/predictor-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
+import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
 import type { ConceptGraph, ConceptNode, LearnerModel } from '@/lib/graph/types';
+import { cn } from '@/lib/utils';
 
 type Props = {
   graph: ConceptGraph; node: ConceptNode; model: LearnerModel;
   neuronExperiment: ReturnType<typeof useNeuronExperiment>;
   tokenizerExperiment: ReturnType<typeof useTokenizerExperiment>;
+  predictorExperiment: ReturnType<typeof usePredictorExperiment>;
   playing: boolean; onSelect: (id: string) => void;
-  onPlayNeuron: () => void; onPlayTokenizer: () => void;
-  onExplainNeuron: () => void; onExplainTokenizer: () => void;
+  onPlay: (id: ExperimentId) => void;
+  onExplain: (id: ExperimentId) => void;
+};
+
+/**
+ * One invitation per view. The concept in focus offers its own experiment; only
+ * where there is none does the general neuron invitation stand in, so two
+ * unrelated calls to action never stack.
+ */
+const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: string; action: string }> = {
+  neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
+  tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
+  'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Where does the rule come from?', blurb: 'Give it a handful of examples. Watch it work out a rule nobody wrote.', action: 'Fit a rule' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, onSelect, onPlayNeuron, onPlayTokenizer, onExplainNeuron, onExplainTokenizer, neuronExperiment, tokenizerExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment }: Props) {
+  const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
+  const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
   const children = graph.nodes.filter(n => n.prerequisites.includes(node.id));
   const state = stateOf(model, node.id);
@@ -50,8 +67,9 @@ export function FocusedMap({ graph, node, model, playing, onSelect, onPlayNeuron
         </button>
       </div>
 
-      {node.id === 'neuron' && playing && <div className="mt-4"><NeuronExperiment onExplain={onExplainNeuron} experiment={neuronExperiment} /></div>}
-      {node.id === 'tokens' && playing && <div className="mt-4"><TokenizerExperiment onExplain={onExplainTokenizer} experiment={tokenizerExperiment} /></div>}
+      {playing && node.id === 'neuron' && <div className="mt-4"><NeuronExperiment onExplain={() => onExplain('neuron')} experiment={neuronExperiment} /></div>}
+      {playing && node.id === 'tokens' && <div className="mt-4"><TokenizerExperiment onExplain={() => onExplain('tokens')} experiment={tokenizerExperiment} /></div>}
+      {playing && node.id === 'prediction-from-examples' && <div className="mt-4"><PredictorExperiment onExplain={() => onExplain('prediction-from-examples')} experiment={predictorExperiment} /></div>}
 
       <div className="focus-connections">
         {children.length > 0 ? <>
@@ -62,20 +80,11 @@ export function FocusedMap({ graph, node, model, playing, onSelect, onPlayNeuron
         </> : <p className="text-muted-foreground mt-4 text-sm">This is an endpoint in this map. You can explore back along its connections.</p>}
       </div>
 
-      {!playing && node.id === 'tokens' && <button onClick={onPlayTokenizer} className="playable-invitation playable-invitation-language mt-6 w-full text-left">
-        <span className="eyebrow inline-flex items-center gap-2"><SlidersHorizontal size={15} aria-hidden />Try this idea</span>
-        <span className="font-display mt-2 block text-2xl">What pieces does the model get?</span>
-        <span className="mt-2 block text-sm">Type anything. See its actual token pieces and IDs change.</span>
-        <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium">Open the tokenizer <ArrowRight size={16} aria-hidden /></span>
-      </button>}
-
-      {/* One invitation per view: on `tokens` its own experiment is the offer, so the
-          general neuron invitation stands down rather than competing beneath it. */}
-      {!playing && node.id !== 'tokens' && <button onClick={onPlayNeuron} className="playable-invitation mt-6 w-full text-left">
-        <span className="eyebrow inline-flex items-center gap-2"><SlidersHorizontal size={15} aria-hidden />Try a playable idea</span>
-        <span className="font-display mt-2 block text-2xl">What does a neuron actually do?</span>
-        <span className="mt-2 block text-sm">Two inputs. One output. You control what happens in between.</span>
-        <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium">Take it apart <ArrowRight size={16} aria-hidden /></span>
+      {!playing && <button onClick={() => onPlay(invited)} className={cn('playable-invitation mt-6 w-full text-left', invitation.tint)}>
+        <span className="eyebrow inline-flex items-center gap-2"><SlidersHorizontal size={15} aria-hidden />{isExperimentId(node.id) ? 'Try this idea' : 'Try a playable idea'}</span>
+        <span className="font-display mt-2 block text-2xl">{invitation.title}</span>
+        <span className="mt-2 block text-sm">{invitation.blurb}</span>
+        <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium">{invitation.action} <ArrowRight size={16} aria-hidden /></span>
       </button>}
     </div>
   </div>;
