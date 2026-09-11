@@ -114,7 +114,7 @@ export function Inspector({
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
 
-      {!marking && !presenting && node.id === 'neuron' && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>Try the neuron experiment</Button>}
+      {!marking && !presenting && (node.id === 'neuron' || node.id === 'tokens') && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>{node.id === 'tokens' ? 'Try the tokenizer playground' : 'Try the neuron experiment'}</Button>}
 
       {!presenting && <div className="starting-point">
         <p className="eyebrow">What connects here</p>
@@ -205,7 +205,7 @@ export function Inspector({
        * someone else's flow rather than something they chose.
        */}
       {!marking && !presenting && (reveal || covered) ? (
-        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 ? 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.' : undefined} node={node} state={state} config={config} onEarned={onEarned} />
+        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 ? node.id === 'tokens' ? 'Why can the number of tokens differ from the number of words?' : node.id === 'neuron' ? 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.' : undefined : undefined} node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
 

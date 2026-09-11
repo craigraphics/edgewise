@@ -925,6 +925,11 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
     background: color-mix(in oklch, var(--band-networks) 7%, var(--surface-0));
 }
 .playable-invitation:hover { background: color-mix(in oklch, var(--band-networks) 12%, var(--surface-0)); }
+.playable-invitation-language {
+    border-color: var(--band-language);
+    background: color-mix(in oklch, var(--band-language) 7%, var(--surface-0));
+}
+.playable-invitation-language:hover { background: color-mix(in oklch, var(--band-language) 12%, var(--surface-0)); }
 .neuron-lab {
     padding: clamp(1rem, 2.5vw, 1.75rem);
     border: 1px solid var(--border);
@@ -955,4 +960,51 @@ fieldset:disabled .neuron-choice { cursor: default; }
     .neuron-output { flex-direction: row; justify-content: space-between; gap: .75rem; padding: .5rem 1rem; }
     .neuron-output-value { font-size: 3rem; }
     .neuron-output > p:last-child { max-width: 6rem; }
+}
+
+.tokenizer-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.tokenizer-engine {
+    padding: .75rem 1rem;
+    border-left: 2px solid var(--band-language);
+    background: var(--surface-2);
+}
+.tokenizer-pieces {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: .5rem;
+}
+.tokenizer-piece {
+    min-width: 4.5rem;
+    max-width: 100%;
+    min-height: 3.5rem;
+    padding: .6rem .75rem;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+    text-align: left;
+}
+.tokenizer-piece:hover { border-color: var(--muted-foreground); }
+.tokenizer-piece-selected {
+    border-color: var(--foreground);
+    box-shadow: inset 3px 0 0 var(--band-language);
+    background: color-mix(in oklch, var(--band-language) 7%, var(--surface-0));
+}
+.tokenizer-connection {
+    padding: 1rem;
+    border: 1px solid var(--band-language);
+    border-radius: .75rem;
+    background: color-mix(in oklch, var(--band-language) 7%, var(--surface-0));
+}
+.tokenizer-error {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
 }
