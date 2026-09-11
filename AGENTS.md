@@ -1546,3 +1546,15 @@ The owner requested prompts only for the next experiments. Ten standalone
 handoffs are in `docs/experiment-prompts/`; `docs/experiment-handoffs.md` contains
 the complete pack. They cover the other ten concepts in graph layers 0–3, with
 tokenization first. No tokenizer or other new experiment was implemented here.
+
+### Required branch isolation for future experiments
+
+The owner requires every experiment session to create its own branch before
+editing, and deliver its own PR for independent review and merging. Never
+implement experiment work on `main`, `proposal/playable-map`, or another
+session's branch. Historical instructions to continue on this proposal branch
+are not permission to share it for new experiments. Use separate worktrees for
+concurrent sessions. Base experiment branches/PRs on the proposal while it is
+unmerged, and on updated `main` after it merges. Verify the active branch before
+editing and committing; push only the session's own branch. All ten handoff
+prompts, their combined document, and the downloadable pack carry this rule.
