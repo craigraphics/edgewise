@@ -1,7 +1,6 @@
-> **Scroll fix and future experiments:** The guide owns scrolling for static
+> **Scroll fix:** The guide owns scrolling for static
 > side-panel content; the walkthrough reading area cannot collapse to zero.
-> See the last section of `AGENTS.md`. Ten prompts (not implementations) are in
-> `docs/experiment-handoffs.md` and `docs/experiment-prompts/`.
+> See the side-panel scroll correction in `AGENTS.md`.
 
 > **Playable proposal, 2026-09-11:** Continue on `proposal/playable-map`.
 > Read `docs/playable-map.md` for the focused map, neuron experiment, and checks.

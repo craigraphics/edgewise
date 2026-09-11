@@ -1525,7 +1525,7 @@ at 45 seconds; a delayed result after reset cannot recreate old marks. The toy
 model names its limitations, including that adjusting weights here is manual
 and nothing is training. See `docs/playable-map.md` for verification and limits.
 
-### Side-panel scroll correction and experiment handoffs — 2026-09-11
+### Side-panel scroll correction — 2026-09-11
 
 The owner found that lower side-panel content was unreachable. The inspector
 and idle conversation both nested a scrolling child inside the scrolling guide;
@@ -1542,11 +1542,6 @@ open explanation at 320×568, 390×600, 720×450, 1100×600, and 1440×720. A lo
 mocked explanation response remains reachable, with learner marks unchanged.
 323 tests, lint, typecheck, and the production Webpack build pass.
 
-The owner requested prompts only for the next experiments. Ten standalone
-handoffs are in `docs/experiment-prompts/`; `docs/experiment-handoffs.md` contains
-the complete pack. They cover the other ten concepts in graph layers 0–3, with
-tokenization first. No tokenizer or other new experiment was implemented here.
-
 ### Required branch isolation for future experiments
 
 The owner requires every experiment session to create its own branch before
@@ -1556,5 +1551,4 @@ session's branch. Historical instructions to continue on this proposal branch
 are not permission to share it for new experiments. Use separate worktrees for
 concurrent sessions. Base experiment branches/PRs on the proposal while it is
 unmerged, and on updated `main` after it merges. Verify the active branch before
-editing and committing; push only the session's own branch. All ten handoff
-prompts, their combined document, and the downloadable pack carry this rule.
+editing and committing; push only the session's own branch.
