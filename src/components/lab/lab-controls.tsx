@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { motion, useReducedMotion } from 'motion/react';
 
 import { Button } from '@/components/ui/button';
@@ -43,7 +45,9 @@ export function LabControls({
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-5">
       <header className="space-y-1">
+        <Link href="/" className="mb-3 inline-flex min-h-10 items-center text-sm underline underline-offset-4">Back to Edgewise</Link>
         <h1 className="font-display text-xl font-medium">Motion lab</h1>
+        <p className="eyebrow">Illustrative marks · not your map</p>
         <p className="text-muted-foreground text-sm">
           The same graph, the same states, the same layout — only the drawing differs. Each effect
           carries the claim it makes and the one thing allowed to fire it in the product. Turn one

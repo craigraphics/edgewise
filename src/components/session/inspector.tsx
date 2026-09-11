@@ -41,6 +41,7 @@ type Props = {
   onEarned: (nodeId: string, state: NodeState) => void;
   onMark: (nodeId: string, state: NodeState) => void;
   onClose: () => void;
+  onSelect?: (id: string) => void;
 };
 
 /**
@@ -72,7 +73,7 @@ export function Inspector({
   config,
   onEarned,
   onMark,
-  onClose,
+  onClose, onSelect,
 }: Props) {
   const blocked = downstreamOf(graph, node.id);
   const state = stateOf(model, node.id);
@@ -95,7 +96,7 @@ export function Inspector({
           {presenting ? null : (
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon-touch"
               onClick={onClose}
               aria-label="Close"
               title="Close"
@@ -105,9 +106,18 @@ export function Inspector({
             </Button>
           )}
         </div>
-        <h2 className="font-display mt-3 text-xl font-semibold">{node.label}</h2>
+        <h2 id="concept-title" tabIndex={-1} className="font-display mt-3 text-2xl font-semibold outline-none">{node.label}</h2>
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
+
+      {!presenting && <div className="starting-point">
+        <p className="eyebrow">What connects here</p>
+        <p className="mt-2 text-sm">{node.prerequisites.length ? 'Builds on' : 'This is the foundation of the map.'}</p>
+        <div className="mt-1 flex flex-wrap gap-x-3">
+          {node.prerequisites.map(id => <button key={id} onClick={() => onSelect?.(id)} className="min-h-10 text-left text-sm underline underline-offset-4">{graph.nodes.find(n => n.id === id)!.label}</button>)}
+        </div>
+        {blocked.length > 0 && <p className="text-muted-foreground mt-3 text-sm">{blocked.length} later ideas build on this one. That describes the connections, not how many you know.</p>}
+      </div>}
 
       {marking && presenting ? null : marking ? (
         <>
@@ -192,12 +202,7 @@ export function Inspector({
         <ExplainBack node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
-      {blocked.length > 0 && state !== 'known' ? (
-        <p className="border-border text-muted-foreground border-t pt-4 text-base leading-relaxed">
-          <span className="text-foreground font-medium tabular">{blocked.length} later ideas</span> rest on
-          this one, including {blocked.slice(0, 3).map((entry) => entry.label).join(', ')}.
-        </p>
-      ) : null}
+
     </div>
   );
 }

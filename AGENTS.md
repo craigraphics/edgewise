@@ -1464,3 +1464,41 @@ cap. **Add a real store before this sees serious traffic.**
   enforce brevity in the prompt.
 - **`pnpm build` regenerates Next's route types.** A new route fails typecheck
   until you build once.
+
+## Recognition-first proposal — 2026-09-11
+
+Branch `proposal/recognition-first`, based on `intro-from-main` at `4041bdb`.
+The owner authorized a working redesign and explicitly allowed changing recorded
+product decisions. See `docs/recognition-first-review.md` for findings and checks.
+
+Three decisions superseded in this proposal:
+
+- **First entry has no gate.** The prelude was still an untrapped `aria-modal`
+  div: Tab after Skip reached the hidden mode switch, verified in BrowserOS neo.
+  More fundamentally, a 22-second sequence, a welcome dialog, and an idle start
+  screen repeat the invitation three times. Sharing one storage key does not
+  remove those steps. The argument now sits beside the actual start action.
+  `/intro` remains a separate, optional narrative, with a text alternative.
+- **A phone map is a reading surface.** The recorded 5.1px overview labels are
+  too small to identify a target before tapping. A full-width list, derived from
+  the same graph and teaching order, names every prerequisite at normal text
+  size. The diagram remains available. Below the existing 1100px threshold the
+  map and guide are explicitly selected full-size views; there is no drag sheet.
+  This avoids both rejected stacked half-panes and a map hidden under a sheet.
+- **Remove the score, including its accessible label.** The old progress ring
+  still announced “0 of 23 ideas solid” when the visible text omitted the count.
+  No global score remains, at any stage. The next useful idea carries progress.
+
+The diagnostic, assessment prompts, graph edges, state semantics, authored
+explanations, and motion lab's five effects are retained. Retry stores the exact
+failed payload; reset aborts and invalidates old requests. Typed drafts live in
+the shell so opening an idea does not erase them. The map now names prerequisite
+relationships in its inspector as well as drawing them.
+
+The welcome's “Nothing is sent anywhere” claim was false for both answers and
+voice. The actual server/Google path is stated next to the invitation, and voice
+explains its automatic microphone handoff before opt-in.
+
+These changes are a proposal, not evidence of improved conversion. The real
+learner validation gate remains open. Browser accessibility-tree and keyboard
+checks do not replace a VoiceOver/NVDA session or physical-phone voice testing.

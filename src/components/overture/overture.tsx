@@ -44,6 +44,7 @@ import {
 import { EDGE_OUT_OF_CONE } from '@/lib/map/focus';
 import { wrapLabel } from '@/lib/map/text';
 import { cn } from '@/lib/utils';
+import { useHydrated } from '@/lib/persisted';
 
 /**
  * The overture.
@@ -70,7 +71,19 @@ type Props = { graph: ConceptGraph };
 
 export function Overture({ graph }: Props) {
   const reduced = useReducedMotion();
+  const hydrated = useHydrated();
+  const [reading, setReading] = useState(false);
 
+  // Match the server on the first client render. The motion preference is only
+  // available in the browser. Keep scroll hooks out of the text-only tree.
+  if (hydrated && (reduced || reading)) {
+    const lead = leadNode(graph, overtureModel(graph))!;
+    return <Still graph={graph} lead={lead} rests={downstreamOf(graph, lead.id).length} />;
+  }
+  return <AnimatedOverture graph={graph} onRead={() => setReading(true)} />;
+}
+
+function AnimatedOverture({ graph, onRead }: Props & { onRead: () => void }) {
   const layout = useMemo(() => layoutGraph(graph), [graph]);
   const model = useMemo(() => overtureModel(graph), [graph]);
   const maxLayer = useMemo(() => Math.max(...graph.nodes.map((node) => node.layer)), [graph.nodes]);
@@ -165,10 +178,10 @@ export function Overture({ graph }: Props) {
    * degraded version of the sequence — a still map and the five sentences, in
    * order, which is what the sequence was saying.
    */
-  if (reduced) return <Still graph={graph} lead={lead} rests={rests} />;
 
   return (
     <div ref={track} className="relative h-[640vh]">
+      <button onClick={onRead} className="bg-surface-1 border-border fixed top-5 left-5 z-30 min-h-10 rounded-full border px-4 text-sm">Read without animation</button>
       <div ref={stage} className="bg-surface-0 sticky top-0 h-dvh overflow-hidden">
         {pane.width > 0 ? (
           <svg
@@ -551,12 +564,12 @@ function Illustrative({ t }: { t: MotionValue<number> }) {
  * film.
  */
 function Way({ t }: { t: MotionValue<number> }) {
-  const quiet = useTransform(t, (value) => 1 - progressIn(value, [0.86, 0.93]));
+  const visibility = useTransform(t, value => value >= 0.945 ? 'visible' : 'hidden');
   const loud = useTransform(t, (value) => progressIn(value, [0.945, 0.99]));
 
   return (
     <>
-      <motion.div style={{ opacity: quiet }} className="absolute top-5 right-5 sm:right-12">
+      <div className="absolute top-5 right-5 sm:right-12 z-30">
         {/* Carries its own surface. Now that nothing on the map dims, a bare
             link lands on top of a fully-lit node card and both become
             unreadable — which the dimming had been hiding. */}
@@ -564,12 +577,12 @@ function Way({ t }: { t: MotionValue<number> }) {
           href="/"
           className="border-border/70 bg-surface-1/80 text-muted-foreground hover:text-foreground focus-visible:ring-ring/60 rounded-full border px-3 py-1 text-sm backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
-          Skip
+          Open Edgewise
         </Link>
-      </motion.div>
+      </div>
 
       <motion.div
-        style={{ opacity: loud }}
+        style={{ opacity: loud, visibility }}
         className="absolute inset-x-0 bottom-[14%] flex flex-col items-center px-6 text-center"
       >
         <p className="font-display max-w-2xl text-balance text-2xl leading-[1.15] font-medium tracking-tight sm:text-4xl">
@@ -592,7 +605,8 @@ function Way({ t }: { t: MotionValue<number> }) {
 /** The reduced-motion page: the same argument, standing still. */
 function Still({ graph, lead, rests }: { graph: ConceptGraph; lead: ConceptNode; rests: number }) {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-20">
+    <main className="mx-auto max-w-2xl px-6 py-20">
+      <h1 className="font-display mb-8 text-3xl">How the ideas connect</h1>
       <p className="text-muted-foreground text-2xs font-medium tracking-[0.18em] uppercase">
         How AI actually works
       </p>
@@ -600,7 +614,7 @@ function Still({ graph, lead, rests }: { graph: ConceptGraph; lead: ConceptNode;
         {CAPTIONS.map((caption) => (
           <section key={caption.line}>
             <h2 className="font-display text-3xl leading-[1.1] font-medium tracking-tight">
-              {caption.line.replace('{rests}', String(rests))}
+              {caption.line.replace('{rests}', String(rests)).replace('{lead}', lead.label)}
             </h2>
             {caption.sub ? (
               <p className="text-muted-foreground mt-3 text-base leading-relaxed">{caption.sub}</p>
@@ -621,6 +635,6 @@ function Still({ graph, lead, rests }: { graph: ConceptGraph; lead: ConceptNode;
         {HANDOFF.action}
         <ArrowRightIcon />
       </Link>
-    </div>
+    </main>
   );
 }

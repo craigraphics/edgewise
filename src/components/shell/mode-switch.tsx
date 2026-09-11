@@ -39,7 +39,7 @@ export function ModeSwitch({
 }) {
   return (
     <div
-      role="radiogroup"
+      role="group"
       aria-label="What to do"
       className={cn(
         'bg-surface-2 border-border relative flex shrink-0 items-center gap-0.5 rounded-lg border p-0.5',
@@ -52,8 +52,7 @@ export function ModeSwitch({
           <button
             key={option.id}
             type="button"
-            role="radio"
-            aria-checked={active}
+            aria-pressed={active}
             onClick={() => onChange(option.id)}
             className={cn(
               'relative h-10 flex-1 rounded-[7px] px-3 text-sm font-medium whitespace-nowrap transition-colors duration-[--dur] sm:flex-none',

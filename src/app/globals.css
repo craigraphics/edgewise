@@ -25,17 +25,17 @@
      * tutor speaks at, and the measure it runs to (~60ch) is set where it is
      * used rather than here.
      */
-    --text-2xs: 0.6875rem;
+    --text-2xs: 0.75rem;
     --text-2xs--line-height: 1.45;
     --text-2xs--letter-spacing: 0.02em;
-    --text-xs: 0.75rem;
+    --text-xs: 0.8125rem;
     --text-xs--line-height: 1.5;
     --text-xs--letter-spacing: 0.01em;
-    --text-sm: 0.8125rem;
+    --text-sm: 0.875rem;
     --text-sm--line-height: 1.6;
-    --text-base: 0.875rem;
+    --text-base: 1rem;
     --text-base--line-height: 1.65;
-    --text-read: 1.0625rem;
+    --text-read: 1.1875rem;
     --text-read--line-height: 1.65;
     --text-read--letter-spacing: -0.003em;
     --text-lg: 1.125rem;
@@ -861,4 +861,36 @@
            never has to compete with a node behind it, shallow enough that the
            drawing still runs off the bottom of the frame rather than stopping. */
         linear-gradient(to top, var(--surface-0) 16%, transparent 46%);
+}
+
+/* Recognition-first proposal: the graph remains the working surface. */
+.eyebrow {
+  font-size: .75rem;
+  line-height: 1.5;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.starting-point {
+  border-left: 2px solid var(--band-learning);
+  background: var(--surface-1);
+  padding: 1rem 1.25rem;
+}
+.guide-panel { background: var(--surface-1); }
+.skip-link { position: fixed; left: 1rem; top: -10rem; z-index: 200; }
+.skip-link:focus { top: 1rem; padding: .75rem 1rem; color: var(--background); background: var(--foreground); }
+button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+.keyboard-focus-ring { visibility: hidden; }
+[data-node]:focus-visible > .keyboard-focus-ring { visibility: visible; }
+.concept-list { scrollbar-gutter: stable; }
+@media (max-width: 1099px) {
+  .workspace { display: flex; flex-direction: column; }
+  .workspace > section { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
