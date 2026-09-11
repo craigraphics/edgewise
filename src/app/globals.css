@@ -25,17 +25,17 @@
      * tutor speaks at, and the measure it runs to (~60ch) is set where it is
      * used rather than here.
      */
-    --text-2xs: 0.6875rem;
+    --text-2xs: 0.75rem;
     --text-2xs--line-height: 1.45;
     --text-2xs--letter-spacing: 0.02em;
-    --text-xs: 0.75rem;
+    --text-xs: 0.8125rem;
     --text-xs--line-height: 1.5;
     --text-xs--letter-spacing: 0.01em;
-    --text-sm: 0.8125rem;
+    --text-sm: 0.875rem;
     --text-sm--line-height: 1.6;
-    --text-base: 0.875rem;
+    --text-base: 1rem;
     --text-base--line-height: 1.65;
-    --text-read: 1.0625rem;
+    --text-read: 1.1875rem;
     --text-read--line-height: 1.65;
     --text-read--letter-spacing: -0.003em;
     --text-lg: 1.125rem;
@@ -861,4 +861,98 @@
            never has to compete with a node behind it, shallow enough that the
            drawing still runs off the bottom of the frame rather than stopping. */
         linear-gradient(to top, var(--surface-0) 16%, transparent 46%);
+}
+
+/* Recognition-first proposal: the graph remains the working surface. */
+.eyebrow {
+  font-size: .75rem;
+  line-height: 1.5;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.starting-point {
+  border-left: 2px solid var(--band-learning);
+  background: var(--surface-1);
+  padding: 1rem 1.25rem;
+}
+.guide-panel {
+  background: var(--surface-1);
+  scrollbar-gutter: stable;
+  overscroll-behavior-y: contain;
+}
+.skip-link { position: fixed; left: 1rem; top: -10rem; z-index: 200; }
+.skip-link:focus { top: 1rem; padding: .75rem 1rem; color: var(--background); background: var(--foreground); }
+button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+.keyboard-focus-ring { visibility: hidden; }
+[data-node]:focus-visible > .keyboard-focus-ring { visibility: visible; }
+.concept-list { scrollbar-gutter: stable; }
+@media (max-width: 1099px) {
+  .workspace { display: flex; flex-direction: column; }
+  .workspace > section { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* The focused map is a traversable neighbourhood, with literal edges and marks. */
+.focus-current {
+    border: 1px solid;
+    border-left-width: 3px;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: var(--surface-1);
+}
+.focus-neighbour {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    padding: .75rem 1rem;
+    min-height: 3.5rem;
+    background: var(--surface-1);
+}
+.focus-neighbour:hover { border-color: var(--muted-foreground); }
+.playable-invitation {
+    padding: 1.5rem;
+    border: 1px solid var(--band-networks);
+    border-radius: 1rem;
+    background: color-mix(in oklch, var(--band-networks) 7%, var(--surface-0));
+}
+.playable-invitation:hover { background: color-mix(in oklch, var(--band-networks) 12%, var(--surface-0)); }
+.neuron-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.neuron-baseline { padding: .75rem 1rem; border-left: 2px solid var(--band-networks); background: var(--surface-2); }
+.neuron-machine { display: grid; grid-template-columns: minmax(0, 1fr) 2rem minmax(100px, .55fr); align-items: stretch; gap: .75rem; }
+.neuron-input { padding: .875rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface-0); }
+.neuron-slider { min-height: 2.75rem; accent-color: var(--band-networks); cursor: pointer; }
+.neuron-slider:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; border-radius: .25rem; }
+.neuron-operator { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .75rem; font-size: 1.5rem; color: var(--muted-foreground); }
+.neuron-output { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem .5rem; border: 1px solid var(--band-networks); border-radius: 1rem; background: color-mix(in oklch, var(--band-networks) 7%, var(--surface-0)); text-align: center; }
+.neuron-output-value { font-size: clamp(4rem, 7vw, 6rem); line-height: 1.3; font-variant-numeric: tabular-nums; }
+.neuron-choice { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--border); border-radius: .5rem; font-size: .875rem; cursor: pointer; }
+.neuron-choice-selected { border-color: var(--foreground); background: var(--surface-2); }
+.neuron-choice input { accent-color: var(--foreground); }
+.neuron-choice:focus-within { outline: 2px solid var(--foreground); outline-offset: 3px; }
+fieldset:disabled .neuron-choice { cursor: default; }
+.neuron-result { border-top: 1px solid var(--border); padding-top: 1.25rem; }
+@media (prefers-reduced-motion: no-preference) {
+    .neuron-reveal { animation: neuron-appear 280ms ease-out; }
+    @keyframes neuron-appear { from { opacity: 0; transform: translateY(.25rem); } to { opacity: 1; transform: translateY(0); } }
+}
+@media (max-width: 600px) {
+    .neuron-machine { grid-template-columns: minmax(0, 1fr); }
+    .neuron-operator { flex-direction: row; gap: 1.5rem; }
+    .neuron-output { flex-direction: row; justify-content: space-between; gap: .75rem; padding: .5rem 1rem; }
+    .neuron-output-value { font-size: 3rem; }
+    .neuron-output > p:last-child { max-width: 6rem; }
 }

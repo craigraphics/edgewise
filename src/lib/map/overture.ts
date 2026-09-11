@@ -267,8 +267,8 @@ export const CAPTIONS: Caption[] = [
   },
   {
     at: [0.54, 0.66],
-    line: 'This is the whole subject.',
-    sub: 'You have almost certainly met most of these. That is not the same as holding them.',
+    line: 'A map of the essentials.',
+    sub: 'Each connection shows an idea that another one builds on.',
     size: 'lead',
   },
   {

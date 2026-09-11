@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,8 @@ type Props = {
   state: NodeState;
   config: SessionConfig;
   onEarned: (nodeId: string, state: NodeState) => void;
+  openRequest?: number;
+  prompt?: string;
 };
 
 const ERRORS: Record<string, string> = {
@@ -38,8 +40,18 @@ const ERRORS: Record<string, string> = {
   EXPLAIN_FAILED: 'That did not come back. Nothing was lost.',
 };
 
-export function ExplainBack({ node, state, config, onEarned }: Props) {
-  const [open, setOpen] = useState(false);
+export function ExplainBack({ node, state, config, onEarned, openRequest = 0, prompt }: Props) {
+  const [open, setOpen] = useState(openRequest > 0);
+  const [lastRequest, setLastRequest] = useState(openRequest);
+  // A new request reopens the existing draft instead of remounting the form.
+  if (lastRequest !== openRequest) {
+    setLastRequest(openRequest);
+    setOpen(true);
+  }
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => { if (open) textareaRef.current?.focus(); }, [open, openRequest]);
+  useEffect(() => () => requestRef.current?.abort(), []);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<{ say: string; moved: boolean } | null>(null);
@@ -55,9 +67,13 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
       setError(null);
       setReply(null);
 
+      const controller = new AbortController();
+      requestRef.current = controller;
+      const timeout = window.setTimeout(() => controller.abort('timeout'), 45_000);
       try {
         const response = await fetch('/api/explain-back', {
           method: 'POST',
+          signal: controller.signal,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             nodeId: node.id,
@@ -77,6 +93,7 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
           error?: string;
         };
 
+        if (controller.signal.aborted) return;
         if (!response.ok || data.error) {
           setError(ERRORS[data.error ?? ''] ?? 'Something went wrong. Nothing was lost.');
           return;
@@ -87,9 +104,11 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
         setReply({ say: data.say ?? '', moved: Boolean(data.moved) });
         setDraft('');
       } catch {
-        setError('Could not reach the server. Nothing was lost.');
+        if (controller.signal.aborted && controller.signal.reason !== 'timeout') return;
+        setError(controller.signal.reason === 'timeout' ? 'That took too long. Your explanation is still here; try again.' : 'Could not reach the server. Nothing was lost.');
       } finally {
-        setBusy(false);
+        clearTimeout(timeout);
+        if (!controller.signal.aborted || controller.signal.reason === 'timeout') setBusy(false);
       }
     },
     [busy, config, node.id, onEarned, state, token],
@@ -112,6 +131,7 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
         useful if it is actually yours.
       </p>
 
+      {prompt && <p className="text-sm">{prompt}</p>}
       {voice.listening ? (
         <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
           <span className="text-muted-foreground text-base">{voice.interim || 'Listening…'}</span>
@@ -121,6 +141,8 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
         </div>
       ) : (
         <Textarea
+          ref={textareaRef}
+          aria-label={prompt ?? `Your explanation of ${node.label}`}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder={`So ${node.label.toLowerCase()} is basically…`}
@@ -142,6 +164,7 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
         <Button
           size="touch"
           variant="ghost"
+          disabled={busy}
           onClick={() => {
             setOpen(false);
             setReply(null);
@@ -155,10 +178,10 @@ export function ExplainBack({ node, state, config, onEarned }: Props) {
       {busy ? (
         <p className="text-muted-foreground font-display text-read animate-pulse">Reading it…</p>
       ) : null}
-      {error ? <p className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
+      {error ? <p role="alert" className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
 
       {reply ? (
-        <div className="edgewise-rise space-y-2 pt-1">
+        <div role="status" className="edgewise-rise space-y-2 pt-1">
           <p className="font-display text-read">{reply.say}</p>
           {/*
            * Stated plainly when something moved, and silent when it did not.

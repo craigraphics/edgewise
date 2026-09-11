@@ -41,6 +41,9 @@ type Props = {
   onEarned: (nodeId: string, state: NodeState) => void;
   onMark: (nodeId: string, state: NodeState) => void;
   onClose: () => void;
+  onSelect?: (id: string) => void;
+  onPlay?: () => void;
+  explainRequest?: number;
 };
 
 /**
@@ -72,13 +75,15 @@ export function Inspector({
   config,
   onEarned,
   onMark,
-  onClose,
+  onClose, onSelect, onPlay, explainRequest = 0,
 }: Props) {
   const blocked = downstreamOf(graph, node.id);
   const state = stateOf(model, node.id);
 
   return (
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+    // The guide owns scrolling, including its padding. A second scroller here
+    // strands the lower controls when the pointer is outside this inner box.
+    <div className="shrink-0 space-y-4 pr-1">
       <div>
         <div className="flex items-start justify-between gap-2">
           {/*
@@ -95,7 +100,7 @@ export function Inspector({
           {presenting ? null : (
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon-touch"
               onClick={onClose}
               aria-label="Close"
               title="Close"
@@ -105,9 +110,20 @@ export function Inspector({
             </Button>
           )}
         </div>
-        <h2 className="font-display mt-3 text-xl font-semibold">{node.label}</h2>
+        <h2 id="concept-title" tabIndex={-1} className="font-display mt-3 text-2xl font-semibold outline-none">{node.label}</h2>
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
+
+      {!marking && !presenting && node.id === 'neuron' && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>Try the neuron experiment</Button>}
+
+      {!presenting && <div className="starting-point">
+        <p className="eyebrow">What connects here</p>
+        <p className="mt-2 text-sm">{node.prerequisites.length ? 'Builds on' : 'This is the foundation of the map.'}</p>
+        <div className="mt-1 flex flex-wrap gap-x-3">
+          {node.prerequisites.map(id => <button key={id} onClick={() => onSelect?.(id)} className="min-h-10 text-left text-sm underline underline-offset-4">{graph.nodes.find(n => n.id === id)!.label}</button>)}
+        </div>
+        {blocked.length > 0 && <p className="text-muted-foreground mt-3 text-sm">{blocked.length} later ideas build on this one. That describes the connections, not how many you know.</p>}
+      </div>}
 
       {marking && presenting ? null : marking ? (
         <>
@@ -189,15 +205,10 @@ export function Inspector({
        * someone else's flow rather than something they chose.
        */}
       {!marking && !presenting && (reveal || covered) ? (
-        <ExplainBack node={node} state={state} config={config} onEarned={onEarned} />
+        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 ? 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.' : undefined} node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
-      {blocked.length > 0 && state !== 'known' ? (
-        <p className="border-border text-muted-foreground border-t pt-4 text-base leading-relaxed">
-          <span className="text-foreground font-medium tabular">{blocked.length} later ideas</span> rest on
-          this one, including {blocked.slice(0, 3).map((entry) => entry.label).join(', ')}.
-        </p>
-      ) : null}
+
     </div>
   );
 }

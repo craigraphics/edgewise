@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { NodeState } from '@/lib/graph/types';
 
@@ -58,14 +58,23 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
   const [status, setStatus] = useState<'idle' | 'thinking' | 'running' | 'done' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [spend, setSpend] = useState(0);
+  const pending = useRef<Record<string, unknown> | null>(null);
+  const active = useRef<AbortController | null>(null);
+  useEffect(() => () => active.current?.abort(), []);
 
   const post = useCallback(
     async (payload: Record<string, unknown>): Promise<TurnResponse | null> => {
+      if (active.current) return null;
+      const controller = new AbortController();
+      active.current = controller;
+      pending.current = payload;
+      const timeout = setTimeout(() => controller.abort(), 45_000);
       setStatus('thinking');
       setError(null);
 
       try {
         const response = await fetch('/api/turn', {
+          signal: controller.signal,
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -78,6 +87,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
         });
 
         const data = (await response.json()) as TurnResponse;
+        if (active.current !== controller) return null;
 
         if (!response.ok || data.error) {
           setError(ERRORS[data.error ?? ''] ?? 'Something went wrong. Your progress is saved.');
@@ -85,11 +95,16 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
           return null;
         }
 
+        pending.current = null;
         return data;
       } catch {
-        setError('Could not reach the server. Your progress is saved.');
+        if (active.current !== controller) return null;
+        setError(controller.signal.aborted ? 'The server took too long to respond. Your answer is still here.' : 'Could not reach the server. Your answer is still here.');
         setStatus('error');
         return null;
+      } finally {
+        clearTimeout(timeout);
+        if (active.current === controller) active.current = null;
       }
     },
     [config.apiKey, config.model, token],
@@ -114,6 +129,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
 
   const start = useCallback(
     async (states: Record<string, NodeState>) => {
+      if (active.current) return;
       setMessages([]);
       const data = await post({ states, history: [], answer: '', currentNodeId: null, followUps: 0 });
       if (data) absorb(data);
@@ -124,7 +140,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
   const answer = useCallback(
     async (text: string, states: Record<string, NodeState>) => {
       const trimmed = text.trim();
-      if (!trimmed || !nodeId) return;
+      if (!trimmed || !nodeId || active.current) return;
 
       // Shown immediately, so the transcript never lags behind the person typing.
       const history = messages;
@@ -142,7 +158,17 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
     [absorb, followUps, messages, nodeId, post],
   );
 
+  const retry = useCallback(async () => {
+    if (!pending.current || active.current) return;
+    const data = await post(pending.current);
+    if (data) absorb(data);
+  }, [absorb, post]);
+
   const reset = useCallback(() => {
+    const previous = active.current;
+    active.current = null;
+    previous?.abort();
+    pending.current = null;
     setMessages([]);
     setNodeId(null);
     setFollowUps(0);
@@ -150,5 +176,5 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
     setError(null);
   }, []);
 
-  return { messages, status, error, spend, nodeId, start, answer, reset };
+  return { messages, status, error, spend, nodeId, start, answer, retry, reset };
 }

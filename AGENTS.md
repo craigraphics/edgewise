@@ -1464,3 +1464,91 @@ cap. **Add a real store before this sees serious traffic.**
   enforce brevity in the prompt.
 - **`pnpm build` regenerates Next's route types.** A new route fails typecheck
   until you build once.
+
+## Recognition-first proposal — 2026-09-11
+
+Branch `proposal/recognition-first`, based on `intro-from-main` at `4041bdb`.
+The owner authorized a working redesign and explicitly allowed changing recorded
+product decisions. See `docs/recognition-first-review.md` for findings and checks.
+
+Three decisions superseded in this proposal:
+
+- **First entry has no gate.** The prelude was still an untrapped `aria-modal`
+  div: Tab after Skip reached the hidden mode switch, verified in BrowserOS neo.
+  More fundamentally, a 22-second sequence, a welcome dialog, and an idle start
+  screen repeat the invitation three times. Sharing one storage key does not
+  remove those steps. The argument now sits beside the actual start action.
+  `/intro` remains a separate, optional narrative, with a text alternative.
+- **A phone map is a reading surface.** The recorded 5.1px overview labels are
+  too small to identify a target before tapping. A full-width list, derived from
+  the same graph and teaching order, names every prerequisite at normal text
+  size. The diagram remains available. Below the existing 1100px threshold the
+  map and guide are explicitly selected full-size views; there is no drag sheet.
+  This avoids both rejected stacked half-panes and a map hidden under a sheet.
+- **Remove the score, including its accessible label.** The old progress ring
+  still announced “0 of 23 ideas solid” when the visible text omitted the count.
+  No global score remains, at any stage. The next useful idea carries progress.
+
+The diagnostic, assessment prompts, graph edges, state semantics, authored
+explanations, and motion lab's five effects are retained. Retry stores the exact
+failed payload; reset aborts and invalidates old requests. Typed drafts live in
+the shell so opening an idea does not erase them. The map now names prerequisite
+relationships in its inspector as well as drawing them.
+
+The welcome's “Nothing is sent anywhere” claim was false for both answers and
+voice. The actual server/Google path is stated next to the invitation, and voice
+explains its automatic microphone handoff before opt-in.
+
+These changes are a proposal, not evidence of improved conversion. The real
+learner validation gate remains open. Browser accessibility-tree and keyboard
+checks do not replace a VoiceOver/NVDA session or physical-phone voice testing.
+
+### Playable map proposal — 2026-09-11
+
+On `proposal/playable-map`, after `proposal/recognition-first`. The owner asked
+for the proposed focused neighbourhood and playable neuron to be implemented.
+The first map view now shows one concept and its immediate prerequisite and
+dependant links; Full map and List remain available. This changes the default
+presentation, not the graph or what any mark claims.
+
+The neuron experiment uses two fixed inputs, two adjustable weights, a fixed
+bias, and ReLU. Predict → run → inspect the arithmetic → optionally explain it
+back. It is deliberately a choice alongside the diagnostic, not a prerequisite
+for it. The experiment has no learner-model access. Only the existing assessor
+and upgrade path can earn a mark; hand marking remains explicit facilitator work.
+This follows the recorded objection to dishonest unlock waves: downstream
+concepts keep their actual states. No points, locked levels, or fabricated mastery.
+
+Weights/results survive view changes, and returning from the experiment keeps
+an unfinished explanation. Explanation requests abort on unmount and time out
+at 45 seconds; a delayed result after reset cannot recreate old marks. The toy
+model names its limitations, including that adjusting weights here is manual
+and nothing is training. See `docs/playable-map.md` for verification and limits.
+
+### Side-panel scroll correction — 2026-09-11
+
+The owner found that lower side-panel content was unreachable. The inspector
+and idle conversation both nested a scrolling child inside the scrolling guide;
+the outer panel and its padding had no scroll range. Static content now has its
+natural height and the guide is its single scroll owner. The guide keeps a stable
+scrollbar gutter. The walkthrough deliberately retains a separate reading area,
+but it now has a 128px minimum: at 720×450 it previously collapsed to 0px beneath
+the fixed controls. The outer guide can scroll to those controls when necessary.
+
+Earlier checks emphasized horizontal overflow. The regression check must also
+reach the final control/last response after expansion and resizing. Browser
+checks now verify actual wheel scrolling and End-key reachability, including an
+open explanation at 320×568, 390×600, 720×450, 1100×600, and 1440×720. A long
+mocked explanation response remains reachable, with learner marks unchanged.
+323 tests, lint, typecheck, and the production Webpack build pass.
+
+### Required branch isolation for future experiments
+
+The owner requires every experiment session to create its own branch before
+editing, and deliver its own PR for independent review and merging. Never
+implement experiment work on `main`, `proposal/playable-map`, or another
+session's branch. Historical instructions to continue on this proposal branch
+are not permission to share it for new experiments. Use separate worktrees for
+concurrent sessions. Base experiment branches/PRs on the proposal while it is
+unmerged, and on updated `main` after it merges. Verify the active branch before
+editing and committing; push only the session's own branch.

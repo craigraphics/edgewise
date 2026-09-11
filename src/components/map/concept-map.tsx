@@ -113,6 +113,7 @@ type Props = {
   fit?: FitMode;
   /** Suppresses the staggered first reveal — used when the map is remounted. */
   quiet?: boolean;
+  showControls?: boolean;
   className?: string;
 };
 
@@ -125,6 +126,7 @@ export function ConceptMap({
   covered,
   fit = 'legible',
   quiet = false,
+  showControls = true,
   className,
 }: Props) {
   const layout = useMemo(() => layoutGraph(graph), [graph]);
@@ -219,16 +221,11 @@ export function ConceptMap({
    */
   const onWheel = useCallback(
     (event: React.WheelEvent<HTMLDivElement>) => {
-      if (!camera || pane.width === 0) return;
+      if (!camera || pane.width === 0 || event.ctrlKey || event.metaKey) return;
       const box = paneRef.current?.getBoundingClientRect();
       if (!box) return;
       event.preventDefault();
 
-      const pointer = { x: event.clientX - box.left, y: event.clientY - box.top };
-      if (event.ctrlKey || event.metaKey) {
-        applyCamera(zoomAt(camera, pointer, Math.exp(-event.deltaY / 220), content, pane));
-        return;
-      }
       applyCamera(
         clampCamera(
           {
@@ -251,7 +248,7 @@ export function ConceptMap({
   useEffect(() => {
     const element = paneRef.current;
     if (!element) return;
-    const handler = (event: WheelEvent) => event.preventDefault();
+    const handler = (event: WheelEvent) => { if (!event.ctrlKey && !event.metaKey) event.preventDefault(); };
     element.addEventListener('wheel', handler, { passive: false });
     return () => element.removeEventListener('wheel', handler);
   }, []);
@@ -446,7 +443,7 @@ export function ConceptMap({
        * this is a diagram to read, and a prominent zoom control invites fiddling
        * with the view instead of looking at what it shows.
        */}
-      <div className="absolute right-2 bottom-2 flex flex-col gap-1">
+      {showControls && <div className="absolute right-2 bottom-2 flex flex-col gap-1">
         <ZoomButton label="Zoom in" onClick={() => zoomBy(1.25)}>
           <PlusIcon />
         </ZoomButton>
@@ -456,7 +453,7 @@ export function ConceptMap({
         <ZoomButton label="Fit the map to the screen" onClick={refit}>
           <ScanIcon />
         </ZoomButton>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -563,6 +560,7 @@ function MapNode({
       data-node={node.id}
       tabIndex={0}
       role="button"
+      aria-pressed={isSelected}
       aria-label={`${node.label}. ${STATE_LABEL[state]}.${isLead ? ' Start here.' : ''}${isCovered ? ' Already walked through.' : ''} In ${node.band}.`}
       onClick={onSelect ? () => onSelect(node) : undefined}
       onKeyDown={(event) => onKeyDown(event, node)}
@@ -582,6 +580,7 @@ function MapNode({
       )}
       style={revealDelay !== null ? { animationDelay: `${revealDelay}ms` } : undefined}
     >
+    <rect className="keyboard-focus-ring" x={-5} y={-5} width={NODE_WIDTH + 10} height={NODE_HEIGHT + 10} rx={NODE_RADIUS + 4} fill="none" stroke="var(--foreground)" strokeWidth={3} aria-hidden />
     {/*
      * The focal lift gets its own group.
      *

@@ -1,9 +1,8 @@
 'use client';
 
-import { AudioLines, InfoIcon, Square } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRightIcon, AudioLines, Square } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
 
-import { NodeGlyph } from '@/components/map/node-glyph';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useMicLevel } from '@/hooks/use-mic-level';
@@ -23,6 +22,13 @@ type Props = {
   onStart: () => void;
   onAnswer: (text: string) => void;
   onReset: () => void;
+  onRetry: () => void;
+  onConfigure: () => void;
+  onExplore: () => void;
+  onWalk: () => void;
+  onPlay: () => void;
+  draft: string;
+  onDraftChange: (value: string) => void;
   /** The node the map is pointing at, and what rests on it. */
   lead: { node: ConceptNode; state: NodeState; resting: number } | null;
 };
@@ -47,10 +53,9 @@ export function Conversation({
   firstTime,
   onStart,
   onAnswer,
-  onReset,
+  onReset, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
   lead,
 }: Props) {
-  const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   const busy = status === 'thinking';
@@ -59,11 +64,11 @@ export function Conversation({
   const submit = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || busy) return;
+      if (!trimmed || status !== 'running') return;
       onAnswer(trimmed);
-      setDraft('');
+      onDraftChange('');
     },
-    [busy, onAnswer],
+    [status, onAnswer, onDraftChange],
   );
 
   const voice = useVoice(submit);
@@ -106,7 +111,7 @@ export function Conversation({
 
     lastSpoken.current = messages.length;
     // Leaving the microphone open after "that's everything" is unsettling.
-    void voice.say(message.content, status !== 'done');
+    if (status === 'running' || status === 'done') void voice.say(message.content, status === 'running');
     /*
      * Deps are narrowed deliberately: the whole `voice` object is rebuilt every
      * render, so depending on it re-runs this constantly. `enabled` and `say`
@@ -124,90 +129,35 @@ export function Conversation({
 
   if (status === 'idle') {
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {/*
-         * A first-time visitor has no idea which of the two modes to pick or
-         * what either does. This is the one place to say it, in the order it
-         * happens.
-         */}
-        {firstTime ? (
-          <>
-            <h2 className="font-display text-2xl font-semibold">Start here</h2>
-            <ol className="mt-5 space-y-3.5">
-              {[
-                'A few questions, so it can work out what you already have. Two minutes.',
-                'The map fills in as you go.',
-                'Then it walks you through the whole thing, whatever you knew.',
-              ].map((line, index) => (
-                <li key={line} className="flex gap-3">
-                  <span className="border-border text-muted-foreground tabular mt-px flex size-5 shrink-0 items-center justify-center rounded-full border text-2xs">
-                    {index + 1}
-                  </span>
-                  <span className="text-muted-foreground text-base leading-relaxed">{line}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="text-muted-foreground mt-5 text-base leading-relaxed">
-              Nothing is scored, and &ldquo;I don&rsquo;t know&rdquo; is a genuinely useful answer.
-            </p>
-          </>
-        ) : (
-          <p className="font-display text-read max-w-[60ch]">
-            A short conversation to find where your understanding of this currently stops. Nothing is
-            scored, and &ldquo;I don&rsquo;t know&rdquo; is a genuinely useful answer.
+      <div className="shrink-0">
+        <div>
+          <p className="eyebrow">Find your starting point</p>
+          <h2 className="font-display mt-5 text-[clamp(2rem,3.1vw,3rem)] leading-[1.08] tracking-tight">
+            {firstTime ? <>Read the explainers.<br /><em>Still not clicking?</em></> : <>Your map,<br /><em>ready to revisit.</em></>}
+          </h2>
+          <p className="mt-5 text-base leading-relaxed">
+            {firstTime ? 'One half-held idea can make everything after it harder to follow. A short conversation helps find where to begin.' : lead ? 'Keep exploring from the ideas already on your map. You can revisit any connection or continue the conversation.' : 'Every idea on this map is marked solid. Revisit an explanation or explore the walkthrough.'}
           </p>
-        )}
-        <Button size="touch" onClick={onStart} className="mt-6">
-          {firstTime ? 'Start the questions' : 'Start'}
-        </Button>
-        {error ? <p className="text-muted-foreground mt-4 text-base leading-relaxed">{error}</p> : null}
-
-        {/*
-         * The panel at rest was a paragraph, a button, and six hundred pixels
-         * of nothing. This is what fills it — not decoration, but the map's own
-         * claim in words: here is the idea it is pointing at, and here is how
-         * much of the rest is waiting behind it.
-         *
-         * That sentence is the entire argument for the map existing, and until
-         * now it was only reachable by clicking the right node. Someone
-         * returning to a half-finished session should not have to hunt for the
-         * one thing that says why to carry on.
-         */}
-        {!firstTime && lead ? (
-          <div className="border-border mt-8 border-t pt-6">
-            <p className="text-muted-foreground text-2xs font-medium uppercase">Where the map says to start</p>
-            <div className="bg-surface-2/60 border-border mt-2.5 flex items-start gap-3 rounded-xl border p-3.5">
-              <span
-                aria-hidden
-                className="mt-0.5 w-[3px] shrink-0 self-stretch rounded-full"
-                style={{ background: `var(--band-${lead.node.band})`, opacity: 0.7 }}
-              />
-              <svg width={13} height={13} aria-hidden className="mt-1 shrink-0 overflow-visible">
-                <NodeGlyph
-                  state={lead.state}
-                  cx={6.5}
-                  cy={6.5}
-                  colour={`var(--band-${lead.node.band})`}
-                />
-              </svg>
-              <span className="min-w-0">
-                <span className="block text-base font-medium">{lead.node.label}</span>
-                <span className="text-muted-foreground mt-1 block text-base leading-relaxed">
-                  {/*
-                   * Structure only. This card is on screen before a single
-                   * question has been answered, so "why so much of the rest
-                   * probably feels slippery" was an interpretation of somebody
-                   * we had not met — the same unearned verdict the intro used
-                   * to make, in a smaller typeface.
-                   */}
-                  {lead.resting > 0
-                    ? `${lead.resting} of the later ideas build on this one.`
-                    : lead.node.subtitle}
-                </span>
-              </span>
-            </div>
+          <Button size="touch" onClick={!firstTime && !lead ? onWalk : onStart} className="mt-6 min-h-12 w-full justify-between px-5">
+            {firstTime ? 'Find my starting point' : lead ? 'Continue from my map' : 'Revisit the walkthrough'} <ArrowRightIcon />
+          </Button>
+          <p className="text-muted-foreground mt-3 text-sm">Speak or type. No maths or code. “I don’t know” is a useful place to start.</p>
+          <button onClick={onPlay} className="mt-4 min-h-11 w-full text-left text-sm underline underline-offset-4">Or take a neuron apart →</button>
+          {!firstTime && lead && <button onClick={onExplore} className="starting-point mt-6 w-full text-left">
+            <span className="eyebrow">A place to explore</span>
+            <span className="font-display mt-2 block text-xl">{lead.node.label}</span>
+            <span className="text-muted-foreground mt-2 block text-sm">{lead.resting ? `${lead.resting} later ideas build on this one.` : lead.node.subtitle}</span>
+          </button>}
+          <div className="border-border mt-8 border-t pt-5">
+            <p className="eyebrow">What you leave with</p>
+            <p className="font-display mt-3 text-read">A map of what holds, what is half-held, and what to explore next.</p>
+            <p className="text-muted-foreground mt-3 text-sm">Read any idea now. Listening to an explanation never changes a mark; explaining it in your own words can.</p>
+            <button onClick={onWalk} className="mt-4 min-h-10 text-sm underline underline-offset-4">Or explore the walkthrough</button>
           </div>
-        ) : null}
+          <p className="text-muted-foreground border-border mt-6 border-t pt-4 text-xs leading-relaxed">
+            Your map is saved in this browser. Answers go to our server and Google’s AI to find your starting point. Voice transcription also goes to Google.
+          </p>
+        </div>
       </div>
     );
   }
@@ -244,8 +194,9 @@ export function Conversation({
        * So the live turn is pinned here, and only what came before it scrolls.
        */}
       {current ? (
-        <div className="border-border/60 mb-4 shrink-0 border-b pb-4">
-          <p className="font-display text-read edgewise-rise max-w-[60ch]">{current}</p>
+        <div className="border-border/60 mb-4 max-h-[42%] shrink-0 overflow-y-auto border-b pb-4" tabIndex={0} role="region" aria-label="Current question">
+          <p className="eyebrow mb-3">A place to begin</p>
+          <p className="font-display text-read edgewise-rise max-w-[60ch]" aria-live="polite" aria-atomic="true">{current}</p>
         </div>
       ) : null}
 
@@ -292,11 +243,11 @@ export function Conversation({
          * voice pausing rather than as the interface loading. No bouncing dots.
          */}
         {busy ? (
-          <p className="text-muted-foreground font-display text-read animate-pulse">Thinking…</p>
+          <p role="status" className="text-muted-foreground font-display text-read">Working with your answer…</p>
         ) : null}
-        {error ? <p className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
+        {error ? <p role="alert" className="text-base leading-relaxed">{error}</p> : null}
         {voice.error ? (
-          <p className="text-muted-foreground text-base leading-relaxed">{voice.error}</p>
+          <p role="alert" className="text-base leading-relaxed">{voice.error}</p>
         ) : null}
         <div ref={endRef} />
       </div>
@@ -309,13 +260,24 @@ export function Conversation({
        * lights the panel's real edges, had nothing at this end to come off.
        */}
       <div className="edgewise-raised border-border relative z-10 mt-4 shrink-0 rounded-xl border p-3">
-        {status === 'done' ? (
-          /* Named for what the tools menu already calls this exact action, now
-             that it does the same thing: the map is cleared, not just the
-             transcript. */
-          <Button variant="outline" size="touch" onClick={onReset} className="w-full">
-            Start over
-          </Button>
+        {status === 'error' ? (
+          <div className="space-y-3">
+            <p className="text-sm">Your answer is still here. Retry when you’re ready, or read the ideas while you wait.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="touch" onClick={onRetry}>Retry this turn</Button>
+              <Button size="touch" variant="outline" onClick={onConfigure}>Connection settings</Button>
+              <Button size="touch" variant="ghost" onClick={onWalk}>Open walkthrough</Button>
+            </div>
+          </div>
+        ) : status === 'done' ? (
+          <div className="space-y-3">
+            <p className="eyebrow">Your next step</p>
+            {lead && <p className="font-display text-xl">{lead.node.label}</p>}
+            <Button size="touch" onClick={onExplore} className="min-h-12 w-full">
+              {lead ? 'Explore this idea' : 'Open the walkthrough'} <ArrowRightIcon />
+            </Button>
+            <Button variant="ghost" size="touch" onClick={onReset}>Start a fresh conversation</Button>
+          </div>
         ) : (
           <>
             {voice.listening ? (
@@ -327,8 +289,9 @@ export function Conversation({
               </div>
             ) : (
               <Textarea
+                aria-label="Your answer"
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(event) => onDraftChange(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
@@ -356,7 +319,7 @@ export function Conversation({
                * to "Stop reading"; it is the most useful answer anyone gives
                * here and it is now styled like one.
                */}
-              <Button size="touch" variant="outline" onClick={() => submit("I don't know")} disabled={busy}>
+              <Button size="touch" variant="outline" onClick={() => submit("I don't know")} disabled={!answering || busy}>
                 I don&rsquo;t know
               </Button>
 
@@ -422,65 +385,17 @@ export function Conversation({
 }
 
 function VoiceToggle({ voice }: { voice: ReturnType<typeof useVoice> }) {
-  const [noteOpen, setNoteOpen] = useState(false);
-
   if (!voice.supported.listen && !voice.supported.speak) {
-    return (
-      <p className="text-muted-foreground mt-2.5 text-2xs">
-        This browser has no speech support — Chrome does. Typing works everywhere.
-      </p>
-    );
+    return <p className="text-muted-foreground mt-3 text-sm">Voice isn’t available in this browser. You can type every answer.</p>;
   }
-
   return (
-    <div className="mt-2.5 flex items-center gap-2">
-      {/*
-       * A labelled control, not a text link.
-       *
-       * Reading the questions aloud is a different route through the product
-       * for anybody who finds a screen of text hard going, and at 2xs muted
-       * text it looked like a preference somebody else had already settled. It
-       * stays secondary — it is not the main action — but it is now the same
-       * kind of object as the buttons above it.
-       */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={voice.toggle}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        {voice.enabled ? 'Turn the voice off' : 'Read the questions aloud'}
+    <div className="border-border mt-3 border-t pt-3">
+      <Button variant="outline" size="touch" onClick={voice.toggle} aria-pressed={voice.enabled}>
+        <AudioLines /> {voice.enabled ? 'Turn voice off' : voice.supported.listen ? 'Talk and listen' : 'Read aloud'}
       </Button>
-
-      {/*
-       * Chrome's recognition is not on-device — the audio goes to Google — and
-       * the spec's description of this path as "free, no server cost" is true
-       * of money and not of privacy. So it is still said before the microphone
-       * opens, and still not buried in a policy page. It is behind a control
-       * rather than printed under the composer because as permanent body text
-       * it became furniture, which is the one thing a disclosure must not be.
-       */}
-      {voice.enabled ? (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setNoteOpen((open) => !open)}
-            aria-expanded={noteOpen}
-            aria-label="Where your voice goes"
-            className="text-muted-foreground hover:text-foreground flex items-center transition-colors duration-[--dur-fast]"
-          >
-            <InfoIcon className="size-3.5" />
-          </button>
-          {noteOpen ? (
-            <div className="edgewise-raised border-border absolute bottom-full left-0 z-40 mb-2 w-64 rounded-lg border p-3">
-              <p className="text-muted-foreground text-2xs leading-relaxed">
-                Chrome sends what you say to Google to transcribe it — it is not done on your computer.
-                Typing stays available throughout.
-              </p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+        {voice.supported.listen ? 'Voice reads each question, then opens your mic. Google transcribes your audio. Typing stays available.' : 'Questions are read aloud. Type your answers below.'}
+      </p>
     </div>
   );
 }

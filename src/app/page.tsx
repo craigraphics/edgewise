@@ -1,444 +1,211 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-
-import { AnimatePresence, motion } from 'motion/react';
-
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConceptMap } from '@/components/map/concept-map';
+import { useNeuronExperiment } from '@/components/experiments/neuron-experiment';
+import { FocusedMap } from '@/components/map/focused-map';
+import { ConceptList } from '@/components/map/concept-list';
 import { MapLegend } from '@/components/map/legend';
-import { AppHeader, Position } from '@/components/shell/header';
+import { AppHeader } from '@/components/shell/header';
 import { type Mode } from '@/components/shell/mode-switch';
-import { PanelSheet, type Snap } from '@/components/shell/panel-sheet';
 import { Conversation } from '@/components/session/conversation';
 import { Inspector, MARKS } from '@/components/session/inspector';
 import { Setup, setupLabel } from '@/components/session/setup';
-import { Welcome } from '@/components/session/welcome';
 import { Walkthrough } from '@/components/session/walkthrough';
-import { PHONE_QUERY, SHEET_QUERY, useMedia } from '@/hooks/use-media';
+import { SHEET_QUERY, useMedia } from '@/hooks/use-media';
 import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
 import { GRAPH } from '@/lib/graph/load';
-import { coveredBy, teachingOrder } from '@/lib/graph/order';
+import { coveredBy } from '@/lib/graph/order';
 import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
 import { useLearnerModel } from '@/lib/learner/store';
 import { useSessionConfig } from '@/lib/session/config';
-import { cn } from '@/lib/utils';
 import { useSession } from '@/lib/session/use-session';
 import { useWalkthrough } from '@/lib/walkthrough/store';
+import { cn } from '@/lib/utils';
 
-/**
- * The shell.
- *
- * Sized to the viewport and scrolled only on the inside. Measured before the
- * first rewrite: 498px of page scroll on a laptop, 387px of the map below the
- * fold, and on a tablet the entire interaction panel sat 800px down the page —
- * you could not tell it existed. Whatever is being said or shown has to stay
- * put while you are listening to it, so the header is fixed and only the two
- * content regions move.
- *
- * Two layouts now, not one with a fallback:
- *
- * - **Desktop (≥1280):** map left, panel right. As before.
- * - **Everything narrower:** the map takes the whole area and the panel is a
- *   sheet over it, dragged to whatever share of the screen the moment needs.
- *   Stacking them instead gave a tablet 530px of map under a panel that hid it,
- *   and a phone two unusable 250px halves.
- */
-
-/**
- * Two things a visitor can do, and a drawer of tools that are not for them.
- *
- * `mark` is a wizard-of-oz harness for testing the diagnostic on someone by
- * hand. It is reached from the tools menu rather than sitting in the main
- * navigation, where it gave a first-time visitor three unlabelled choices where
- * there are really two.
- */
 type View = Mode | 'mark';
 
 export default function Page() {
   const { model, hydrated, mark, reset: resetMarks, loadFixture } = useLearnerModel(GRAPH);
   const { config, hydrated: configReady, save, forget } = useSessionConfig();
   const session = useSession(config, mark);
-
+  const walk = useWalkthrough(GRAPH);
+  const compact = useMedia(SHEET_QUERY);
   const [view, setView] = useState<View>('session');
+  const [surface, setSurface] = useState<'map' | 'guide'>('guide');
+  const [mapFormat, setMapFormat] = useState<'focus' | 'diagram' | 'list' | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [walkNodeId, setWalkNodeId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  /**
-   * The sheet's height, as an override rather than as the value.
-   *
-   * Left as plain state it had to be corrected by an effect every time the
-   * breakpoint changed, which is a cascading render to compute something that
-   * is simply derived: a phone opens the panel over the map, a tablet shares
-   * the screen with it. The override is what the learner has dragged it to, and
-   * once they have expressed a preference it outranks the default.
-   */
-  const [snapOverride, setSnapOverride] = useState<Snap | null>(null);
-  /**
-   * Facilitator presentation mode.
-   *
-   * `AGENTS.md` has described this since the beginning — "press `f`, then turn
-   * the screen around" — and calls it the mitigation for the largest risk in
-   * the product: that being diagnosed feels like being graded. Watching someone
-   * click "Not yet" against you is the most direct possible way to produce that
-   * feeling. It had never actually been implemented.
-   *
-   * Derived against the view rather than reset by an effect, so leaving
-   * facilitator mode cannot strand anyone in a screen with no controls on it.
-   */
-  const [presentingRequested, setPresentingRequested] = useState(false);
-
-  const sheetLayout = useMedia(SHEET_QUERY);
-  const phone = useMedia(PHONE_QUERY);
-
-  const walk = useWalkthrough(GRAPH);
-  const walkPosition = walk.position;
-  const covered = useMemo(() => coveredBy(GRAPH, walkPosition), [walkPosition]);
-  const order = useMemo(() => teachingOrder(GRAPH), []);
-
-  const earn = useCallback(
-    (nodeId: string, earned: NodeState) => {
-      mark(nodeId, upgrade(stateOf(model, nodeId), earned));
-    },
-    [mark, model],
-  );
-
+  const [presenting, setPresenting] = useState(false);
+  const [draft, setDraft] = useState('');
+  const experiment = useNeuronExperiment();
+  const [practice, setPractice] = useState(false);
+  const [explainRequest, setExplainRequest] = useState(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const returnFocus = useRef<Element | null>(null);
+  const covered = useMemo(() => coveredBy(GRAPH, walk.position), [walk.position]);
   const lead = leadNode(GRAPH, model);
-  /* The sentence the whole map exists to deliver, so the panel can say it too
-     rather than making someone find the right node to click. */
-  const leadDetail = useMemo(
-    () =>
-      lead
-        ? { node: lead, state: stateOf(model, lead.id), resting: downstreamOf(GRAPH, lead.id).length }
-        : null,
-    [lead, model],
-  );
-  const selected = GRAPH.nodes.find((node) => node.id === selectedId) ?? null;
-  const solid = useMemo(
-    () => new Set(GRAPH.nodes.filter((node) => stateOf(model, node.id) === 'known').map((n) => n.id)),
-    [model],
-  );
-  const started = solid.size > 0 || walkPosition > 0;
-
-  /* What the conversation or the walk is on. Separate from what has been
-     clicked open — see the note on `highlightedId` in the map. */
+  const selected = GRAPH.nodes.find(node => node.id === selectedId) ?? null;
+  const started = Object.values(model.states).some(state => state !== 'unexplored') || walk.position > 0;
+  const format = mapFormat ?? (view === 'mark' ? (compact ? 'list' : 'diagram') : 'focus');
+  const leadDetail = lead ? { node: lead, state: stateOf(model, lead.id), resting: downstreamOf(GRAPH, lead.id).length } : null;
   const highlighted = view === 'session' ? session.nodeId : view === 'walk' ? walkNodeId : null;
 
-  const snap = snapOverride ?? (phone ? 'full' : 'half');
-  const presenting = presentingRequested && view === 'mark';
+  const playing = practice && selected?.id === 'neuron' && format === 'focus';
+  const focusNode = selected ?? GRAPH.nodes.find(node => node.id === highlighted) ?? lead ?? GRAPH.nodes[0];
 
-  /*
-   * Three states, not one layout that shows everything at once.
-   *
-   * While somebody is answering, the header's mode switch, the legend and the
-   * band key were all at full strength alongside the question — so the map and
-   * the chrome were negotiating with the thing the learner was meant to be
-   * doing. The order of attention during a diagnosis is: the question, the
-   * reassurance, the answer, and only then the map.
-   *
-   * Nothing is removed, because a control that vanishes is a control somebody
-   * has to hunt for. The legend recedes and comes back on hover or focus; the
-   * mode switch is not offered mid-answer, because switching away is what the
-   * Start over action is for and an idle choice next to a question invites
-   * leaving it.
-   */
-  const answering = view === 'session' && started && session.status !== 'done';
+  const latestModel = useRef(model);
+  useEffect(() => { latestModel.current = model; }, [model]);
+  const earn = useCallback((id: string, earned: NodeState) => {
+    mark(id, upgrade(stateOf(latestModel.current, id), earned));
+  }, [mark]);
 
-  /* Opening a node is an act of reading, so the sheet comes up to meet it —
-     done here, where the opening happens, rather than in an effect watching
-     for it afterwards. */
-  const openNode = useCallback(
-    (nodeId: string) => {
-      setSelectedId(nodeId);
-      setSnapOverride((current) => (current === 'peek' ? 'half' : current));
-    },
-    [],
-  );
+  const openNode = useCallback((id: string) => {
+    if (!selectedId) returnFocus.current = document.activeElement;
+    setSelectedId(id);
+    setSurface('guide');
+  }, [selectedId]);
 
-  const onKey = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '')) return;
+  const playNeuron = () => {
+    setView('session');
+    setPresenting(false);
+    openNode('neuron');
+    setPractice(true);
+    setMapFormat('focus');
+    setSurface('map');
+    requestAnimationFrame(() => {
+      const title = document.getElementById('neuron-lab-title');
+      title?.focus();
+      title?.scrollIntoView({ block: 'start' });
+    });
+  };
 
-      if (event.key === 'Escape') {
-        // Leaves presentation mode first: it is the state you are most likely
-        // to be stuck in, since every control that would take you out of it is
-        // hidden by definition.
-        if (presenting) setPresentingRequested(false);
-        else setSelectedId(null);
-        return;
-      }
+  const explainExperiment = () => {
+    setSelectedId('neuron');
+    setExplainRequest(request => request + 1);
+    setSurface('guide');
+  };
 
-      if (view !== 'mark') return;
-
-      /*
-       * `f` hides every control, so the screen can be turned around.
-       *
-       * That is not tidiness. The largest risk in this product is that being
-       * diagnosed feels like being graded, and watching someone click "Not yet"
-       * against you is the most direct possible way to produce that feeling.
-       */
-      if (event.key === 'f') {
-        setPresentingRequested((on) => !on);
-        return;
-      }
-
-      if (!selectedId || presenting) return;
-
-      const slot = Number(event.key);
-      if (!Number.isInteger(slot) || slot < 1 || slot > MARKS.length) return;
-      mark(selectedId, MARKS[slot - 1]);
-    },
-    [mark, presenting, selectedId, view],
-  );
+  const closeNode = useCallback(() => {
+    setSelectedId(null);
+    if (compact) setSurface('map');
+    requestAnimationFrame(() => {
+      const target = returnFocus.current;
+      if (target?.isConnected && (target instanceof HTMLElement || target instanceof SVGElement)) target.focus({ preventScroll: true });
+      else document.getElementById('concept-map')?.focus({ preventScroll: true });
+    });
+  }, [compact]);
 
   useEffect(() => {
+    if (selectedId) panelRef.current?.querySelector<HTMLElement>('#concept-title')?.focus({ preventScroll: true });
+  }, [selectedId]);
+
+  const changeView = (next: Mode) => {
+    setSelectedId(null);
+    setView(next);
+    setSurface('guide');
+    setPresenting(false);
+  };
+
+  const reset = () => {
+    resetMarks();
+    session.reset();
+    setDraft('');
+    setSelectedId(null);
+    setPractice(false);
+    experiment.reset();
+    setExplainRequest(0);
+  };
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (event.metaKey || event.ctrlKey || event.altKey || target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '') || target?.closest('[role="dialog"]')) return;
+      if (event.key === 'Escape') {
+        if (presenting) setPresenting(false);
+        else if (selectedId) closeNode();
+      }
+      if (view !== 'mark') return;
+      if (event.key === 'f') setPresenting(on => !on);
+      const slot = Number(event.key);
+      if (!presenting && selectedId && Number.isInteger(slot) && slot >= 1 && slot <= MARKS.length) mark(selectedId, MARKS[slot - 1]);
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onKey]);
-
-  /* The sheet is sized in pixels, so the region it sits in has to be measured. */
-  const regionRef = useRef<HTMLDivElement>(null);
-  const [regionHeight, setRegionHeight] = useState(0);
-  useLayoutEffect(() => {
-    const element = regionRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setRegionHeight(entry.contentRect.height));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  const panel = selected ? (
-    <Inspector
-      graph={GRAPH}
-      node={selected}
-      model={model}
-      marking={view === 'mark'}
-      presenting={presenting}
-      reveal={view !== 'session' || session.status === 'idle' || session.status === 'done'}
-      covered={covered.has(selected.id)}
-      config={config}
-      onEarned={earn}
-      onMark={mark}
-      onClose={() => setSelectedId(null)}
-    />
-  ) : view === 'walk' ? (
-    <Walkthrough
-      graph={GRAPH}
-      model={model}
-      config={config}
-      onNodeChange={setWalkNodeId}
-      onEarned={earn}
-    />
-  ) : view === 'session' ? (
-    <Conversation
-      messages={session.messages}
-      status={session.status}
-      error={session.error}
-      firstTime={!started}
-      onStart={() => session.start(model.states)}
-      onAnswer={(text) => session.answer(text, model.states)}
-      lead={leadDetail}
-      onReset={() => {
-        /*
-         * Clears the marks too, not just the transcript.
-         *
-         * Resetting the conversation alone left every node the frontier had
-         * opened still marked, and `nextToAsk` only ever offers `unexplored`
-         * nodes — so the fresh session had nothing to ask and ended on its own
-         * opening turn. Starting again has to mean the whole thing again, which
-         * is the same action the tools menu calls Start over.
-         */
-        resetMarks();
-        session.reset();
-      }}
-    />
-  ) : (
-    <p className="text-muted-foreground text-base leading-relaxed">
-      Pick a node on the map to see its probes.
-    </p>
-  );
+  }, [closeNode, mark, presenting, selectedId, view]);
 
   return (
-    // h-dvh + overflow-hidden: the page itself never scrolls, on any screen.
     <div className="bg-surface-0 flex h-dvh flex-col overflow-hidden">
-      <Welcome />
-      {/*
-       * Rendered here rather than inside the tools menu: leaving it there meant
-       * closing the menu unmounted the dialog in the same click, so it opened
-       * and vanished instantly.
-       */}
-      {settingsOpen ? (
-        <Setup onClose={() => setSettingsOpen(false)} config={config} onSave={save} onForget={forget} />
-      ) : null}
-
-      {presenting ? null : (
-        <AppHeader
-          graph={GRAPH}
-          mode={view === 'mark' ? 'session' : view}
-          onModeChange={(mode) => {
-            setSelectedId(null);
-            setView(mode);
-          }}
-          solid={solid}
-          order={order}
-          lead={lead}
-          marking={view === 'mark'}
-          answering={answering}
-          onLeaveMarking={() => setView('session')}
-          tools={[
-            { label: 'Mark by hand (for testing)', onSelect: () => setView('mark') },
-            { label: 'Load example progress', onSelect: loadFixture },
-            {
-              label: 'Start over',
-              onSelect: () => {
-                resetMarks();
-                session.reset();
-              },
-            },
-            ...(configReady
-              ? [{ label: setupLabel(config), onSelect: () => setSettingsOpen(true), separated: true }]
-              : []),
-          ]}
-        />
-      )}
-
-      <div
-        ref={regionRef}
-        className="relative mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 panel:gap-6 panel:px-6"
-      >
+      <a className="skip-link" href="#guide" onClick={() => { setSurface('guide'); requestAnimationFrame(() => panelRef.current?.focus()); }}>Skip to conversation</a>
+      <a className="skip-link" href="#concept-map" onClick={() => { setSurface('map'); requestAnimationFrame(() => document.getElementById('concept-map')?.focus()); }}>Skip to map</a>
+      {settingsOpen && <Setup onClose={() => setSettingsOpen(false)} config={config} onSave={save} onForget={forget} />}
+      {!presenting && <AppHeader
+        mode={view === 'mark' ? 'session' : view}
+        onModeChange={changeView}
+        marking={view === 'mark'}
+        onLeaveMarking={() => changeView('session')}
+        tools={[
+          { label: 'Mark by hand (for testing)', onSelect: () => { setView('mark'); setSurface('map'); } },
+          { label: 'Load example progress', onSelect: loadFixture },
+          { label: 'Start over', onSelect: reset },
+          ...(configReady ? [{ label: setupLabel(config), onSelect: () => setSettingsOpen(true), separated: true }] : []),
+        ]}
+      />}
+      {!presenting && <nav aria-label="Workspace" className="border-border flex shrink-0 border-b panel:hidden">
+        {(['session', 'map', 'walk'] as const).map(item => <button
+          key={item}
+          aria-pressed={item === 'map' ? surface === 'map' : surface === 'guide' && view === item}
+          onClick={() => item === 'map' ? setSurface('map') : item === 'session' && selected ? setSurface('guide') : changeView(item)}
+          className={cn('min-h-12 flex-1 border-b-2 text-sm font-medium', (item === 'map' ? surface === 'map' : surface === 'guide' && view === item) ? 'border-foreground' : 'text-muted-foreground border-transparent')}
+        >{item === 'map' ? 'Your map' : item === 'walk' ? 'Walkthrough' : selected ? 'This idea' : 'Conversation'}</button>)}
+      </nav>}
+      <main className="workspace mx-auto grid min-h-0 w-full max-w-[100rem] flex-1 panel:grid-cols-[minmax(0,1fr)_minmax(380px,440px)]">
         <section
-          aria-label="Concept map"
-          /*
-           * Below desktop the map fills the whole region and the panel floats
-           * over it. At desktop it is a column of its own again.
-           */
-          /*
-           * `min-w-0` is load-bearing, not tidiness. A flex item's automatic
-           * minimum size is its content's min-content width, so without this
-           * the map region could not shrink below the map — and narrowing the
-           * window pushed the panel off the right-hand edge and cut it in half.
-           */
-          className="absolute inset-0 flex min-h-0 min-w-0 flex-col px-4 pt-3 sm:px-6 panel:relative panel:inset-auto panel:flex-1 panel:px-0"
+          id="guide" ref={panelRef} tabIndex={-1} aria-label={selected ? 'Selected idea' : view === 'walk' ? 'Walkthrough' : 'Conversation'}
+          className={cn('guide-panel min-h-0 min-w-0 flex-col overflow-y-auto p-5 sm:p-8 panel:col-start-2 panel:row-start-1 panel:border-l panel:border-border', compact && surface !== 'guide' && !presenting ? 'hidden' : 'flex')}
         >
-          {/*
-           * The legend, above the map rather than below it.
-           *
-           * It used to sit under the full 1038px height of the drawing, inside
-           * the drawing's own scroll container, so on a laptop you had to
-           * scroll 250px past the last node to reach the only thing that
-           * explained the marks. It also explained the six bands and not the
-           * four states, which are what the product is actually about.
-           */}
-          {presenting ? null : (
-            <MapLegend
-              graph={GRAPH}
-              className={cn(
-                'shrink-0 pb-2 transition-opacity duration-[--dur-slow] ease-[--ease]',
-                /* Quiet while answering, full strength the moment somebody
-                   looks at it. Recedes; never disappears. */
-                answering && 'opacity-45 focus-within:opacity-100 hover:opacity-100',
-              )}
-            />
-          )}
-
-          <div className={hydrated ? 'contents' : 'contents opacity-0'}>
-            <ConceptMap
-              graph={GRAPH}
-              model={model}
-              onSelect={(node) => openNode(node.id)}
-              selectedId={selectedId}
-              highlightedId={highlighted}
-              covered={covered}
-              /* Beside the panel, legibility wins and the last units pan.
-                 Under a sheet, the full width has to be visible — clipping a
-                 column mid-node reads as a broken drawing. On a phone the map
-                 is a backdrop, so the whole shape wins outright. */
-              fit={phone ? 'all' : sheetLayout ? 'width' : 'legible'}
-              quiet={started}
-            />
-          </div>
+          {selected ? <Inspector
+            key={selected.id} graph={GRAPH} node={selected} model={model} marking={view === 'mark'} presenting={presenting}
+            reveal={(practice && selected.id === 'neuron') || view !== 'session' || session.status === 'idle' || session.status === 'done'} covered={covered.has(selected.id)}
+            config={config} onEarned={earn} onMark={mark} onClose={closeNode} onSelect={openNode}
+            onPlay={playNeuron} explainRequest={selected.id === 'neuron' ? explainRequest : 0}
+          /> : view === 'walk' ? <Walkthrough graph={GRAPH} model={model} config={config} onNodeChange={setWalkNodeId} onEarned={earn} /> : view === 'mark' ? (
+            <div className="space-y-4">
+              <p className="eyebrow">Facilitator tools</p>
+              <h2 className="font-display text-2xl">Listen for the idea.</h2>
+              <p className="text-muted-foreground text-base">Choose an idea to see its questions and mark what you hear.</p>
+              <p className="text-sm">Keys 1–4 mark it. Press <kbd>f</kbd> to hide the controls before sharing the screen. Escape brings them back.</p>
+            </div>
+          ) : <Conversation
+            messages={session.messages} status={session.status} error={session.error} firstTime={!started}
+            draft={draft} onDraftChange={setDraft}
+            onStart={() => session.start(model.states)} onAnswer={text => session.answer(text, model.states)}
+            onRetry={session.retry} onConfigure={() => setSettingsOpen(true)}
+            onExplore={() => { if (lead) openNode(lead.id); else changeView('walk'); }}
+            onWalk={() => changeView('walk')} onPlay={playNeuron}
+            lead={leadDetail} onReset={reset}
+          />}
         </section>
-
-        {sheetLayout ? (
-          <PanelSheet
-            snap={snap}
-            onSnapChange={setSnapOverride}
-            containerHeight={regionHeight}
-            /*
-             * Pinned over the bottom of the map rather than laid out beside it.
-             * As an ordinary flex child it sat at the TOP of the row with the
-             * map showing underneath, and — having no width of its own — grew
-             * to the width of its longest unwrapped line and ran off the screen.
-             */
-            className="absolute inset-x-0 bottom-0"
-          >
-            {/* The position moves into the panel here: the header has no room
-                for it at this width, and it is worth the space at any width. */}
-            <Position
-              graph={GRAPH}
-              solid={solid}
-              order={order}
-              lead={lead}
-              className="mb-3 flex shrink-0 lg:hidden"
-            />
-            <PanelBody view={view} selectedId={selectedId}>
-              {panel}
-            </PanelBody>
-          </PanelSheet>
-        ) : (
-          /* `relative` so the voice halo, raised from inside the conversation,
-             lights this panel's edges — including the divider it shares with
-             the map — rather than the content box it is declared in.
-
-             Widened from 22rem: the conversation is the thing being done and
-             the map is context for it, so the panel gets the room a paragraph
-             of the tutor's voice actually needs. */
-          <aside className="border-border relative flex min-h-0 w-[28rem] min-w-0 shrink-0 flex-col border-l py-4 pl-6 2xl:w-[32rem]">
-            <PanelBody view={view} selectedId={selectedId}>
-              {panel}
-            </PanelBody>
-          </aside>
-        )}
-      </div>
+        <section id="concept-map" tabIndex={-1} aria-label="Concept map" className={cn('min-h-0 min-w-0 flex-col px-5 pt-5 pb-3 sm:px-8 panel:col-start-1 panel:row-start-1', compact && surface !== 'map' && !presenting ? 'hidden' : 'flex')}>
+          {!presenting && <>
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className={cn("eyebrow", playing && "hidden sm:block")}>A field guide to AI</p>
+                <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing ? "The neuron, up close." : "Ideas build on ideas."}</h1>
+              </div>
+              <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
+                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => setMapFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
+              </div>
+            </div>
+            <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
+            {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
+          </>}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} experiment={experiment} playing={practice && focusNode.id === 'neuron'} onSelect={openNode} onPlay={playNeuron} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
+        </section>
+      </main>
     </div>
-  );
-}
-
-/**
- * Crossfades between the three things the panel can be.
- *
- * Switching mode used to snap, which read as a page replacement rather than as
- * the same surface showing something else — and the surrounding layout does not
- * move, so a replacement is exactly the wrong impression. A short crossfade with
- * a few pixels of rise says "same place, different content".
- *
- * `mode="wait"` so the outgoing panel is gone before the new one arrives. Both
- * present at once would double the voice hooks for a frame, and the sibling
- * project's three fighting audio loops started as exactly that kind of overlap.
- */
-function PanelBody({
-  view,
-  selectedId,
-  children,
-}: {
-  view: View;
-  selectedId: string | null;
-  children: React.ReactNode;
-}) {
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={selectedId ?? view}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -2 }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="flex min-h-0 flex-1 flex-col"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
   );
 }

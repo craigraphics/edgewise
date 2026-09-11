@@ -66,7 +66,7 @@ export function MapLegend({ graph, className }: { graph: ConceptGraph; className
         </button>
 
         {bandsOpen ? (
-          <div className="edgewise-raised border-border absolute right-0 bottom-full z-30 mb-2 w-56 rounded-lg border p-2">
+          <div className="edgewise-raised border-border absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border p-2">
             <ul className="space-y-1.5">
               {graph.bands.map((band) => (
                 <li key={band.id} className="flex items-center gap-2 text-xs">
