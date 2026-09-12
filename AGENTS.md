@@ -1768,6 +1768,73 @@ marks loaded — including this node's prerequisite and three of its dependants 
 flipping cells, choosing positions, turning a picture and switching encodings
 left the stored model byte-identical. An empty model would have proved much less.
 
+### Learning a rule, or using one — 2026-09-12
+
+On `experiment/04-training-vs-inference`, branched from `main` after the
+representation playground merged. An experiment on `training-vs-inference`, in
+the predictor's own delivery setting so there is no new story to learn. See
+`docs/training-vs-inference.md` for the verification table and the limits.
+
+**The rule is stored, and the answer function cannot see the data.**
+`answerWith(learned, distance)` takes a rule and a distance; the delivery rows
+are not in scope. So "using the rule cannot change it" is the shape of the
+function rather than a promise in a comment — which is the same structural move
+as putting a required field before `verdict` in the assessor schema, applied to
+a panel instead of a prompt. The fitting is `regression.ts` unchanged: this node
+is about when that step runs, not how it works.
+
+**Refusing to learn beats learning badly.** `learnability` answers whether
+pressing the button would do anything, and the button is disabled with the reason
+in words when it would not — unchanged deliveries, fewer than two complete rows,
+or every remaining row at one distance. Refusing *before* the attempt is why a
+rule already in hand can never be destroyed by an emptied field, and it is why
+`Learned.fit` is a `FittedModel` rather than a `FitResult`. There is no state in
+which the panel holds an undetermined rule, so there is no copy to write for one.
+
+**The distance is held while the two rules are compared.** Both are read at one
+distance, so the cause of the difference cannot be the question. The slider and
+the number field are disabled for that stretch, with the reason beside them and
+an explicit way out in the tab order. Two answers at two distances would not be
+a comparison of two rules.
+
+**Two rules can agree at one distance.** They cross. `compare` reports `same`
+there while still reporting that the rate moved, rather than printing a
+difference of zero as a change. The threshold is 0.05 minutes, under the 0.1 the
+panel prints, because a change nobody can see is not a change.
+
+**The names come last, and the limit is stated.** "Learning a rule" and "using
+the rule" carry the whole first half; training and inference are introduced only
+once the difference is on screen. That card then says *"This is the common setup,
+not a law"* — models are retrained, and some are handed documents at the moment
+you ask. Claiming no system ever learns during use would be a new misconception
+planted on the node whose job is removing one.
+
+**A shipped contrast defect, found by a test written for the new panel.** Both
+experiment readouts painted their value card as a 10% tint of their own band and
+put band-coloured text on it. Measured: **4.18:1 in light mode**, under AA, and
+no tint that still reads as a tint reaches 4.5. Exactly the map-node failure this
+file already records — text sitting on the band colour, twenty-four combinations
+none of which had been measured — reappearing in a place `globals.test.ts` did
+not look, because that block only ever covered `foreground` and
+`muted-foreground` on the plain surfaces. The card is a plain surface now in
+**both** panels; the predictor had it first and shipped with it. Three
+assertions per theme hold it, including that the card still separates from the
+readout behind it.
+
+**The number field was 22px wide at 320px.** With the field free to shrink, the
+row's label took the width. Seventh time a defect here was found by measuring
+rather than reading, and the rule it broke was already written down.
+
+**`NumberField` is now shared** by the predictor and this panel. Its `h-10` is
+the 40px finger-target lesson, and duplicating that across two files is how a
+measured lesson gets lost.
+
+**Nothing here touches the map.** No learner-model access. Reading answers,
+editing deliveries, learning again, answering the optional question and resetting
+all left storage at zero keys, read before and after. One real assessed
+explanation then cleared **only** this node, with the prerequisite and all three
+dependants unchanged.
+
 ### "Explore this idea" was a control that did nothing — 2026-09-12
 
 Reported by the owner while reviewing the experiment above, and older than it:
