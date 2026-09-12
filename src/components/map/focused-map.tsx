@@ -18,7 +18,10 @@ type Props = {
   tokenizerExperiment: ReturnType<typeof useTokenizerExperiment>;
   predictorExperiment: ReturnType<typeof usePredictorExperiment>;
   representationExperiment: ReturnType<typeof useRepresentationExperiment>;
-  playing: boolean; onSelect: (id: string) => void;
+  playing: boolean;
+  /** The panel is already showing this idea, so offering to open it would do nothing. */
+  alreadyOpen: boolean;
+  onSelect: (id: string) => void;
   onPlay: (id: ExperimentId) => void;
   onExplain: (id: ExperimentId) => void;
 };
@@ -36,7 +39,7 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -63,11 +66,20 @@ export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onEx
           <p className="eyebrow">In focus</p>
           <span className="inline-flex items-center gap-2 text-xs"><svg width={14} height={14} aria-hidden><NodeGlyph state={state} cx={7} cy={7} colour={`var(--band-${node.band})`} /></svg>{STATE_COPY[state]}</span>
         </div>
-        <button onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
+        {/*
+          * A heading once the panel is already showing this idea, and a way in
+          * only while there is somewhere to go. Selecting the idea that is
+          * already selected changed nothing on screen, so the offer was dead in
+          * every state after the first press.
+          */}
+        {alreadyOpen ? <div className="mt-3">
+          <h2 className="font-display text-2xl">{node.label}</h2>
+          {!playing && <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>}
+        </div> : <button onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
           <h2 className="font-display text-2xl">{node.label}</h2>
           {!playing && <span className="text-muted-foreground mt-1 block text-sm">{node.subtitle}</span>}
           {!playing && <span className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm underline underline-offset-4">Explore this idea <ArrowRight size={15} aria-hidden /></span>}
-        </button>
+        </button>}
       </div>
 
       {playing && node.id === 'neuron' && <div className="mt-4"><NeuronExperiment onExplain={() => onExplain('neuron')} experiment={neuronExperiment} /></div>}
