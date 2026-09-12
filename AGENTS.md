@@ -1695,3 +1695,100 @@ control in this panel is at least 40px.
 *and* a number field, and the slider's `aria-valuetext` carries the prediction so
 a screen reader hears the consequence once per committed change rather than on
 every frame. Nothing on the drawing is draggable.
+
+### The representation playground — two encodings, one collision — 2026-09-12
+
+On `experiment/03-representation`, branched from `main` after the predictor
+merged. An experiment on `features-and-representation`, built to the same rule
+as the neuron, the tokenizer and the predictor: change something, inspect the
+consequence, optionally explain it. See `docs/representation-playground.md` for
+the verification table and the limits.
+
+**The collision is the instrument.** Two 4x4 black-and-white pictures, and two
+ways of turning them into numbers: the mean of the sixteen cell values, or all
+sixteen in their declared order. The opening pair is a filled top half against a
+checkerboard — eight white cells each, nobody would confuse them, both arrive as
+**0.5**. Switch encoding and the same two pictures differ at eight of sixteen
+positions. Both numbers are computed from the cells on screen; nothing selects a
+prepared answer.
+
+**"Information is lost" is given as a count, not asserted.** `sharingPictures`
+reports how many of the 65,536 possible pictures produce exactly this encoded
+data: **12,870** for an average of 0.5, **exactly 1** for any ordered list. The
+extremes are the honest exception and are shown rather than hidden — all-white
+and all-black are each produced by one picture, so a single number does separate
+those. An encoding is not lossy by nature; this one is lossy in the middle. That
+count is tested against a **brute-force enumeration of all 65,536 pictures**,
+which is the "do not assert the encoder against itself" trap closed by a third
+route.
+
+**Rearranging is the second half of the argument.** A quarter turn moves every
+cell and adds none, so the average cannot move and the ordered list must. The
+panel reports what happened rather than claiming it: a symmetric picture gets
+*"looks the same after a quarter turn, so both encodings are unchanged too"*.
+Claiming a change that did not occur, on the node about not trusting surface
+claims, would teach the opposite of the node.
+
+**Immediate feedback, no prediction step.** The neuron asks for a prediction
+because it has one arithmetic result worth committing to. Here the interesting
+move is flipping a cell and watching the collision appear or break, so every
+change shows at once and nothing is gated behind a guess.
+
+**The two cell colours are deliberately not theme tokens.** This panel is about
+brightness values, so a cell worth 1 has to read as white in both themes;
+letting dark mode swap them would make 1 the dark value and contradict the
+arithmetic printed beside it. That exemption puts them outside
+`globals.test.ts`, so `representation-contrast.test.ts` holds them to a number
+instead — **17.33:1**, both directions, plus a test that fails if either is ever
+redefined under a theme. Each cell also prints its own value as a digit, so the
+grid survives greyscale.
+
+**A `sr-only` span made the whole page scroll.** Each grid carried a visually
+hidden summary. Tailwind's `sr-only` is `position: absolute`, and with no
+positioned ancestor its containing block sits **above** the shell's
+`overflow: hidden` — so the shell does not clip it. Laid out at its static
+position deep inside a scrolling pane, it extended the document's own scroll
+area: **1602px of page scroll at 320x568**, against this file's oldest layout
+rule. Invisible in the code, invisible on screen, and caught only because the
+probe measures the right quantity and the predictor panel on the same shell
+measured a clean zero as a control. The spans are gone — they duplicated a count
+already printed and, being outside any live region, announced nothing on change.
+**The rule to carry forward: `sr-only` inside one of this app's scrolling panes
+escapes the shell's clip.**
+
+**Roving tabindex on the grids.** Thirty-two cells would have been thirty-two tab
+stops. Arrow keys move, Home and End jump, Space and Enter flip — the standard
+grid pattern, and every cell is still a plain button carrying its row, column and
+`aria-pressed`, so nothing depends on a custom role being interpreted correctly.
+Measured: 12 tab stops through the panel in one-number mode, 28 in list mode,
+every one scrolled into view at 320x568 and 720x450.
+
+**Marks were checked against a populated model, not an empty one.** With ten
+marks loaded — including this node's prerequisite and three of its dependants —
+flipping cells, choosing positions, turning a picture and switching encodings
+left the stored model byte-identical. An empty model would have proved much less.
+
+### "Explore this idea" was a control that did nothing — 2026-09-12
+
+Reported by the owner while reviewing the experiment above, and older than it:
+introduced with `b18a5c4` and already on `main`.
+
+The focused card's "Explore this idea" calls `openNode`, which selects the idea
+and brings the guide into view. But the card always draws the **selected** idea,
+so after the first press of a session it was selecting what was already selected
+and showing a panel that was already on screen. On a wide window nothing moved.
+It worked exactly once per session and was inert from then on.
+
+`src/lib/map/panel.ts` now answers whether the panel is already showing that
+idea, and the card renders the way in — and its button wrapper — only when there
+is somewhere to go. Below the panel breakpoint the offer stays, because there the
+two surfaces are switched between rather than shown side by side, so the same
+press still does something real and is the route back to an idea's text from
+inside an experiment. That is why the predicate asks about the layout and not
+only about the selection, and why it is a tested pure function rather than an
+inline comparison.
+
+**Worth keeping:** the defect was reachable in two clicks from a fresh load and
+survived three experiment sessions on this card. Nothing measures whether a
+control does anything, which is the one thing this project has never had a probe
+for.

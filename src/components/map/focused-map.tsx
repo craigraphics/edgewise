@@ -5,6 +5,7 @@ import { NodeGlyph } from './node-glyph';
 import { NeuronExperiment, type useNeuronExperiment } from '@/components/experiments/neuron-experiment';
 import { TokenizerExperiment, type useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
 import { PredictorExperiment, type usePredictorExperiment } from '@/components/experiments/predictor-experiment';
+import { RepresentationExperiment, type useRepresentationExperiment } from '@/components/experiments/representation-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -16,7 +17,11 @@ type Props = {
   neuronExperiment: ReturnType<typeof useNeuronExperiment>;
   tokenizerExperiment: ReturnType<typeof useTokenizerExperiment>;
   predictorExperiment: ReturnType<typeof usePredictorExperiment>;
-  playing: boolean; onSelect: (id: string) => void;
+  representationExperiment: ReturnType<typeof useRepresentationExperiment>;
+  playing: boolean;
+  /** The panel is already showing this idea, so offering to open it would do nothing. */
+  alreadyOpen: boolean;
+  onSelect: (id: string) => void;
   onPlay: (id: ExperimentId) => void;
   onExplain: (id: ExperimentId) => void;
 };
@@ -30,10 +35,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
   'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
+  'features-and-representation': { tint: 'playable-invitation-foundations', title: 'How can an H and a T become the same number?', blurb: 'Follow two pixel letters into the model, then change which details their numbers preserve.', action: 'Open the playground' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -60,16 +66,26 @@ export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onEx
           <p className="eyebrow">In focus</p>
           <span className="inline-flex items-center gap-2 text-xs"><svg width={14} height={14} aria-hidden><NodeGlyph state={state} cx={7} cy={7} colour={`var(--band-${node.band})`} /></svg>{STATE_COPY[state]}</span>
         </div>
-        <button onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
+        {/*
+          * A heading once the panel is already showing this idea, and a way in
+          * only while there is somewhere to go. Selecting the idea that is
+          * already selected changed nothing on screen, so the offer was dead in
+          * every state after the first press.
+          */}
+        {alreadyOpen ? <div className="mt-3">
+          <h2 className="font-display text-2xl">{node.label}</h2>
+          {!playing && <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>}
+        </div> : <button onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
           <h2 className="font-display text-2xl">{node.label}</h2>
           {!playing && <span className="text-muted-foreground mt-1 block text-sm">{node.subtitle}</span>}
           {!playing && <span className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm underline underline-offset-4">Explore this idea <ArrowRight size={15} aria-hidden /></span>}
-        </button>
+        </button>}
       </div>
 
       {playing && node.id === 'neuron' && <div className="mt-4"><NeuronExperiment onExplain={() => onExplain('neuron')} experiment={neuronExperiment} /></div>}
       {playing && node.id === 'tokens' && <div className="mt-4"><TokenizerExperiment onExplain={() => onExplain('tokens')} experiment={tokenizerExperiment} /></div>}
       {playing && node.id === 'prediction-from-examples' && <div className="mt-4"><PredictorExperiment onExplain={() => onExplain('prediction-from-examples')} experiment={predictorExperiment} /></div>}
+      {playing && node.id === 'features-and-representation' && <div className="mt-4"><RepresentationExperiment onExplain={() => onExplain('features-and-representation')} experiment={representationExperiment} /></div>}
 
       <div className="focus-connections">
         {children.length > 0 ? <>
