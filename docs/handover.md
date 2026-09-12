@@ -1,3 +1,14 @@
+> **Training vs. using, 2026-09-12:** On `experiment/04-training-vs-inference`,
+> branched from merged `main`. The predictor's delivery setting reused on the
+> `training-vs-inference` node: change the new customer's distance and the answer
+> moves while the rule sits still, then edit a past delivery and press Learn
+> again to see the rule itself move, both rules read at one held distance. The
+> answer function cannot see the delivery rows, and learning is refused with a
+> reason rather than attempted on data that cannot determine a rule. It also
+> fixes a shipped contrast defect in the predictor's readout, found by a test
+> written for the new panel. Read `docs/training-vs-inference.md` for what was
+> verified and what was not. Its PR targets `main`.
+
 > **Representation playground, 2026-09-12:** On `experiment/03-representation`,
 > branched from merged `main`. Two recognisable 4x4 pixel letters on the
 > `features-and-representation` node, with each picture kept beside the numbers

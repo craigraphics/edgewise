@@ -6,6 +6,7 @@ import { NeuronExperiment, type useNeuronExperiment } from '@/components/experim
 import { TokenizerExperiment, type useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
 import { PredictorExperiment, type usePredictorExperiment } from '@/components/experiments/predictor-experiment';
 import { RepresentationExperiment, type useRepresentationExperiment } from '@/components/experiments/representation-experiment';
+import { PhasesExperiment, type usePhasesExperiment } from '@/components/experiments/phases-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -18,6 +19,7 @@ type Props = {
   tokenizerExperiment: ReturnType<typeof useTokenizerExperiment>;
   predictorExperiment: ReturnType<typeof usePredictorExperiment>;
   representationExperiment: ReturnType<typeof useRepresentationExperiment>;
+  phasesExperiment: ReturnType<typeof usePhasesExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -36,10 +38,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
   'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
   'features-and-representation': { tint: 'playable-invitation-foundations', title: 'How can an H and a T become the same number?', blurb: 'Follow two pixel letters into the model, then change which details their numbers preserve.', action: 'Open the playground' },
+  'training-vs-inference': { tint: 'playable-invitation-foundations', title: 'If the answer changes, did it learn something?', blurb: 'Change a customer’s distance and the delivery estimate moves. The rule behind it does not.', action: 'Try the experiment' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -86,6 +89,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'tokens' && <div className="mt-4"><TokenizerExperiment onExplain={() => onExplain('tokens')} experiment={tokenizerExperiment} /></div>}
       {playing && node.id === 'prediction-from-examples' && <div className="mt-4"><PredictorExperiment onExplain={() => onExplain('prediction-from-examples')} experiment={predictorExperiment} /></div>}
       {playing && node.id === 'features-and-representation' && <div className="mt-4"><RepresentationExperiment onExplain={() => onExplain('features-and-representation')} experiment={representationExperiment} /></div>}
+      {playing && node.id === 'training-vs-inference' && <div className="mt-4"><PhasesExperiment onExplain={() => onExplain('training-vs-inference')} experiment={phasesExperiment} /></div>}
 
       <div className="focus-connections">
         {children.length > 0 ? <>
