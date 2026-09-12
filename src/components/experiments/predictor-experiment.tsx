@@ -131,8 +131,8 @@ function NumberField({ id, label, name, unit, value, max, onChange }: {
  * never observed. Everything here is also stated in text below, so nothing
  * depends on reading the picture.
  */
-function Plot({ examples, fit, queryDistance, prediction }: {
-  examples: readonly Example[]; fit: FitResult | null; queryDistance: number; prediction: number | null;
+function Plot({ examples, fit, queryDistance, prediction, stale }: {
+  examples: readonly Example[]; fit: FitResult | null; queryDistance: number; prediction: number | null; stale: boolean;
 }) {
   const width = 320;
   const height = 190;
@@ -145,8 +145,12 @@ function Plot({ examples, fit, queryDistance, prediction }: {
 
   return <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-auto w-full" role="img" aria-label={
     fitted
-      ? `Scatter plot of ${examples.length} example trips with the fitted line drawn through them. Every value is listed in the examples below.`
-      : `Scatter plot of ${examples.length} example trips. No rule has been worked out yet.`
+      ? `Scatter plot of ${examples.length} past food deliveries with the fitted line drawn through them. Every value is listed in the examples above.`
+      : stale
+        ? `Scatter plot of ${examples.length} edited food deliveries. The previous fitted line is hidden until the model learns from these examples again.`
+        : fit?.status === 'undetermined'
+          ? `Scatter plot of ${examples.length} past food deliveries. These examples do not determine a straight-line rule.`
+          : `Scatter plot of ${examples.length} past food deliveries. No rule has been worked out yet.`
   }>
     <defs><clipPath id="predictor-plot"><rect x={pad.left} y={pad.top} width={width - pad.left - pad.right} height={height - pad.top - pad.bottom} /></clipPath></defs>
     <line x1={pad.left} y1={py(0)} x2={width - pad.right} y2={py(0)} stroke="var(--border)" />
@@ -186,30 +190,38 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
   const current = matchesFittedData(rows, fit);
   const fitted = fit?.status === 'fitted' ? fit : null;
   const prediction = predictAt(fit, queryDistance);
+  const queryWasObserved = examples.some(example => example.distance === queryDistance);
   const repeated = repeatedDistances(examples);
   const contradictory = hasContradiction(examples);
 
-  const ruleSentence = fitted
-    ? `${round(fitted.intercept, 1)} minutes to start, ${round(fitted.slope, 2)} minutes for every ${DISTANCE_UNIT}`
+  const rate = fitted ? round(fitted.slope, 2) : null;
+  const ruleSentence = fitted && rate !== null
+    ? `Start at ${round(fitted.intercept, 1)} minutes, then ${rate < 0 ? 'subtract' : 'add'} ${Math.abs(rate)} minutes for every ${DISTANCE_UNIT}`
     : null;
 
   return <section className="predictor-lab" aria-labelledby="predictor-lab-title">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <p className="eyebrow">A playable idea · runs in your browser</p>
-        <h3 id="predictor-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Nobody writes the rule.</h3>
+        <p className="eyebrow">A quick experiment · runs in your browser</p>
+        <h3 id="predictor-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Can past food deliveries predict the next one?</h3>
       </div>
       <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
     </div>
-    <p className="mt-3 max-w-2xl text-base">These are past deliveries: how far, and how long it actually took. Change a time, or add a trip of your own, then ask for a rule and see what comes out.</p>
+    <p className="mt-3 max-w-2xl text-base">Imagine a restaurant wants to estimate when a new food order will arrive. Each example below is one earlier delivery: how far the customer was from the restaurant, and how many minutes the food took to arrive.</p>
+    <p className="mt-3 max-w-2xl text-base">You are not being tested. You are testing one idea: <strong>changing the past deliveries can change what the model learns and predicts.</strong></p>
+    <ol className="text-muted-foreground mt-3 list-decimal space-y-1 pl-5 text-sm">
+      <li>Press <strong className="text-foreground">Learn from these examples</strong> to make the first rule.</li>
+      <li>Change how long one food delivery took.</li>
+      <li>Learn again, then compare the rule and the prediction for a new food delivery.</li>
+    </ol>
 
     <div className="predictor-split mt-5">
-      <p className="text-sm font-medium">We chose the shape. Your examples choose the numbers.</p>
-      <p className="text-muted-foreground mt-1 text-xs">The shape is fixed here: one straight line, <em>a start, plus a rate for every {DISTANCE_UNIT}</em>. Nothing in this panel decides what the start and the rate are. They are worked out from whatever examples are in the list, by the same least-squares method underneath every button.</p>
+      <p className="text-sm font-medium">What stays fixed, and what can change?</p>
+      <p className="text-muted-foreground mt-1 text-xs">We have told the model to use a straight line. That part stays fixed. From the food deliveries below, it works out a base time, which could include preparation, and how many minutes to add per {DISTANCE_UNIT} of travel. Those two numbers can change when the deliveries change.</p>
     </div>
 
     <div className="mt-5">
-      <p className="text-sm font-medium">Start from a set of observations</p>
+      <p className="text-sm font-medium">Choose the past food deliveries</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {PRESETS.map(preset => <Button key={preset.label} type="button" size="touch" variant={presetLabel === preset.label ? 'default' : 'outline'} onClick={() => choosePreset(preset)}>{preset.label}</Button>)}
       </div>
@@ -218,7 +230,7 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
 
     <div className="mt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="font-display text-xl">The examples you are giving it</h4>
+        <h4 className="font-display text-xl">The past deliveries it will learn from</h4>
         <p className="text-muted-foreground text-xs">{examples.length} usable · every value editable</p>
       </div>
 
@@ -231,9 +243,9 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
             : null;
           return <li key={row.id} className="predictor-row">
             <div className="flex flex-wrap items-end gap-2">
-              <NumberField id={`${row.id}-distance`} label="Distance" name={`Example ${position} distance in ${DISTANCE_UNIT}`} unit={DISTANCE_UNIT} value={row.distance} max={MAX_DISTANCE} onChange={value => edit(row.id, 'distance', value)} />
-              <NumberField id={`${row.id}-minutes`} label="Time it took" name={`Example ${position} observed time in minutes`} unit={MINUTES_UNIT} value={row.minutes} max={MAX_MINUTES} onChange={value => edit(row.id, 'minutes', value)} />
-              <Button variant="ghost" size="icon-touch" onClick={() => remove(row.id)} aria-label={`Remove example ${position}${row.distance === null ? '' : `, at ${row.distance} ${DISTANCE_UNIT}`}`}><X aria-hidden /></Button>
+              <NumberField id={`${row.id}-distance`} label="Customer distance" name={`Delivery ${position} distance from the restaurant in ${DISTANCE_UNIT}`} unit={DISTANCE_UNIT} value={row.distance} max={MAX_DISTANCE} onChange={value => edit(row.id, 'distance', value)} />
+              <NumberField id={`${row.id}-minutes`} label="Minutes to arrive" name={`Delivery ${position} time until the food arrived in minutes`} unit={MINUTES_UNIT} value={row.minutes} max={MAX_MINUTES} onChange={value => edit(row.id, 'minutes', value)} />
+              <Button variant="ghost" size="icon-touch" onClick={() => remove(row.id)} aria-label={`Remove delivery ${position}${row.distance === null ? '' : `, for a customer ${row.distance} ${DISTANCE_UNIT} away`}`}><X aria-hidden /></Button>
             </div>
             {row.distance === null || row.minutes === null
               ? <p className="text-muted-foreground mt-1.5 text-xs">Needs both numbers before it can count as an example.</p>
@@ -245,7 +257,7 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
       </ul>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Button variant="outline" size="touch" onClick={add} disabled={rows.length >= MAX_ROWS}><Plus aria-hidden />Add an example</Button>
+        <Button variant="outline" size="touch" onClick={add} disabled={rows.length >= MAX_ROWS}><Plus aria-hidden />Add a delivery</Button>
         {rows.length >= MAX_ROWS && <p className="text-muted-foreground text-xs">{MAX_ROWS} is as many as this panel draws.</p>}
         {incomplete > 0 && <p className="text-muted-foreground text-xs">{incomplete} {incomplete === 1 ? 'row is' : 'rows are'} not counted yet.</p>}
       </div>
@@ -254,44 +266,49 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
     <div className="mt-5 flex flex-wrap items-center gap-3">
       <Button size="touch" onClick={learn} disabled={current}>Learn from these examples <ArrowRight aria-hidden /></Button>
       <p className={cn('text-sm', current ? 'text-muted-foreground' : 'font-medium')}>
-        {!fit ? 'No rule yet. Nothing has been worked out from these numbers.'
-          : current ? fit.status === 'fitted' ? 'The rule below was worked out from exactly these examples.' : 'That ran on exactly these examples, and no rule came out of them.'
-          : 'The examples have changed. The rule below still comes from the old ones.'}
+        {!fit ? 'No rule yet. Press the button to make one from these examples.'
+          : current ? fit.status === 'fitted' ? 'This rule was learned from the examples now on screen.' : 'The model tried these examples, but they did not give it enough information for a rule.'
+          : 'You changed the examples. The result below is still the old rule. Learn again to see what changes.'}
       </p>
     </div>
 
-    <Plot examples={examples} fit={current ? fit : null} queryDistance={queryDistance} prediction={current ? prediction : null} />
+    <Plot examples={examples} fit={current ? fit : null} queryDistance={queryDistance} prediction={current ? prediction : null} stale={Boolean(fit && !current)} />
 
     <div aria-live="polite" aria-atomic="true" className="mt-4">
       {fit && fit.status === 'undetermined' ? <div className="predictor-undetermined">
         <p className="font-display text-xl">No rule came out of that.</p>
         <p className="mt-2 text-sm">{
-          fit.reason === 'no-examples' ? 'There are no complete examples to work from. With nothing to fit, there is nothing to fit to.'
-            : fit.reason === 'one-example' ? 'One example fixes a single point. Every rate you can imagine passes through it, so the examples do not say which one is right.'
-            : `Every example is at the same distance, so nothing in this data shows what happens when the distance changes. Any rate at all fits these observations equally well.`
+          fit.reason === 'no-examples' ? 'There are no complete examples yet, so there is nothing to learn from.'
+            : fit.reason === 'one-example' ? 'One delivery gives the line one point to pass through, but it does not show how time changes as distance changes.'
+            : `Every delivery has the same distance. Because the distance never changes, these examples cannot show how much extra distance changes the time.`
         }</p>
-        <p className="text-muted-foreground mt-2 text-sm">Rather than show a made-up rate, this reports that the examples did not determine one. {fit.reason === 'no-spread' ? 'Add a trip at a different distance and run it again.' : 'Add examples at two different distances and run it again.'}</p>
+        <p className="text-muted-foreground mt-2 text-sm">The experiment will not invent a rate the examples did not determine. {fit.reason === 'no-spread' ? 'Add a delivery for a customer at a different distance and learn again.' : 'Add deliveries for customers at two different distances and learn again.'}</p>
       </div> : fitted ? <div className="predictor-rule">
-        <p className="eyebrow">The rule that came out</p>
+        <p className="eyebrow">What it learned from these examples</p>
         <p className="font-display mt-2 text-xl">{ruleSentence}.</p>
-        <p className="mt-2 text-sm">Neither number was typed by anyone. They are the pair that leaves the smallest total miss across the {fitted.examples.length} examples it was given.</p>
+        <p className="mt-2 text-sm">No one typed either number. The fit calculated both from the examples, choosing the straight line that comes closest overall, with larger misses counting more.</p>
         <p className="mt-2 font-mono text-sm tabular-nums">
-          {fitted.exact ? 'Average miss 0 — every example reproduced exactly.' : `Average miss ${round(fitted.meanAbsoluteError, 2)} ${MINUTES_UNIT} · worst ${round(Math.max(...fitted.residuals.map(Math.abs)), 1)} ${MINUTES_UNIT}`}
+          {fitted.exact ? 'Average miss 0. Every example reproduced exactly.' : `Average miss ${round(fitted.meanAbsoluteError, 2)} ${MINUTES_UNIT} · worst ${round(Math.max(...fitted.residuals.map(Math.abs)), 1)} ${MINUTES_UNIT}`}
         </p>
       </div> : null}
     </div>
 
     {contradictory && fitted && current && <div className="predictor-clash mt-4">
-      <p className="font-display text-xl">One distance, two different answers.</p>
-      <p className="mt-2 text-sm">{repeated.length === 1 ? `${minus(repeated[0])} ${DISTANCE_UNIT} appears more than once with different observed times.` : `${repeated.map(d => `${minus(d)} ${DISTANCE_UNIT}`).join(' and ')} each appear more than once with different observed times.`} The rule returns one number for a given distance, so it cannot match both. It is not discarding either: it sits between them, and both misses show in the list above.</p>
+      <p className="font-display text-xl">Same distance, different delivery times.</p>
+      <p className="mt-2 text-sm">{repeated.length === 1 ? `More than one customer was ${minus(repeated[0])} ${DISTANCE_UNIT} away, but their food arrived at different times.` : `Customers at ${repeated.map(d => `${minus(d)} ${DISTANCE_UNIT}`).join(' and ')} had different delivery times.`} This rule gives only one estimate for each distance, so it cannot match them all. None is discarded: every delivery influences where the line lands, and every miss is shown above.</p>
     </div>}
 
     <div className="mt-5">
-      <h4 className="font-display text-xl">Ask it about a trip it never saw</h4>
-      <p className="text-muted-foreground mt-1 text-sm">This reads the rule above. It only changes when you run the fit again.</p>
+      <h4 className="font-display text-xl">Predict a new food delivery</h4>
+      <p className="text-muted-foreground mt-1 text-sm">{
+        current && prediction !== null ? 'Now test the rule on a distance that was not in the examples.'
+          : fit && !current ? 'The examples have changed. Learn again before predicting a new food delivery.'
+          : fit?.status === 'undetermined' ? 'These examples did not produce a rule. Change them and learn again before predicting a new food delivery.'
+          : 'After the model learns a rule, come back here to test it on a distance it has not seen.'
+      }</p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <span className="min-w-[9rem] flex-1">
-          <label htmlFor="predictor-query" className="text-muted-foreground block text-2xs">New distance</label>
+          <label htmlFor="predictor-query" className="text-muted-foreground block text-2xs">Customer distance</label>
           <input
             id="predictor-query"
             type="range"
@@ -300,7 +317,7 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
             step={0.5}
             value={queryDistance}
             onChange={event => setQueryDistance(Number(event.target.value))}
-            aria-valuetext={prediction !== null && current ? `${queryDistance} ${DISTANCE_UNIT}, rule predicts ${round(prediction, 1)} minutes` : `${queryDistance} ${DISTANCE_UNIT}, no rule to read yet`}
+            aria-valuetext={prediction !== null && current ? `Customer ${queryDistance} ${DISTANCE_UNIT} from the restaurant, predicted delivery time ${round(prediction, 1)} minutes` : `Customer ${queryDistance} ${DISTANCE_UNIT} from the restaurant, no rule to read yet`}
             className="predictor-slider mt-2 w-full"
           />
         </span>
@@ -322,13 +339,28 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
           </span>
         </span>
       </div>
-      <p className="predictor-readout mt-3">
+      <div className="predictor-readout mt-3">
         {current && prediction !== null
-          ? <>At <strong className="font-mono tabular-nums">{queryDistance} {DISTANCE_UNIT}</strong> the rule predicts <strong className="font-mono tabular-nums">{round(prediction, 1)} {MINUTES_UNIT}</strong>. No delivery in the list has to be at that distance — the rule answers anywhere.</>
+          ? <>
+            <div className="predictor-result-values">
+              <span className="predictor-result-value">
+                <span className="predictor-result-label">Customer distance</span>
+                <strong className="font-mono tabular-nums">{queryDistance} {DISTANCE_UNIT}</strong>
+              </span>
+              <ArrowRight className="predictor-result-arrow" aria-hidden />
+              <span className="predictor-result-value">
+                <span className="predictor-result-label">Predicted arrival</span>
+                <strong className="font-mono tabular-nums">{round(prediction, 1)} {MINUTES_UNIT}</strong>
+              </span>
+            </div>
+            <p className="mt-3">{queryWasObserved ? 'That distance is already in the past deliveries. Choose one that is not to test a new prediction.' : 'That distance was not in the past deliveries. The prediction came from the rule the model learned.'} A prediction is not a guarantee, especially beyond the distances in the examples.</p>
+          </>
           : fit && !current
-            ? <>Run the fit again to read a rule that matches the examples now on screen.</>
-            : <>Nothing to read yet. Run the fit and this answers for any distance.</>}
-      </p>
+            ? <p>Run the fit again to read a rule that matches the examples now on screen.</p>
+            : fit?.status === 'undetermined'
+              ? <p>No prediction yet. These examples did not determine a rule.</p>
+              : <p>No prediction yet. Learn from the examples first.</p>}
+      </div>
     </div>
 
     {fitted && current && <div className="border-border mt-5 border-t pt-5">
@@ -350,7 +382,7 @@ export function PredictorExperiment({ onExplain, experiment }: Props) {
     <details className="text-muted-foreground mt-2 text-sm">
       <summary className="min-h-10 cursor-pointer py-2 underline underline-offset-4">What this model leaves out</summary>
       <div className="space-y-2 pt-2">
-        <p>One input, one output, and a shape chosen in advance by us rather than found in the data. Real systems have many inputs, shapes with millions of parameters, and no formula that solves them outright — they are nudged towards a fit step by step instead.</p>
+        <p>One input, one output, and a shape chosen in advance by us rather than found in the data. Real systems have many inputs, shapes with millions of parameters, and no formula that solves them outright. They are nudged towards a fit step by step instead.</p>
         <p>A fitted line says the observations line up. It does not say distance causes the time, that the rule holds beyond the distances observed, or that anything here understood a delivery. The starting dataset is invented for this panel, not measured.</p>
       </div>
     </details>

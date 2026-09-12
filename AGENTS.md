@@ -1626,11 +1626,11 @@ ones."* While stale the line is removed from the drawing and the prediction is
 withheld rather than recomputed. A rule that moved the instant you typed would
 hide the one step this node is about.
 
-**Who chose what is stated, because it is the lesson.** We chose the family — one
-straight line. The examples chose the two numbers. That sentence is at the top of
-the panel, not in the optional algebra, and the closing question is the node's
-own: *"If nobody typed the final rule, where did this model's predictions come
-from?"*
+**What stays fixed and what can change is stated, because it is the lesson.** We
+choose the family, one straight line. The fit works out its two numbers from the
+examples. That explanation is at the top of the panel, not in the optional
+algebra, and the closing question is the node's own: *"If nobody typed the final
+rule, where did this model's predictions come from?"*
 
 **An underdetermined fit is reported, never filled in.** Two cases: fewer than
 two complete examples, and every example at the same distance. Both leave the
@@ -1640,12 +1640,14 @@ Inventing a slope, or dividing by a near-zero spread and printing whatever came
 out, would teach the exact thing this node exists to correct. There is no path
 that can produce `NaN`, and a test asserts it over the awkward datasets.
 
-**The contradiction is reachable in one tap and is not discarded.** "Two answers
-for 9 km" puts the same input in twice with different observed times. One rule
+**The contradiction is reachable in one tap and is not discarded.** "Same
+distance, different times" puts the same input in twice with different observed times. One rule
 returns one number for one distance, so both duplicates get the same prediction
-and at least one must miss; the callout says the rule sits between them, and both
-misses show on their rows. The residuals are equal and opposite, which is
-asserted rather than described.
+and at least one must miss; the callout says both observations influence the
+line, and both misses show on their rows. In this preset the fitted value lands
+between them and the residuals are equal and opposite, which is asserted rather
+than described; the learner-facing copy does not claim that every editable
+dataset must behave that way.
 
 **The four presets are the four cases.** Inexact, exact, contradictory, and
 undetermined — and a test holds each preset to being the case it claims, so

@@ -30,8 +30,8 @@ export type Preset = { label: string; note: string; rows: readonly Example[] };
  */
 export const PRESETS: readonly Preset[] = [
   {
-    label: 'Past deliveries',
-    note: 'Real-looking observations: close to a line, but never exactly on one.',
+    label: 'Past food deliveries',
+    note: 'Distance matters, but traffic and preparation can make each delivery a little faster or slower.',
     rows: [
       { distance: 2, minutes: 19 },
       { distance: 5, minutes: 26 },
@@ -41,7 +41,7 @@ export const PRESETS: readonly Preset[] = [
   },
   {
     label: 'Exactly on a line',
-    note: 'Every observation sits on one rule, so the fit reproduces it with nothing left over.',
+    note: 'Every delivery follows one perfect pattern, so the line can match all of them.',
     rows: [
       { distance: 1, minutes: 14 },
       { distance: 3, minutes: 22 },
@@ -50,8 +50,8 @@ export const PRESETS: readonly Preset[] = [
     ],
   },
   {
-    label: 'Two answers for 9 km',
-    note: 'The same distance was observed twice with different times. One rule cannot return both.',
+    label: 'Same distance, different times',
+    note: 'Two customers were 9 km away, but one order arrived much faster. One distance-based rule cannot match both.',
     rows: [
       { distance: 2, minutes: 19 },
       { distance: 5, minutes: 26 },
@@ -61,8 +61,8 @@ export const PRESETS: readonly Preset[] = [
     ],
   },
   {
-    label: 'Every trip 5 km',
-    note: 'No spread in the input at all, so nothing in the data says how time changes with distance.',
+    label: 'Every customer 5 km away',
+    note: 'Every customer is the same distance away, so the examples never show what one extra kilometre does.',
     rows: [
       { distance: 5, minutes: 22 },
       { distance: 5, minutes: 27 },

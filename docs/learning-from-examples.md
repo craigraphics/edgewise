@@ -6,9 +6,10 @@ the mechanism. Reached from the concept's inspector ("Try the predictor
 experiment") and from its own invitation on the focused map, and rendered in the
 main workspace beside the existing explanation.
 
-The toy problem is delivery time from distance. A handful of editable
-`(distance, observed time)` examples go in; a rule comes out; the rule can then
-be read at a distance nobody drove.
+The toy problem is a restaurant estimating when a food order will arrive from
+the customer's distance. A handful of editable `(distance from restaurant,
+minutes until arrival)` examples go in; a rule comes out; the rule can then be
+read at a distance absent from the past deliveries.
 
 ## It fits a real model
 
@@ -26,13 +27,14 @@ prints its parameters to the learner.
 
 | | |
 |---|---|
-| **The examples** | Supplied by the learner. Filled dots on the drawing, editable rows below it. |
-| **The parameters** | Derived from those examples. Named in words: *"12.9 minutes to start, 2.92 minutes for every km."* |
-| **The new input** | A distance nobody observed. A hollow ring on a dashed drop line. |
+| **The examples** | Supplied by the learner. Filled dots on the drawing, editable rows above it. |
+| **The parameters** | Derived from those examples. Named in words: *"Start at 12.9 minutes, then add 2.92 minutes for every km."* |
+| **The new input** | A distance nobody observed. A hollow ring on a dashed drop line, then a blue distance-to-arrival readout that keeps the two changing numbers together. |
 
-The panel's second block says who chose what: **we chose the shape — one
-straight line; the examples chose the two numbers.** That is the lesson, so it
-sits above the controls rather than inside the optional algebra.
+The panel's second block makes the division explicit: **we tell the model to use
+a straight line; the examples determine where it starts and how many minutes it
+adds per kilometre.** That is the lesson, so it sits above the controls rather
+than inside the optional algebra.
 
 ## The fit is a snapshot, on purpose
 
@@ -62,16 +64,18 @@ fabricated number here would teach the exact thing this node exists to correct.
 
 ## The contradiction is one tap away and is not discarded
 
-The **Two answers for 9 km** preset puts one distance in twice with different
+The **Same distance, different times** preset puts one distance in twice with different
 observed times. One rule returns one number for one distance, so both duplicates
-get the identical prediction and at least one must miss. The callout says the
-rule sits between them rather than dropping either, and both misses show on their
-own rows. Measured: adding the contradictory observation moved the rule from
-`11.3 + 2.66d` away from the clean `12.9 + 2.92d` fit of the same underlying set.
+get the identical prediction and at least one must miss. The callout says neither
+observation is discarded: both influence the fitted line, and both misses show
+on their own rows. In this preset the fitted value lands between them; the copy
+does not claim that is guaranteed after the other editable examples change.
+Measured: adding the contradictory observation moved the rule from `11.3 +
+2.66d` away from the clean `12.9 + 2.92d` fit of the same underlying set.
 
 ## Reset is deterministic
 
-Back to the **Past deliveries** dataset, the query distance back to 7 km, and
+Back to the **Past food deliveries** dataset, the query distance back to 7 km, and
 **no fitted rule at all** — so the first thing anyone does is ask for one. That
 is the honest opening frame for a node whose subject is where the rule comes
 from.
@@ -100,7 +104,7 @@ Chrome, against the dev server, driven in a real window at exact viewport sizes.
 | Edit one label, refit | `32.6 + 1.15d` — the rule visibly moved |
 | Edit without refitting | Parameters held, line removed, prediction withheld, stale line shown |
 | Duplicate inputs | Both 9 km rows predicted 35.2; misses +5.8 and −14.2 |
-| Every trip 5 km | "No rule came out of that", reason stated, no number invented |
+| Every customer 5 km away | "No rule came out of that", reason stated, no number invented |
 | New distance beyond the data | 22 km → 68.3 min, from the parameters |
 | Reset | Opening dataset, query 7, no rule, marks untouched |
 | Navigation (Focus → Full map → List → Focus) | Dataset, rule, query and an unfinished explanation all preserved |

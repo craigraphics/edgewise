@@ -85,7 +85,7 @@ describe('fitting a line to examples', () => {
 });
 
 describe('the cases a straight line cannot resolve', () => {
-  it('cannot match two different answers at one distance, and is pulled between them', () => {
+  it('gives duplicate inputs one prediction and keeps both misses', () => {
     const contradictory: Example[] = [
       { distance: 2, minutes: 20 },
       { distance: 8, minutes: 50 },

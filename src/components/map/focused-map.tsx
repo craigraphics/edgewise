@@ -29,7 +29,7 @@ type Props = {
 const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: string; action: string }> = {
   neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
-  'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Where does the rule come from?', blurb: 'Give it a handful of examples. Watch it work out a rule nobody wrote.', action: 'Fit a rule' },
+  'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
