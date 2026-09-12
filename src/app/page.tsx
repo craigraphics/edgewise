@@ -6,6 +6,7 @@ import { useNeuronExperiment } from '@/components/experiments/neuron-experiment'
 import { useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
 import { usePredictorExperiment } from '@/components/experiments/predictor-experiment';
 import { useRepresentationExperiment } from '@/components/experiments/representation-experiment';
+import { usePhasesExperiment } from '@/components/experiments/phases-experiment';
 import { FocusedMap } from '@/components/map/focused-map';
 import { ConceptList } from '@/components/map/concept-list';
 import { MapLegend } from '@/components/map/legend';
@@ -49,6 +50,7 @@ export default function Page() {
   const tokenizerExperiment = useTokenizerExperiment();
   const predictorExperiment = usePredictorExperiment();
   const representationExperiment = useRepresentationExperiment();
+  const phasesExperiment = usePhasesExperiment();
   const [practice, setPractice] = useState<ExperimentId | null>(null);
   const [explainRequest, setExplainRequest] = useState(EMPTY_EXPLAIN_REQUESTS);
   const panelRef = useRef<HTMLElement>(null);
@@ -128,6 +130,7 @@ export default function Page() {
     tokenizerExperiment.reset();
     predictorExperiment.reset();
     representationExperiment.reset();
+    phasesExperiment.reset();
     setExplainRequest(EMPTY_EXPLAIN_REQUESTS);
   };
 
@@ -215,7 +218,7 @@ export default function Page() {
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
             {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
           </>}
-          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} phasesExperiment={phasesExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
           {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
         </section>
       </main>
