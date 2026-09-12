@@ -6,6 +6,7 @@ import { NodeGlyph } from '@/components/map/node-glyph';
 import { Caveat } from '@/components/session/caveat';
 import { ExplainBack } from '@/components/session/explain-back';
 import { Button } from '@/components/ui/button';
+import { EXPERIMENT_ACTION, EXPERIMENT_PROMPT, isExperimentId } from '@/lib/experiments/registry';
 import { downstreamOf, stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/graph/types';
 import type { SessionConfig } from '@/lib/session/config';
@@ -114,7 +115,7 @@ export function Inspector({
         <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>
       </div>
 
-      {!marking && !presenting && (node.id === 'neuron' || node.id === 'tokens') && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>{node.id === 'tokens' ? 'Try the tokenizer playground' : 'Try the neuron experiment'}</Button>}
+      {!marking && !presenting && isExperimentId(node.id) && onPlay && <Button variant="outline" size="touch" onClick={onPlay}>{EXPERIMENT_ACTION[node.id]}</Button>}
 
       {!presenting && <div className="starting-point">
         <p className="eyebrow">What connects here</p>
@@ -205,7 +206,7 @@ export function Inspector({
        * someone else's flow rather than something they chose.
        */}
       {!marking && !presenting && (reveal || covered) ? (
-        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 ? node.id === 'tokens' ? 'Why can the number of tokens differ from the number of words?' : node.id === 'neuron' ? 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.' : undefined : undefined} node={node} state={state} config={config} onEarned={onEarned} />
+        <ExplainBack openRequest={explainRequest} prompt={explainRequest > 0 && isExperimentId(node.id) ? EXPERIMENT_PROMPT[node.id] : undefined} node={node} state={state} config={config} onEarned={onEarned} />
       ) : null}
 
 

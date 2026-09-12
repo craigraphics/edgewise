@@ -1,3 +1,10 @@
+> **Predictor experiment, 2026-09-11:** On `experiment/02-learning-from-examples`,
+> branched from merged `main`. A real least-squares fit on the
+> `prediction-from-examples` node, local to the browser, with the fit held as a
+> deliberate snapshot and an underdetermined fit reported rather than invented.
+> Read `docs/learning-from-examples.md` for what was verified and what was not.
+> Its PR targets `main`.
+
 > **Tokenizer playground, 2026-09-11:** On `experiment/01-tokenizer`, branched
 > from merged `main`. A real `cl100k_base` tokenizer on the `tokens` node, local
 > to the browser. Read `docs/tokenizer-playground.md` for what was verified and

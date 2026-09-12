@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConceptMap } from '@/components/map/concept-map';
 import { useNeuronExperiment } from '@/components/experiments/neuron-experiment';
 import { useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
+import { usePredictorExperiment } from '@/components/experiments/predictor-experiment';
 import { FocusedMap } from '@/components/map/focused-map';
 import { ConceptList } from '@/components/map/concept-list';
 import { MapLegend } from '@/components/map/legend';
@@ -19,6 +20,7 @@ import { GRAPH } from '@/lib/graph/load';
 import { coveredBy } from '@/lib/graph/order';
 import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
+import { EMPTY_EXPLAIN_REQUESTS, EXPERIMENT_HEADLINE, EXPERIMENT_TITLE_ID, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
 import { useLearnerModel } from '@/lib/learner/store';
 import { useSessionConfig } from '@/lib/session/config';
 import { useSession } from '@/lib/session/use-session';
@@ -43,8 +45,9 @@ export default function Page() {
   const [draft, setDraft] = useState('');
   const neuronExperiment = useNeuronExperiment();
   const tokenizerExperiment = useTokenizerExperiment();
-  const [practice, setPractice] = useState<'neuron' | 'tokens' | null>(null);
-  const [explainRequest, setExplainRequest] = useState({ neuron: 0, tokens: 0 });
+  const predictorExperiment = usePredictorExperiment();
+  const [practice, setPractice] = useState<ExperimentId | null>(null);
+  const [explainRequest, setExplainRequest] = useState(EMPTY_EXPLAIN_REQUESTS);
   const panelRef = useRef<HTMLElement>(null);
   const returnFocus = useRef<Element | null>(null);
   const covered = useMemo(() => coveredBy(GRAPH, walk.position), [walk.position]);
@@ -70,7 +73,7 @@ export default function Page() {
     setSurface('guide');
   }, [selectedId]);
 
-  const playExperiment = (id: 'neuron' | 'tokens') => {
+  const playExperiment = (id: ExperimentId) => {
     setView('session');
     setPresenting(false);
     openNode(id);
@@ -78,13 +81,13 @@ export default function Page() {
     setMapFormat('focus');
     setSurface('map');
     requestAnimationFrame(() => {
-      const title = document.getElementById(`${id === 'neuron' ? 'neuron' : 'tokenizer'}-lab-title`);
+      const title = document.getElementById(EXPERIMENT_TITLE_ID[id]);
       title?.focus();
       title?.scrollIntoView({ block: 'start' });
     });
   };
 
-  const explainExperiment = (id: 'neuron' | 'tokens') => {
+  const explainExperiment = (id: ExperimentId) => {
     setSelectedId(id);
     setExplainRequest(request => ({ ...request, [id]: request[id] + 1 }));
     setSurface('guide');
@@ -119,7 +122,8 @@ export default function Page() {
     setPractice(null);
     neuronExperiment.reset();
     tokenizerExperiment.reset();
-    setExplainRequest({ neuron: 0, tokens: 0 });
+    predictorExperiment.reset();
+    setExplainRequest(EMPTY_EXPLAIN_REQUESTS);
   };
 
   useEffect(() => {
@@ -173,8 +177,8 @@ export default function Page() {
             key={selected.id} graph={GRAPH} node={selected} model={model} marking={view === 'mark'} presenting={presenting}
             reveal={practice === selected.id || view !== 'session' || session.status === 'idle' || session.status === 'done'} covered={covered.has(selected.id)}
             config={config} onEarned={earn} onMark={mark} onClose={closeNode} onSelect={openNode}
-            onPlay={selected.id === 'neuron' ? () => playExperiment('neuron') : selected.id === 'tokens' ? () => playExperiment('tokens') : undefined}
-            explainRequest={selected.id === 'neuron' || selected.id === 'tokens' ? explainRequest[selected.id] : 0}
+            onPlay={isExperimentId(selected.id) ? () => playExperiment(selected.id as ExperimentId) : undefined}
+            explainRequest={isExperimentId(selected.id) ? explainRequest[selected.id] : 0}
           /> : view === 'walk' ? <Walkthrough graph={GRAPH} model={model} config={config} onNodeChange={setWalkNodeId} onEarned={earn} /> : view === 'mark' ? (
             <div className="space-y-4">
               <p className="eyebrow">Facilitator tools</p>
@@ -197,7 +201,7 @@ export default function Page() {
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className={cn("eyebrow", playing && "hidden sm:block")}>A field guide to AI</p>
-                <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing ? focusNode.id === 'tokens' ? 'Text, piece by piece.' : 'The neuron, up close.' : 'Ideas build on ideas.'}</h1>
+                <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing && isExperimentId(focusNode.id) ? EXPERIMENT_HEADLINE[focusNode.id] : 'Ideas build on ideas.'}</h1>
               </div>
               <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
                 {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => setMapFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
@@ -206,7 +210,7 @@ export default function Page() {
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
             {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
           </>}
-          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} playing={playing} onSelect={openNode} onPlayNeuron={() => playExperiment('neuron')} onPlayTokenizer={() => playExperiment('tokens')} onExplainNeuron={() => explainExperiment('neuron')} onExplainTokenizer={() => explainExperiment('tokens')} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} playing={playing} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
           {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
         </section>
       </main>
