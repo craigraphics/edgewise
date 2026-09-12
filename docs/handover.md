@@ -1,10 +1,13 @@
 > **Representation playground, 2026-09-12:** On `experiment/03-representation`,
-> branched from merged `main`. Two 4x4 pixel grids on the
-> `features-and-representation` node, with average brightness against the full
-> ordered list, computed from the actual cells and local to the browser. Read
-> `docs/representation-playground.md` for what was verified and what was not.
-> It also fixes the dead "Explore this idea" control on the focused card, which
-> the owner reported and which predates the branch. Its PR targets `main`.
+> branched from merged `main`. Two recognisable 4x4 pixel letters on the
+> `features-and-representation` node, with each picture kept beside the numbers
+> it becomes. Average brightness is compared with the full ordered list, all
+> computed from the actual cells and local to the browser. The teaching path was
+> revised after comparison with the predictor: three explicit actions first,
+> exploratory presets and rotation second. Read `docs/representation-playground.md`
+> for what was verified and what was not. It also fixes the dead "Explore this
+> idea" control on the focused card, which the owner reported and which predates
+> the branch. Its PR targets `main`.
 
 > **Predictor experiment, 2026-09-11:** On `experiment/02-learning-from-examples`,
 > branched from merged `main`. A real least-squares fit on the

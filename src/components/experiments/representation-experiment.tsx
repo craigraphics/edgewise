@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
-import { ArrowRight, RotateCcw, RotateCw } from 'lucide-react';
+import { ArrowDown, ArrowRight, RotateCcw, RotateCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -152,24 +152,34 @@ export function RepresentationExperiment({ onExplain, experiment }: Props) {
   const collides = sameEncoding(pictures.a, pictures.b, encoding);
   const inspected = position === null ? null : { ...positionOf(position), a: pictures.a[position], b: pictures.b[position] };
 
-  const scenarioNote = SCENARIOS.find(scenario => scenario.label === scenarioLabel)?.note;
+  const scenario = SCENARIOS.find(candidate => candidate.label === scenarioLabel);
+  const scenarioNote = scenario?.note;
+  const openingLetters = scenarioLabel === INITIAL_SCENARIO.label;
+  const pictureName = (side: Side) => scenario?.names[side === 'a' ? 0 : 1] ?? SIDE_NAME[side];
 
   function outputFor(side: Side) {
     const grid = pictures[side];
     const whites = whiteCount(grid);
-    const sharing = sharingPictures(grid, encoding);
-    return <div key={side} className="representation-output">
-      <p className="eyebrow">{SIDE_NAME[side]}</p>
-      {encoding === 'average' ? <>
-        <p className="representation-output-value font-mono tabular-nums">{formatBrightness(brightness[side])}</p>
-        <p className="mt-1 text-sm">{whites} of {CELL_COUNT} cells are white, so {whites} ÷ {CELL_COUNT} = {formatBrightness(brightness[side])}.</p>
-      </> : <>
-        <OrderedList grid={grid} selected={highlighted} />
-        <p className="mt-1 text-sm">{CELL_COUNT} numbers, one per cell, read row by row. The dots are only there to make it readable; the model gets one flat run of {CELL_COUNT}.</p>
-      </>}
-      <p className="text-muted-foreground mt-2 text-sm">{sharing === 1
-        ? `Exactly one of the ${grouped(TOTAL_PICTURES)} possible pictures produces this, so nothing about the picture was thrown away.`
-        : `${grouped(sharing)} of the ${grouped(TOTAL_PICTURES)} possible pictures produce this same data. From it alone, nothing can tell which one you drew.`}</p>
+    return <div key={side} className="representation-flow">
+      <div className="representation-picture">
+        <p id={`representation-${side}-title`} className="text-sm font-medium">{pictureName(side)}</p>
+        <p id={`representation-${side}-hint`} className="text-muted-foreground mt-1 text-xs">Tap a cell to flip it. Black is 0; white is 1. Arrow keys move between cells.</p>
+        <PixelGrid grid={grid} selected={highlighted} labelledBy={`representation-${side}-title`} describedBy={`representation-${side}-hint`} onFlip={index => flip(side, index)} />
+      </div>
+      <div className="representation-flow-arrow" aria-hidden>
+        <ArrowDown />
+        <span>{encoding === 'average' ? 'keep only the average' : 'keep every position'}</span>
+      </div>
+      <div className="representation-output">
+        <p className="eyebrow">Numbers handed to the model</p>
+        {encoding === 'average' ? <>
+          <p className="representation-output-value font-mono tabular-nums">{formatBrightness(brightness[side])}</p>
+          <p className="mt-1 text-sm">{whites} white cells ÷ {CELL_COUNT} total cells.</p>
+        </> : <>
+          <OrderedList grid={grid} selected={highlighted} />
+          <p className="mt-1 text-sm">One number per cell, read row by row.</p>
+        </>}
+      </div>
     </div>;
   }
 
@@ -177,59 +187,33 @@ export function RepresentationExperiment({ onExplain, experiment }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A quick experiment · runs in your browser</p>
-        <h3 id="representation-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Can two different pictures become the same number?</h3>
+        <h3 id="representation-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How can an H and a T become the same number?</h3>
       </div>
       <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
     </div>
-    <p className="mt-3 max-w-2xl text-base">A model never receives a picture. Something has to turn it into numbers first, and that step is the encoding. Below are two tiny pictures and two ways of encoding them.</p>
-    <p className="mt-3 max-w-2xl text-base">You are not being tested. You are testing one idea: <strong>whatever the encoding leaves out is gone.</strong></p>
+    <p className="mt-3 max-w-2xl text-base">A model does not see a picture as an H or a T. It receives numbers. An <strong>encoding</strong> decides which numbers will stand in for the picture.</p>
+    <p className="mt-3 max-w-2xl text-base">You are not being tested. You are testing one idea: <strong>the model can only notice differences those numbers preserve.</strong></p>
+    <ol className="text-muted-foreground mt-3 list-decimal space-y-1 pl-5 text-sm">
+      <li>Compare the <strong className="text-foreground">H</strong> and the <strong className="text-foreground">T</strong> below.</li>
+      <li>See what reaches the model when the encoding keeps only average brightness.</li>
+      <li>Switch to <strong className="text-foreground">Keep every cell&apos;s position</strong> and compare again.</li>
+    </ol>
 
-    <div className="representation-split mt-5">
-      <p className="text-sm font-medium">What the model is handed</p>
-      <p className="text-muted-foreground mt-1 text-xs">Each cell is black or white. <strong className="text-foreground">Black counts as 0, white counts as 1.</strong> Those values are the only thing that exists downstream. The picture itself is never passed on, so anything an encoding drops cannot be looked up again later.</p>
-    </div>
-
-    <div className="mt-5">
-      <h4 className="font-display text-xl">1. The two pictures</h4>
-      <p className="text-muted-foreground mt-1 text-sm">Flip any cell. Both pictures are yours to change.</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {SCENARIOS.map(scenario => <Button key={scenario.label} type="button" size="touch" variant={scenarioLabel === scenario.label ? 'default' : 'outline'} onClick={() => chooseScenario(scenario)}>{scenario.label}</Button>)}
-      </div>
-      {scenarioNote && <p className="text-muted-foreground mt-2 text-xs">{scenarioNote}</p>}
-
-      <div className="representation-pair mt-4">
-        {(['a', 'b'] as const).map(side => <div key={side} className="representation-picture">
-          <p id={`representation-${side}-title`} className="text-sm font-medium">{SIDE_NAME[side]}</p>
-          <p id={`representation-${side}-hint`} className="text-muted-foreground mt-1 text-xs">{GRID_SIZE} by {GRID_SIZE} cells, read row by row. A pressed cell is white and counts as 1. Arrow keys move between cells; Space or Enter flips one.</p>
-          <PixelGrid grid={pictures[side]} selected={highlighted} labelledBy={`representation-${side}-title`} describedBy={`representation-${side}-hint`} onFlip={index => flip(side, index)} />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="touch" onClick={() => rotate(side)}><RotateCw aria-hidden />Turn a quarter turn</Button>
-            <p className="text-muted-foreground text-xs">Moves every cell. Adds and removes none.</p>
-          </div>
-          {turn?.side === side && <p className="representation-turn mt-2 text-sm">{turn.moved > 0
-            ? `The same ${CELL_COUNT} cells, in new places. Average brightness is still ${formatBrightness(turn.brightness)}. The ordered list changed at ${turn.moved} of its ${CELL_COUNT} positions.`
-            : `This picture looks the same after a quarter turn, so both encodings are unchanged too. Try it on a pattern that is not symmetrical.`}</p>}
-        </div>)}
-      </div>
-    </div>
-
-    <fieldset className="mt-6 min-w-0">
-      <legend className="font-display text-xl">2. Turn them into numbers</legend>
-      <p className="text-muted-foreground mt-1 text-sm">The pictures stay exactly as they are. Only the encoding changes.</p>
+    <fieldset className="representation-split mt-5 min-w-0">
+      <legend className="text-sm font-medium">1. Choose what the encoding keeps</legend>
       <div className="mt-3 flex flex-wrap gap-2">
         {ENCODINGS.map(option => <label key={option.id} className={cn('representation-choice', encoding === option.id && 'representation-choice-selected')}>
           <input type="radio" name="representation-encoding" value={option.id} checked={encoding === option.id} onChange={() => setEncoding(option.id)} />
-          <span><span className="block font-medium">{option.label}</span><span className="text-muted-foreground block text-xs">{option.sub}</span></span>
+          <span><span className="block font-medium">{option.id === 'average' ? 'Keep only average brightness' : 'Keep every cell\'s position'}</span><span className="text-muted-foreground block text-xs">{option.id === 'average' ? '1 number' : `${CELL_COUNT} numbers, read row by row`}</span></span>
         </label>)}
       </div>
-      <div className="representation-keeps mt-3">
-        <p className="text-sm"><strong>Keeps:</strong> {chosen.keeps}</p>
-        <p className="mt-1 text-sm"><strong>Leaves out:</strong> {chosen.discards}</p>
-      </div>
+      <p className="mt-3 text-sm"><strong>Keeps:</strong> {chosen.keeps}</p>
+      <p className="mt-1 text-sm"><strong>Throws away:</strong> {chosen.discards}</p>
     </fieldset>
 
-    <div className="mt-6">
-      <h4 className="font-display text-xl">3. What the model gets</h4>
+    <div className="mt-5">
+      <h4 className="font-display text-xl">2. Follow each picture into the model</h4>
+      {scenarioNote && <p className="text-muted-foreground mt-1 text-sm">{scenarioNote}</p>}
       <div className="representation-pair mt-3">{(['a', 'b'] as const).map(outputFor)}</div>
 
       <div aria-live="polite" aria-atomic="true" className="mt-4">
@@ -239,8 +223,9 @@ export function RepresentationExperiment({ onExplain, experiment }: Props) {
               <p className="font-display text-xl">One number, and the same picture twice.</p>
               <p className="mt-2 text-sm">These two are identical, cell for cell, so of course they encode alike. Change one of them to see what a single number does keep.</p>
             </> : collides ? <>
-              <p className="font-display text-xl">Both pictures became the same number.</p>
-              <p className="mt-2 text-sm">They differ at {differences.length} of their {CELL_COUNT} cells, and none of that difference reached the number. Both are {formatBrightness(brightness.a)}. Anything downstream receives one value, not two pictures.</p>
+              <p className="font-display text-xl">{openingLetters ? 'To the model, the H and the T now look identical.' : 'To the model, these pictures now look identical.'}</p>
+              <p className="mt-2 text-sm">They differ at {differences.length} of their {CELL_COUNT} positions, but both became {formatBrightness(brightness.a)}. From that number alone, the model cannot know which picture was drawn.</p>
+              <p className="text-muted-foreground mt-2 text-sm">In fact, {grouped(sharingPictures(pictures.a, encoding))} of the {grouped(TOTAL_PICTURES)} possible grids produce this same number.</p>
             </> : <>
               <p className="font-display text-xl">These two came out as different numbers.</p>
               <p className="mt-2 text-sm">Picture A is {formatBrightness(brightness.a)}, picture B is {formatBrightness(brightness.b)}. One number separates these two — but only by overall brightness. Any two pictures with the same count of white cells still collide.</p>
@@ -250,14 +235,15 @@ export function RepresentationExperiment({ onExplain, experiment }: Props) {
               <p className="font-display text-xl">Two identical lists, from two identical pictures.</p>
               <p className="mt-2 text-sm">Nothing separates them because there is nothing to separate. Flip a cell in either picture and the lists part company at that exact position.</p>
             </> : <>
-              <p className="font-display text-xl">The distinction survived.</p>
-              <p className="mt-2 text-sm">The two lists differ at {differences.length} of their {CELL_COUNT} positions{differences.length <= 6 ? ` — ${differences.map(index => index + 1).join(', ')}` : ''}. The same two pictures that collided as one number arrive here as different data. That costs {CELL_COUNT} numbers instead of 1.</p>
+              <p className="font-display text-xl">Now the distinction survives.</p>
+              <p className="mt-2 text-sm">The lists differ at {differences.length} of their {CELL_COUNT} positions{differences.length <= 6 ? ` — ${differences.map(index => index + 1).join(', ')}` : ''}. The same pictures that collided as one number now arrive as different data. That costs {CELL_COUNT} numbers instead of 1.</p>
+              <p className="text-muted-foreground mt-2 text-sm">Each exact list belongs to just one of the {grouped(TOTAL_PICTURES)} possible grids, so this encoding threw no cell away.</p>
             </>
           )}
         </div>
       </div>
 
-      <p className="mt-4 max-w-2xl text-base">A model only ever works on the numbers it is handed. When two inputs arrive as the same numbers, nothing further along can tell them apart — not a larger model, not more training. What the encoding left out is not buried deeper inside; it is not there.</p>
+      <p className="mt-4 max-w-2xl text-base"><strong>This is representation:</strong> choosing the numbers that stand in for the original thing. When two inputs arrive as the same numbers, nothing later can tell them apart — not a larger model and not more training.</p>
 
       {listed && <div className="mt-5">
         <h5 className="text-sm font-medium">Look up one position</h5>
@@ -287,6 +273,20 @@ export function RepresentationExperiment({ onExplain, experiment }: Props) {
           ? `Position ${(position ?? 0) + 1} is row ${inspected.row}, column ${inspected.column}. Picture A has ${inspected.a} (${describePixel(inspected.a)}) there; picture B has ${inspected.b} (${describePixel(inspected.b)}).`
           : 'No position chosen yet. Every position in the list points at one cell, and always the same cell.'}</p>
       </div>}
+    </div>
+
+    <div className="border-border mt-6 border-t pt-5">
+      <h4 className="font-display text-xl">3. Change the evidence</h4>
+      <p className="text-muted-foreground mt-1 text-sm">Flip any square above, try another pair, or rearrange the same cells. The numbers update from the pictures you make.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {SCENARIOS.map(candidate => <Button key={candidate.label} type="button" size="touch" variant={scenarioLabel === candidate.label ? 'default' : 'outline'} onClick={() => chooseScenario(candidate)}>{candidate.label}</Button>)}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(['a', 'b'] as const).map(side => <Button key={side} type="button" variant="outline" size="touch" onClick={() => rotate(side)}><RotateCw aria-hidden />Turn {SIDE_NAME[side]} a quarter turn</Button>)}
+      </div>
+      {turn && <p className="representation-turn mt-3 text-sm">{turn.moved > 0
+        ? `The same ${CELL_COUNT} cells moved to new places in ${SIDE_NAME[turn.side]}. Its average stayed ${formatBrightness(turn.brightness)}, while its ordered list changed at ${turn.moved} positions.`
+        : `That picture looks the same after a quarter turn, so both encodings stayed the same too. Try a pattern that is not symmetrical.`}</p>}
     </div>
 
     <div className="border-border mt-6 border-t pt-5">

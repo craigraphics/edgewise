@@ -35,7 +35,7 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
   'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
-  'features-and-representation': { tint: 'playable-invitation-foundations', title: 'Can two different pictures become the same number?', blurb: 'Flip cells on a tiny grid, then compare two ways of turning it into numbers.', action: 'Open the playground' },
+  'features-and-representation': { tint: 'playable-invitation-foundations', title: 'How can an H and a T become the same number?', blurb: 'Follow two pixel letters into the model, then change which details their numbers preserve.', action: 'Open the playground' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */

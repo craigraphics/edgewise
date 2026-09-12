@@ -13,6 +13,12 @@ handed, and that whatever the encoding discards is gone — so the panel is buil
 around a **collision**: two pictures nobody would confuse, arriving at the model
 as identical data.
 
+The teaching path is deliberately the same shape as the predictor experiment:
+three explicit actions, one causal chain, and the input beside its consequence.
+Each card keeps **picture → encoding rule → numbers handed to the model** in one
+vertical line. Presets and rotations come after that first comparison, so the
+learner meets the mechanism before the playground controls.
+
 ## Both encodings are computed, and neither is a label on an animation
 
 `src/lib/experiments/representation.ts` does the arithmetic over the cells
@@ -25,10 +31,12 @@ other pictures share the same encoded data — comes from the two grids.
 | **One number** | The mean of the sixteen cell values. Black is 0, white is 1. |
 | **The full ordered list** | All sixteen values, in the declared reading order. |
 
-The opening pair is eight white cells arranged as a filled top half, against
-eight white cells arranged as a checkerboard. Both average **0.5**. Switch to
-the ordered list and the same two pictures differ at eight of sixteen positions.
-That is the lesson in two presses, and neither number is written down anywhere.
+The opening pair is a pixel **H** and a pixel **T**. Each uses ten white cells,
+so both average **0.625**, even though they differ at twelve of sixteen
+positions. Switch to the ordered list and the difference survives. Recognisable
+letters make the loss concrete: with only the average, the model cannot know
+which letter was drawn. That is the lesson in one switch, and neither result is
+written down anywhere.
 
 ## "Information is lost" is given as a number
 
@@ -36,7 +44,7 @@ Saying an encoding throws something away is easy to assert and hard to feel, so
 the panel counts. `sharingPictures` reports how many of the 65,536 possible
 pictures produce exactly this encoded data:
 
-- Average 0.5 → **12,870 pictures**. From that one number, nothing downstream
+- Average 0.625 → **8,008 pictures**. From that one number, nothing downstream
   can work out which was drawn.
 - Any ordered list → **exactly 1 picture**. Nothing was thrown away, and it cost
   sixteen numbers rather than one.
@@ -55,8 +63,8 @@ That count is checked in the tests against a **brute-force enumeration of all
 cannot change; the ordered list does. The panel reports what actually happened
 rather than asserting it:
 
-> The same 16 cells, in new places. Average brightness is still 0.5. The ordered
-> list changed at 8 of its 16 positions.
+> The same 16 cells moved to new places in Picture A. Its average stayed 0.625,
+> while its ordered list changed at 10 positions.
 
 A rotationally symmetric picture — all-white, all-black — gets the other
 sentence, because claiming a change that did not occur on the node about not
@@ -71,8 +79,8 @@ In list mode a strip of sixteen position buttons sits under the two pictures,
 showing both lists aligned position by position with `=` or `≠` on each. Choosing
 a position outlines **that cell in both grids** and states it in words:
 
-> Position 7 is row 2, column 3. Picture A has 1 (white) there; picture B has 0
-> (black).
+> Position 3 is row 1, column 3. Picture A has 0 (black) there; picture B has 1
+> (white).
 
 Positions exist only in that encoding, which the panel says: the single number
 has none.
@@ -126,15 +134,15 @@ Chrome, against the dev server, driven in a real window at exact viewport sizes.
 
 | Check | Result |
 |---|---|
-| Opening pair | Both 0.5; 12,870 pictures share it; differ at 8 of 16 cells |
-| Switch to the ordered list | Same two pictures, lists differ at 8 of 16; 1 picture per list |
+| Opening pair | H and T both 0.625; 8,008 pictures share it; differ at 12 of 16 cells |
+| Switch to the ordered list | Same two pictures, lists differ at 12 of 16; 1 picture per list |
 | All white | 16 of 16 white, 16 ÷ 16 = 1, exactly one picture produces it |
 | All black | 0 of 16 white, 0 ÷ 16 = 0, exactly one picture produces it |
-| Flip one cell | 0.4375 against 0.5 — the collision breaks, stated as such |
+| Flip one cell | 0.5625 against 0.625 — the collision breaks, stated as such |
 | The same picture twice | Both encodings agree, and the panel says why |
-| Quarter turn, asymmetric | Average held at 0.5, list changed at 8 of 16 |
+| Quarter turn, asymmetric | Average held at 0.625, list changed at 10 of 16 |
 | Quarter turn, all white | Reported unchanged rather than claimed changed |
-| Position 7 selected | Correct cell outlined in **both** grids, readout exact |
+| Position 3 selected | Correct cell outlined in **both** grids, readout exact |
 | Arrow keys, Home, End | Move focus; Space and Enter both flip a cell |
 | Reset | Opening pair, one-number encoding, no position, no turn note |
 | Start over | Clears marks and returns the experiment to its opening state |
@@ -142,9 +150,9 @@ Chrome, against the dev server, driven in a real window at exact viewport sizes.
 | Trip to another concept and back | Preserved |
 | Experiment ↔ explanation | Unfinished draft preserved |
 | Marks, against a populated model | Byte-identical before and after |
-| 320x568, 320x450, 390x600, 720x450, 1100x600, 1440x720, 1920x900 | No page scroll, nothing clipped, no control off-screen |
+| 320x568, 640x600 after a resize, 1440x720 | No page scroll, nothing clipped, no control off-screen after the teaching-path revision |
 | Tap targets | Every control in the panel at least 40px in both dimensions |
-| Final control, wheel | Reached at every size; the map pane is the single scroll owner |
+| Final control, wheel | Reached after the 640px resize; the map pane is the single scroll owner |
 | Final control, keyboard | Reached with every stop scrolled into view; page scroll 0 |
 | Reduced motion, emulated | Zero running animations in the panel |
 | Both themes | Cell colours identical in both, digits inverted, 17.33:1 |

@@ -173,7 +173,7 @@ export function formatBrightness(value: number): string {
   return Number(value.toFixed(4)).toString();
 }
 
-export type Scenario = { label: string; note: string; a: Grid; b: Grid };
+export type Scenario = { label: string; note: string; names: readonly [string, string]; a: Grid; b: Grid };
 
 /** Reads the picture out of a 4-row literal, so a scenario can be checked by eye in the source. */
 function picture(rows: readonly string[]): Grid {
@@ -189,20 +189,23 @@ function picture(rows: readonly string[]): Grid {
  */
 export const SCENARIOS: readonly Scenario[] = [
   {
-    label: 'Different pictures, same average',
-    note: 'Eight white cells each, arranged completely differently. Nobody would confuse these two pictures.',
-    a: picture(['####', '####', '....', '....']),
-    b: picture(['#.#.', '.#.#', '#.#.', '.#.#']),
+    label: 'An H and a T',
+    note: 'Two recognisable letters. Each uses ten white cells, but the cells sit in different places.',
+    names: ['Picture A · the letter H', 'Picture B · the letter T'],
+    a: picture(['#..#', '####', '#..#', '#..#']),
+    b: picture(['####', '.##.', '.##.', '.##.']),
   },
   {
     label: 'All white and all black',
     note: 'The two extremes. Here even one number keeps them apart, because only one picture can produce each.',
+    names: ['Picture A · all white', 'Picture B · all black'],
     a: picture(['####', '####', '####', '####']),
     b: picture(['....', '....', '....', '....']),
   },
   {
     label: 'The same picture twice',
     note: 'Identical cell for cell. Neither encoding separates them, because there is nothing to separate.',
+    names: ['Picture A · a small square', 'Picture B · the same square'],
     a: picture(['....', '.##.', '.##.', '....']),
     b: picture(['....', '.##.', '.##.', '....']),
   },

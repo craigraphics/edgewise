@@ -163,7 +163,8 @@ describe('what an encoding throws away', () => {
   it('is lossless at the extremes and worst in the middle', () => {
     expect(sharingPictures(WHITE, 'average')).toBe(1);
     expect(sharingPictures(BLACK, 'average')).toBe(1);
-    expect(sharingPictures(INITIAL_SCENARIO.a, 'average')).toBe(12870);
+    expect(sharingPictures(INITIAL_SCENARIO.a, 'average')).toBe(8008);
+    expect(binomial(CELL_COUNT, CELL_COUNT / 2)).toBe(12870);
   });
 
   it('sums to every possible picture across the seventeen averages', () => {
@@ -189,7 +190,7 @@ describe('rearranging the cells', () => {
   });
 
   it('turns clockwise, so the top row becomes the right-hand column', () => {
-    expect(quarterTurn(INITIAL_SCENARIO.a)).toEqual([0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]);
+    expect(quarterTurn(INITIAL_SCENARIO.a)).toEqual([1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1]);
   });
 
   /**
@@ -220,7 +221,7 @@ describe('differences between two pictures', () => {
 
   it('counts every cell that differs, in reading order', () => {
     expect(differingPositions(WHITE, BLACK)).toHaveLength(CELL_COUNT);
-    expect(differingPositions(INITIAL_SCENARIO.a, INITIAL_SCENARIO.b)).toEqual([1, 3, 4, 6, 8, 10, 13, 15]);
+    expect(differingPositions(INITIAL_SCENARIO.a, INITIAL_SCENARIO.b)).toEqual([1, 2, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
   });
 
   it('moves by exactly one cell when one cell is flipped', () => {
@@ -253,11 +254,11 @@ describe('the scenarios are the cases they claim', () => {
 
   it('opens on two visibly different pictures with one identical average', () => {
     const [same] = SCENARIOS;
-    expect(same.label).toBe('Different pictures, same average');
+    expect(same.label).toBe('An H and a T');
     expect(averageBrightness(same.a)).toBe(averageBrightness(same.b));
     expect(sameEncoding(same.a, same.b, 'average')).toBe(true);
     expect(sameEncoding(same.a, same.b, 'list')).toBe(false);
-    expect(differingPositions(same.a, same.b).length).toBeGreaterThanOrEqual(CELL_COUNT / 2);
+    expect(differingPositions(same.a, same.b)).toHaveLength(12);
   });
 
   it('offers all white against all black, which even one number separates', () => {
