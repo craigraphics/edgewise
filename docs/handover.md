@@ -1,3 +1,11 @@
+> **Representation playground, 2026-09-12:** On `experiment/03-representation`,
+> branched from merged `main`. Two 4x4 pixel grids on the
+> `features-and-representation` node, with average brightness against the full
+> ordered list, computed from the actual cells and local to the browser. Read
+> `docs/representation-playground.md` for what was verified and what was not.
+> It also fixes the dead "Explore this idea" control on the focused card, which
+> the owner reported and which predates the branch. Its PR targets `main`.
+
 > **Predictor experiment, 2026-09-11:** On `experiment/02-learning-from-examples`,
 > branched from merged `main`. A real least-squares fit on the
 > `prediction-from-examples` node, local to the browser, with the fit held as a
