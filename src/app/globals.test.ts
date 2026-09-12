@@ -122,6 +122,36 @@ describe('panel text', () => {
   }
 });
 
+/**
+ * The two experiment readouts print their headline number in the band colour.
+ * That combination was never measured — the panel-text block above only covers
+ * `foreground` and `muted-foreground` — and it is the one number a learner has
+ * to read off these panels.
+ *
+ * It found a shipped defect. The card used to be a 10% tint of its own band, and
+ * band-on-that-tint measures **4.18:1** in light mode, under AA, with no tint
+ * that still reads as a tint reaching 4.5. Same shape as the map-node failure
+ * above: text sitting on the band colour. The card is a plain surface now.
+ *
+ * Mirrors `.predictor-result-value` and `.phases-value` in `globals.css`.
+ */
+describe('experiment readouts', () => {
+  for (const theme of THEMES) {
+    it(`${theme}: the headline value is legible on its card`, () => {
+      expect(contrastRatio(colour(theme, 'band-foundations'), colour(theme, 'surface-0'))).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`${theme}: the label above it meets AA on the same card`, () => {
+      expect(contrastRatio(colour(theme, 'muted-foreground'), colour(theme, 'surface-0'))).toBeGreaterThanOrEqual(4.5);
+    });
+
+    /* The card has to be visible against the readout it sits in. */
+    it(`${theme}: the card separates from the readout behind it`, () => {
+      expect(contrastRatio(colour(theme, 'band-foundations'), colour(theme, 'surface-2'))).toBeGreaterThanOrEqual(3);
+    });
+  }
+});
+
 describe('the no-red rule', () => {
   /*
    * "Red is reserved for nothing." The `behaviour` band used to sit at hue 25
