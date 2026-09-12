@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ArrowRight, Plus, RotateCcw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { NumberField } from '@/components/experiments/number-field';
 import { Input } from '@/components/ui/input';
 import {
   completeExamples,
@@ -92,36 +93,6 @@ export function usePredictorExperiment() {
   }, []);
 
   return { rows, presetLabel, fit, queryDistance, edit, add, remove, choosePreset, learn, reset, setQueryDistance };
-}
-
-/** A number field that can genuinely be empty, so a half-typed row is never guessed at. */
-function NumberField({ id, label, name, unit, value, max, onChange }: {
-  id: string; label: string; name: string; unit: string; value: number | null; max: number; onChange: (value: number | null) => void;
-}) {
-  return <span className="min-w-0 flex-1">
-    <label htmlFor={id} className="text-muted-foreground block text-2xs">{label}</label>
-    <span className="mt-1 flex items-center gap-1.5">
-      {/* h-10: the shared Input is 32px, below the 40px finger target this project records. */}
-      <Input
-        id={id}
-        type="number"
-        inputMode="decimal"
-        aria-label={name}
-        min={0}
-        max={max}
-        step={0.5}
-        value={value === null ? '' : String(value)}
-        onChange={event => {
-          const raw = event.target.value;
-          if (raw === '') return onChange(null);
-          const parsed = Number(raw);
-          onChange(Number.isFinite(parsed) ? Math.min(max, Math.max(0, parsed)) : null);
-        }}
-        className="h-10 font-mono tabular-nums"
-      />
-      <span aria-hidden className="text-muted-foreground text-xs">{unit}</span>
-    </span>
-  </span>;
 }
 
 /**

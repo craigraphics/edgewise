@@ -1066,7 +1066,13 @@ fieldset:disabled .neuron-choice { cursor: default; }
     padding: .625rem .75rem;
     border: 1px solid var(--band-foundations);
     border-radius: .625rem;
-    background: color-mix(in oklch, var(--band-foundations) 10%, var(--surface-0));
+    /*
+     * Plain surface, not a band tint. Measured: the band-coloured value on a 10%
+     * tint of the same band is 4.18:1 in light mode, under AA, and no tint that
+     * still reads as a tint reaches 4.5. Same lesson as the map nodes — the text
+     * comes off the band colour and the band stays as the border.
+     */
+    background: var(--surface-0);
 }
 .predictor-result-label {
     color: var(--muted-foreground);
@@ -1271,4 +1277,110 @@ fieldset:disabled .neuron-choice { cursor: default; }
     border-radius: .75rem;
     background: var(--surface-2);
     line-height: 1.6;
+}
+
+/*
+ * The two-phase experiment — `training-vs-inference`.
+ *
+ * Built out of the predictor's vocabulary rather than sharing its class names:
+ * the two panels sit on adjacent concepts and one of them changing its look must
+ * not silently restyle the other.
+ */
+.phases-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.phases-rule {
+    padding: 1rem;
+    border: 1px solid var(--band-foundations);
+    border-radius: .75rem;
+    background: color-mix(in oklch, var(--band-foundations) 7%, var(--surface-0));
+}
+.phases-slider { min-height: 2.75rem; accent-color: var(--band-foundations); cursor: pointer; width: 100%; }
+.phases-slider:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; border-radius: .25rem; }
+.phases-slider:disabled { cursor: not-allowed; opacity: .6; }
+.phases-readout {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    line-height: 1.6;
+}
+.phases-values {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .625rem;
+}
+.phases-value {
+    display: flex;
+    min-width: 0;
+    min-height: 4.5rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: .125rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--band-foundations);
+    border-radius: .625rem;
+    /* Plain surface, for the reason recorded on `.predictor-result-value`. */
+    background: var(--surface-0);
+}
+.phases-value-label {
+    color: var(--muted-foreground);
+    font-size: .75rem;
+    line-height: 1.3;
+}
+.phases-value strong {
+    color: var(--band-foundations);
+    font-size: 1.375rem;
+    line-height: 1.25;
+}
+.phases-arrow {
+    width: 1.125rem;
+    color: var(--band-foundations);
+}
+.phases-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .5rem .75rem;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.phases-row > span:first-child { flex: 1 1 9rem; }
+/*
+ * Measured at 320px: with the field free to shrink, the row's label took the
+ * width and left a 22px-wide number input. A basis with a floor makes the field
+ * wrap onto its own line instead of collapsing.
+ */
+.phases-row .phases-field { flex: 0 1 8.5rem; min-width: 8rem; max-width: 11rem; }
+.phases-row-fresh { border-style: dashed; }
+.phases-compare, .phases-names {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.phases-compare-grid {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.phases-compare-side {
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.phases-compare-now { border-color: var(--band-foundations); }
+@media (max-width: 460px) {
+    .phases-values { grid-template-columns: 1fr; }
+    .phases-arrow {
+        justify-self: center;
+        transform: rotate(90deg);
+    }
+    .phases-compare-grid { grid-template-columns: 1fr; }
 }
