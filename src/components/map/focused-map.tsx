@@ -5,6 +5,7 @@ import { NodeGlyph } from './node-glyph';
 import { NeuronExperiment, type useNeuronExperiment } from '@/components/experiments/neuron-experiment';
 import { TokenizerExperiment, type useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
 import { PredictorExperiment, type usePredictorExperiment } from '@/components/experiments/predictor-experiment';
+import { RepresentationExperiment, type useRepresentationExperiment } from '@/components/experiments/representation-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -16,6 +17,7 @@ type Props = {
   neuronExperiment: ReturnType<typeof useNeuronExperiment>;
   tokenizerExperiment: ReturnType<typeof useTokenizerExperiment>;
   predictorExperiment: ReturnType<typeof usePredictorExperiment>;
+  representationExperiment: ReturnType<typeof useRepresentationExperiment>;
   playing: boolean; onSelect: (id: string) => void;
   onPlay: (id: ExperimentId) => void;
   onExplain: (id: ExperimentId) => void;
@@ -30,10 +32,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
   'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
+  'features-and-representation': { tint: 'playable-invitation-foundations', title: 'Can two different pictures become the same number?', blurb: 'Flip cells on a tiny grid, then compare two ways of turning it into numbers.', action: 'Open the playground' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -70,6 +73,7 @@ export function FocusedMap({ graph, node, model, playing, onSelect, onPlay, onEx
       {playing && node.id === 'neuron' && <div className="mt-4"><NeuronExperiment onExplain={() => onExplain('neuron')} experiment={neuronExperiment} /></div>}
       {playing && node.id === 'tokens' && <div className="mt-4"><TokenizerExperiment onExplain={() => onExplain('tokens')} experiment={tokenizerExperiment} /></div>}
       {playing && node.id === 'prediction-from-examples' && <div className="mt-4"><PredictorExperiment onExplain={() => onExplain('prediction-from-examples')} experiment={predictorExperiment} /></div>}
+      {playing && node.id === 'features-and-representation' && <div className="mt-4"><RepresentationExperiment onExplain={() => onExplain('features-and-representation')} experiment={representationExperiment} /></div>}
 
       <div className="focus-connections">
         {children.length > 0 ? <>
