@@ -93,13 +93,23 @@ function Moment({ label, row }: { label: string; row: Row }) {
   </span>;
 }
 
-/** "changed its numbers" / "changed them by less than 0.01" / "left them exactly as they were". */
-function saidMovement(before: Row, after: Row): string {
+/**
+ * What a stage did, read off the unrounded numbers rather than written down.
+ *
+ * A real change too small to print says so instead of being called nothing, and
+ * two identical rows are never described as a change — the same rule the
+ * one-step-at-a-time panel follows when a distance is under a hundredth.
+ */
+function saidMovement(before: Row, after: Row, again = false): string {
   const moved = movement(before, after);
-  if (moved === 'moved') return 'changed its numbers';
-  if (moved === 'tiny') return 'changed them by less than 0.01';
+  const them = again ? 'them again' : 'its numbers';
+  if (moved === 'moved') return `changed ${them}`;
+  if (moved === 'tiny') return `changed ${them} by less than 0.01`;
   return 'left them exactly as they were';
 }
+
+/** Small counts read better as words in a sentence than as digits. */
+const COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
 
 /** A small table of numbers, scrollable on its own rather than widening the panel. */
 function NumberTable({ caption, head, rows }: { caption: string; head: readonly string[]; rows: readonly (readonly string[])[] }) {
@@ -143,6 +153,9 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
   const [first, second] = useMemo(() => runBlocks(sentence.words), [sentence]);
   const otherFirst = useMemo(() => runBlocks(other.words)[0], [other]);
 
+  /** Whether anything has happened yet, which is what makes Reset worth offering. */
+  const touched = hasRun || hasSwapped || showSecond || showNumbers || showHow;
+
   const last = sentence.words.length - 1;
   const target = sentence.words[last];
   const started = first.input[last];
@@ -158,10 +171,16 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
         <p className="eyebrow">A quick experiment · runs in your browser</p>
         <h3 id="transformer-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How do a few simple steps work together on a sentence?</h3>
       </div>
-      <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
+      {/*
+        * Offered only once there is something to undo. On the first screen it
+        * was a control that did nothing, and at 390px it wrapped onto its own
+        * row above the panel's actual first action and pushed it 52px further
+        * down. The same call the saved-messages panel already records.
+        */}
+      {touched && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">A short note about pets. We follow its last word through one block — the pair of steps below.</p>
+    <p className="mt-3 max-w-2xl text-base">We follow the last word of this note through one block: the pair of steps below.</p>
 
     <div className="transformer-note mt-4">
       <SentenceLine sentence={sentence} />
@@ -174,7 +193,7 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
           <span className="transformer-step-number" aria-hidden>{index + 1}</span>
           <span className="min-w-0">
             {step.title}
-            {hasRun && <span className="transformer-step-done">done</span>}
+            {hasRun && <span className="transformer-step-done">{' '}done</span>}
           </span>
         </li>)}
       </ol>
@@ -199,9 +218,9 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
           <Moment label="after step 2" row={finished} />
         </div>
         <p className="mt-3 text-sm">
-          The last word is <strong>{target}</strong>. Sharing clues from the {last} words before it {saidMovement(started, midway)}.
-          The calculation after that {saidMovement(midway, finished)}. Two steps, one after the other, and the second one
-          worked on what the first one left.
+          The last word is <strong>{target}</strong>. Sharing clues from the {COUNT_WORDS[last] ?? last} words before it{' '}
+          {saidMovement(started, midway)}. The calculation after that {saidMovement(midway, finished, true)}. Two steps, one
+          after the other, and the second one worked on what the first one left.
         </p>
       </div>
     </div>}
