@@ -142,8 +142,8 @@
         "Believing individual neurons hold individual concepts — a 'grandmother neuron' — rather than concepts being spread across many."
       ],
       "explanations": {
-        "intuition": "An artificial neuron multiplies each of its inputs by a weight, adds them up, and passes the total through a simple function that bends the line. That is the whole thing. The weights are the part that gets learned; everything else is fixed arithmetic.",
-        "example": "Ten numbers in, each multiplied by its own weight, summed, then squashed. One number out. You could do it on paper."
+        "intuition": "An artificial neuron is a small number-combiner. It gives each input its own influence, adds the results to a starting number, then applies one simple final rule. One number comes out. The influence settings — called weights — and the starting number are the parts learned during training. There is no little brain inside it: just arithmetic.",
+        "example": "Imagine a streaming app has already described a movie with numbers — how funny it is, how mysterious it is, and so on. One neuron can make each number count more, less, or against the result, add them, and send out one match score. It sees only the numbers, not the movie."
       },
       "simplificationCost": "The word 'neuron' does real damage. It imports intuitions about brains — firing, memory, thinking — that do not apply, and it makes the arithmetic sound more mysterious than it is."
     },
