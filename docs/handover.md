@@ -1,3 +1,47 @@
+> **How can the words around "bank" change what it means here? 2026-09-13:** On
+> `experiment/12-attention`, branched from `main` after the saved-numbers
+> experiment. An experiment on `attention`: one sentence, one word being
+> updated, and one button that swaps the sentence. *We walked beside the river
+> to the bank* leaves `bank` at outdoors 1.60 / money 0.21; *We took cash to the
+> bank* leaves it at 0.24 / 1.78; on its own it is an even 1.00 / 1.00, which is
+> asserted rather than described. It is real single-head causal self-attention
+> with the query, key and value settings left as the identity — a simplification
+> the panel states, and the reason every number on screen can be checked against
+> a nine-word table. There are no arrows anywhere, because an arrow looks like
+> choosing and a thick arrow looks like a reason, which are this node's two
+> recorded misconceptions. Causality is the shape of `updateAt`, not a comment:
+> a test swaps every word after the target for nonsense and requires the result
+> to be byte-identical. Read `docs/words-around-it.md` for what was verified and
+> what was not — including one real assessed explanation submitted end to end,
+> which moved only this node, `blocked` → `known`. Its PR targets `main`.
+>
+> It also records three defects found the way this project keeps finding them:
+> the first action sat 502px below the panel title at 390px until the connection
+> sentence moved below the readout (**306 at 1230x842** now, second shortest of
+> the twelve panels); each before/after card stood 176px tall at 320px with 90px
+> of nothing in it, because `flex-basis` is the main axis and an 11rem column
+> width became a minimum height once the pair stacked; and five of the eight
+> share rows said "adds outdoors 0.00 · money 0.00", which is true and is noise —
+> they say "adds nothing" now. And one about the probe rather than the panel: a
+> contrast check that composited over black reported the share bar at 1.52:1 in
+> light mode when the real figure is 3.36.
+>
+> A later legibility pass fixed the thing most likely to stop this working: the
+> readout printed `outdoors 1.00 money 1.00` before anything had said that words
+> carry numbers, and used *description* and *share* before either was defined.
+> One sentence now sits inside the readout card — at the moment the numbers
+> appear, not in front of the button — and the result sentence grounds *share*
+> by using it, with "balanced" and the direction it leans both read off
+> `leadingColumn` rather than written down. *See the shares* now says what the
+> match number actually is, derived: "river overlaps bank by 3.00, so it reads
+> 2.12 below." The first action did not move, because the readout is below it.
+>
+> A disagreement with an authored simplification is recorded and **not acted
+> on**: the panel names its two columns, where the `embeddings` node's authored
+> text says nobody decides what a dimension means. The graph, the assessor
+> prompt, the schema and the model list are untouched. `pnpm calibrate --explain
+> --runs 3` was not run, for the reasons in the doc.
+
 > **When a model learns, what does it actually keep? 2026-09-13:** On
 > `experiment/11-parameters-scale`, branched from `main` after the
 > train-test-split experiment. An experiment on `parameters-scale`: a bike
