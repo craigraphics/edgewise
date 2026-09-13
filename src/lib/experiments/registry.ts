@@ -73,5 +73,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'training-vs-inference': 'When the answer changes, what has actually changed — the question, or the rule? How can you tell?',
   loss: 'Why would “wrong by this much” be more useful to a model than just “wrong”?',
   'gradient-descent': 'Why can a step in the helpful direction still leave the guess further away, if the step is too big?',
-  'generalization-overfitting': 'What did the past deliveries fail to tell us about how this rule would work next time?',
+  'generalization-overfitting': 'Why did the cracked phone help one rule on the examples it saw, but hurt it on the sales kept hidden?',
 };

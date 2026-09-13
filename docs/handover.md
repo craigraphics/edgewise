@@ -1,13 +1,14 @@
 > **Did it learn the pattern, or remember the examples? 2026-09-13:** On
 > `experiment/07-generalization`, branched from merged `main`. An experiment on
-> `generalization-overfitting`: two rules fitted to the same five past
-> deliveries, one a straight line and one a curve free to bend through every one
-> of them. The curve is nothing off on the past deliveries and 6.1 minutes off on
-> four it has never seen; the line is 3.0 and 1.9. Two further weeks of
-> deliveries carry the honesty — one where the closer fit is 8.7 times better,
-> one where both rules come out identical — so the panel cannot be read as
-> teaching that detail always fails. Both fitting functions take past deliveries
-> and nothing else, so the held-out rows cannot reach a rule; a test swaps them
+> `generalization-overfitting`: two pricing rules fitted to the same five past
+> used-phone sales, one a straight trend and one a curve free to bend through
+> every sale. The flexible rule is nothing off on the past sales and $100 off on
+> four held-out sales; the line is $51.2 and $34.5. A cracked phone makes the
+> one-off detail concrete. Two further datasets carry the honesty — one where a
+> real early price drop makes the flexible rule 25.8 times better, one where both
+> rules come out identical — so the panel cannot be read as teaching that detail
+> always fails. Both fitting functions take past sales and nothing else, so the
+> held-out rows cannot reach a rule; a test swaps them
 > for nonsense and requires the rules to be byte-identical. It also records a
 > defect worth keeping: the first action sat 982px below the panel title because
 > a `w-full` chart stretched to 664px and stood 415px tall on its own, invisible
@@ -16,6 +17,13 @@
 > `docs/memorising-or-learning.md` for what was verified and what was not —
 > including a real assessed explanation submitted end to end. Its PR targets
 > `main`.
+>
+> The phone-specific explanation was accepted end to end (`unexplored → known`).
+> The required repository-wide `pnpm calibrate --explain --runs 3` rerun failed
+> on unrelated fixtures: 2/72 false passes for `hallucination/parroted` and one
+> false block for `neuron/technical`. The explain canary does not include this
+> experiment, so the result is not evidence against the new question, but it is
+> current assessor evidence and must not be hidden.
 
 > **One step at a time, 2026-09-12:** On `experiment/06-small-steps`, branched
 > from merged `main`. An experiment on `gradient-descent`, continuing the

@@ -1683,8 +1683,8 @@ fieldset:disabled .neuron-choice { cursor: default; }
     color: var(--muted-foreground);
 }
 /*
- * The 2x2 the whole experiment turns on: each rule read on the deliveries it was
- * built from and on the ones it was not. A grid rather than a table because the
+ * The 2x2 the whole experiment turns on: each rule read on the phone sales it
+ * learned from and on the ones it was kept from. A grid rather than a table because the
  * two headings and two row labels are the only structure there is, and a table
  * at 320px puts "nothing off" on three lines.
  */
@@ -1722,7 +1722,7 @@ fieldset:disabled .neuron-choice { cursor: default; }
     .generalization-rules { grid-template-columns: 1fr; }
 }
 /*
- * Below 460px the three columns stop fitting: "On the past deliveries" wraps to
+ * Below 460px the three columns stop fitting: the two set headings wrap to
  * four lines against a 90px column. Each rule becomes its own block with the two
  * readings as label-left/value-right rows, which is the same move the loss
  * panel's verdict pair makes at 420px and for the same measured reason.
