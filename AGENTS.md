@@ -2011,6 +2011,63 @@ stepped, so there is nothing for a reduced-motion setting to suppress. The only
 self-moving thing is the optional six-step run, which is opt-in and carries a
 Stop button throughout.
 
+### Reaching an experiment — a button, and a URL — 2026-09-13
+
+On `experiment/08-experiment-links`, branched from `main` after the
+one-step-at-a-time experiment merged. The owner asked for a direct route from
+the focused view to every experiment, and for a URL that names where you are.
+See `docs/experiment-links.md` for the verification table and the limits.
+
+**Seven ideas have an experiment and only one was reachable from the focused
+view** — the idea in focus, through the invitation at the bottom. Every
+neighbour that has one now carries a `Try it` button on its own card. It is a
+second control, not a second invitation: the card still opens the idea, and the
+button takes its accessible name from `EXPERIMENT_ACTION`, so it can never read
+as an unlabelled "try" beside a heading it does not belong to.
+
+**The invitation was 576px below the panel title with its action off the bottom
+of the window**, measured at 1230x842 — the viewport this file already records
+as the common laptop. It now sits directly under the idea in focus whenever
+that idea has its own experiment: **325px**, fully on screen. The general
+neuron invitation still comes last, on ideas that have none, so one invitation
+per view still holds. Same defect as the one-step-at-a-time panel's 517px, in a
+different place, found the same way.
+
+**Two URL forms: `#idea/<id>` and `#play/<id>`**, with a bare `#tokens`
+accepted and rewritten. `replaceState`, never `pushState` — selecting an idea
+is panel state, not a page, and pushing would bury the back button under
+twenty-three entries. An unknown id lands on the ordinary first screen rather
+than an empty panel that reads as a failed load, and `#play/<id>` for an idea
+with no experiment falls back to the idea, so a link written before its
+experiment exists still arrives somewhere true.
+
+**The hash is a subscription, not a store.** `persisted.ts` and `use-media.ts`
+use `useSyncExternalStore` because components render from those values. Nothing
+renders from the hash: a link is an *event*, and the app responds by moving. So
+`use-hash.ts` takes a callback, and the hash already in the address bar is
+delivered through that same callback rather than read separately on mount — one
+path in, so a pasted link and a hand-edited one cannot disagree. That shape was
+not chosen for tidiness. The obvious version is what
+`react-hooks/set-state-in-effect` rejects, and the rule's own text names the
+alternative. **The lint error was right about the design, not just the line.**
+
+**`#idea/tokens` typed while the tokenizer was open left the experiment
+running.** Selecting an idea used to leave an experiment by accident — the
+focused view moves off the one being played — but not when the idea was the
+same one, so the URL said one thing and the screen showed another. `openNode`
+stops it explicitly now.
+
+**A hash-link check that does not reload is checking something else.** Changing
+only the fragment is a same-document navigation, so React state carries across
+it, and a probe that walked several links in a row credited each result to the
+wrong cause. Every case was re-run through `about:blank` first.
+
+**The row's `overflow: hidden` would have clipped the focus outline.** Making
+the neighbour a row with two buttons inside it, clipped to its own corner
+radius, hides a 3px-offset outline on both. The right-hand control carries the
+inner radius itself instead. Tenth time a defect here was found by measuring
+rather than reading — and this one was introduced by a purely visual line.
+
 ### "Explore this idea" was a control that did nothing — 2026-09-12
 
 Reported by the owner while reviewing the experiment above, and older than it:

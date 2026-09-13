@@ -11,7 +11,7 @@ import { LossExperiment, type useLossExperiment } from '@/components/experiments
 import { StepsExperiment, type useStepsExperiment } from '@/components/experiments/steps-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
-import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
+import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
 import type { ConceptGraph, ConceptNode, LearnerModel } from '@/lib/graph/types';
 import { cn } from '@/lib/utils';
 
@@ -55,14 +55,48 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
   const children = graph.nodes.filter(n => n.prerequisites.includes(node.id));
   const state = stateOf(model, node.id);
 
+  /*
+   * A neighbour that has an experiment offers it here, rather than only after
+   * you have navigated onto that idea and scrolled to the bottom of its view.
+   * It is a second control, not a second invitation: the accessible name says
+   * which experiment, so it never reads as an unlabelled "try" beside a
+   * heading it does not belong to.
+   */
   function neighbour(n: ConceptNode) {
     const mark = stateOf(model, n.id);
-    return <button key={n.id} onClick={() => onSelect(n.id)} className="focus-neighbour">
-      <svg width={14} height={14} aria-hidden className="shrink-0"><NodeGlyph state={mark} cx={7} cy={7} colour={`var(--band-${n.band})`} /></svg>
-      <span className="min-w-0 flex-1 text-left"><span className="block text-sm font-medium">{n.label}</span><span className="text-muted-foreground block text-xs">{STATE_COPY[mark]}</span></span>
-      <ArrowRight size={15} aria-hidden />
-    </button>;
+    const playable: ExperimentId | null = isExperimentId(n.id) ? n.id : null;
+    return <div key={n.id} className="focus-neighbour">
+      <button onClick={() => onSelect(n.id)} className="focus-neighbour-open">
+        <svg width={14} height={14} aria-hidden className="shrink-0"><NodeGlyph state={mark} cx={7} cy={7} colour={`var(--band-${n.band})`} /></svg>
+        <span className="min-w-0 flex-1 text-left"><span className="block text-sm font-medium">{n.label}</span><span className="text-muted-foreground block text-xs">{STATE_COPY[mark]}</span></span>
+        <ArrowRight size={15} aria-hidden className="shrink-0" />
+      </button>
+      {playable && <button
+        onClick={() => onPlay(playable)}
+        aria-label={EXPERIMENT_ACTION[playable]}
+        className="focus-neighbour-play"
+      >
+        <SlidersHorizontal size={14} aria-hidden />
+        <span aria-hidden>Try it</span>
+      </button>}
+    </div>;
   }
+
+  /*
+   * The offer itself, placed by the caller below.
+   *
+   * When the idea in focus has its own experiment the offer sits directly
+   * under it, because that is where the eye already is — measured at 1230x842
+   * it used to start 576px below the panel title, with its action entirely off
+   * the bottom of the window. The general neuron invitation still comes last,
+   * where it cannot compete with the idea actually being read.
+   */
+  const offer = <button onClick={() => onPlay(invited)} className={cn('playable-invitation w-full text-left', invitation.tint)}>
+    <span className="eyebrow inline-flex items-center gap-2"><SlidersHorizontal size={15} aria-hidden />{isExperimentId(node.id) ? 'Try this idea' : 'Try a playable idea'}</span>
+    <span className="font-display mt-2 block text-2xl">{invitation.title}</span>
+    <span className="mt-2 block text-sm">{invitation.blurb}</span>
+    <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium">{invitation.action} <ArrowRight size={16} aria-hidden /></span>
+  </button>;
 
   return <div className="focus-map min-h-0 flex-1 overflow-y-auto pb-5 pr-1">
     <div className="mx-auto max-w-3xl">
@@ -99,6 +133,8 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'loss' && <div className="mt-4"><LossExperiment onExplain={() => onExplain('loss')} experiment={lossExperiment} /></div>}
       {playing && node.id === 'gradient-descent' && <div className="mt-4"><StepsExperiment onExplain={() => onExplain('gradient-descent')} experiment={stepsExperiment} /></div>}
 
+      {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
+
       <div className="focus-connections">
         {children.length > 0 ? <>
           <ArrowDown className="mx-auto my-3" size={18} aria-hidden />
@@ -108,12 +144,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
         </> : <p className="text-muted-foreground mt-4 text-sm">This is an endpoint in this map. You can explore back along its connections.</p>}
       </div>
 
-      {!playing && <button onClick={() => onPlay(invited)} className={cn('playable-invitation mt-6 w-full text-left', invitation.tint)}>
-        <span className="eyebrow inline-flex items-center gap-2"><SlidersHorizontal size={15} aria-hidden />{isExperimentId(node.id) ? 'Try this idea' : 'Try a playable idea'}</span>
-        <span className="font-display mt-2 block text-2xl">{invitation.title}</span>
-        <span className="mt-2 block text-sm">{invitation.blurb}</span>
-        <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium">{invitation.action} <ArrowRight size={16} aria-hidden /></span>
-      </button>}
+      {!playing && !isExperimentId(node.id) && <div className="mt-6">{offer}</div>}
     </div>
   </div>;
 }
