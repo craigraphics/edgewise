@@ -98,12 +98,18 @@ describe('map node labels', () => {
 });
 
 describe('band accents', () => {
-  /* Non-text graphics: the 3px bar down a node's leading edge, and the glyph. */
+  /*
+   * Non-text graphics: the 3px bar down a node's leading edge, the glyph, and
+   * the band-coloured borders the experiment panels draw round their readouts.
+   * All three surfaces, because those borders sit on whichever one they land on.
+   */
   for (const theme of THEMES) {
     for (const band of BANDS) {
-      it(`${theme}: ${band} is distinguishable from the card it sits on`, () => {
-        expect(contrastRatio(colour(theme, `band-${band}`), colour(theme, 'surface-1'))).toBeGreaterThanOrEqual(3);
-      });
+      for (const surface of ['surface-0', 'surface-1', 'surface-2'] as const) {
+        it(`${theme}: ${band} is distinguishable from ${surface}`, () => {
+          expect(contrastRatio(colour(theme, `band-${band}`), colour(theme, surface))).toBeGreaterThanOrEqual(3);
+        });
+      }
     }
   }
 });
@@ -135,19 +141,29 @@ describe('panel text', () => {
  *
  * Mirrors `.predictor-result-value` and `.phases-value` in `globals.css`.
  */
+/**
+ * The bands that are printed as TEXT anywhere in the interface.
+ *
+ * Only `foundations`, and that is a measurement rather than a preference: run
+ * the check below over every band and light mode gives `learning` 4.30,
+ * `behaviour` 4.36, `networks` 4.45 and `language` 4.02 against the same card,
+ * all under AA. `foundations` clears it because it happens to be the darkest of
+ * the six. That is why the `loss` panel prints its numbers in `foreground` and
+ * keeps its band on the border, and why adding a band to this list means
+ * measuring it first rather than assuming the other five behave like this one.
+ */
+const BANDS_USED_AS_TEXT = ['foundations'] as const;
+
 describe('experiment readouts', () => {
   for (const theme of THEMES) {
-    it(`${theme}: the headline value is legible on its card`, () => {
-      expect(contrastRatio(colour(theme, 'band-foundations'), colour(theme, 'surface-0'))).toBeGreaterThanOrEqual(4.5);
-    });
+    for (const band of BANDS_USED_AS_TEXT) {
+      it(`${theme}: the ${band} headline value is legible on its card`, () => {
+        expect(contrastRatio(colour(theme, `band-${band}`), colour(theme, 'surface-0'))).toBeGreaterThanOrEqual(4.5);
+      });
+    }
 
     it(`${theme}: the label above it meets AA on the same card`, () => {
       expect(contrastRatio(colour(theme, 'muted-foreground'), colour(theme, 'surface-0'))).toBeGreaterThanOrEqual(4.5);
-    });
-
-    /* The card has to be visible against the readout it sits in. */
-    it(`${theme}: the card separates from the readout behind it`, () => {
-      expect(contrastRatio(colour(theme, 'band-foundations'), colour(theme, 'surface-2'))).toBeGreaterThanOrEqual(3);
     });
   }
 });
