@@ -1928,6 +1928,89 @@ did not, so that claim rests on the absence of learner-model access and on the
 before/after storage reads. Recorded in `docs/how-far-off.md` under "Not
 verified".
 
+### One step at a time — a real slope, and a step that runs away — 2026-09-12
+
+On `experiment/06-small-steps`, branched from `main` after the how-far-off
+experiment merged. An experiment on `gradient-descent`, built to the same rule as
+the five before it: change something, inspect the consequence, optionally explain
+it. See `docs/one-step-at-a-time.md` for the verification tables and the limits.
+
+**One guess, one fact, one button.** The delivery from `loss` continues — the
+same 30 minutes — and the model guessed 40. The first screen carries the guess
+and how far off it is, the single fact a step is allowed to act on (*"moving the
+guess down makes it less wrong"*), and **Take one step**. Then the before and
+after sit side by side and stay there. Nothing on that screen says gradient,
+learning rate or loss, and there is no landscape and no rolling ball.
+
+**No prediction step, deliberately.** The neuron asks for one because it has a
+single arithmetic result worth committing to. Here the learner has been given
+nothing they could use to work out the size of the next move, and asking them to
+guess an unexplained number is the thing this file's own rules forbid.
+
+**The update is real, and the slope is checked against the score rather than
+against itself.** `guess ← guess − step × 2(guess − actual)`, over a squared
+error. `slopeAt` is the analytic expression; the test measures
+`(score(g+h) − score(g−h)) / 2h` and requires the two to agree. Asserting a
+measure against itself is the trap the tokenizer closed by decoding `bpe_ranks`
+independently, the predictor by checking the least-squares conditions, the
+representation playground by brute force and the loss panel by hand arithmetic;
+this one closes it with a finite difference.
+
+**Three step sizes, and they are the three things that can happen.** A step here
+covers a fixed fraction of the remaining distance, because the slope is
+proportional to the gap — a fifth of the way, a little past, three times past.
+That fraction is a *consequence* of the update and is held to it in the test
+rather than written into the copy, and the panel says the neat relationship
+belongs to this one-number example rather than to training. **The labels say how
+big a step is, never how it will turn out**, with a test rejecting "past", "too
+far", "worse" and "best" in a label.
+
+**A step that would run away is refused, and the number it would have reached is
+printed.** *"From 50.48 min, a much bigger step would have taken the guess to
+−10.96 min, which is less than no time at all."* Clamping it into something that
+still looked reasonable would have hidden the one thing a too-big step is for.
+Choosing a smaller size clears it and carries on, so it is a stop rather than a
+dead end.
+
+**The panel contradicted itself once, and only driving it found that.** A run of
+bigger steps converges fast enough that within a dozen steps the gap is under
+0.005 minutes, so a row printed **"30 → 30 min · 0 off → 0 off · past it, and
+closer"** — the classification tolerance is 1e-9 and the display rounds to two
+places. Same shape as the `loss` panel's own rule that "0 minutes off" must never
+sit beside the word "Wrong". A real distance too small to print now says so
+(`under 0.01 minutes off`), and the readout carries the note that earns its
+place: the steps carry on getting smaller, which is the ordinary ending rather
+than landing exactly on the answer. Ninth time a defect here was found by
+measuring rather than reading.
+
+**The first action was 517px below the panel title, and the fix came from
+measuring the siblings.** The how-far-off panel is 334, representation 445,
+predictor 520. In house norms and still the wrong end of them for a panel whose
+whole first screen is one button. Two paragraphs became one, and the direction
+line stopped being a bordered box and became a 3px band accent down its leading
+edge — the map's own idiom. **431 now**, and at 1100×700 the title and the first
+action fit on screen together, which they did not before.
+
+**The brief's wording for the optional question was changed rather than the test
+relaxed.** "Why can moving in a helpful direction still go wrong…" trips
+`registry.test.ts`, which rejects a judging word in a prompt's own text. The
+`loss` node genuinely needed "wrong" and relaxed the rule once, by
+quote-stripping, with the reasoning recorded. This node does not need it, so it
+asks in the panel's own vocabulary — *"still leave the guess further away"* —
+rather than relaxing the same rule a second time.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+stepping, changing size, running, hitting the cap, being refused and resetting
+left a **populated** ten-mark model byte-identical. Then the direction the
+how-far-off experiment left open — a real explanation submitted through the live
+assessor moved `gradient-descent` **`shaky` → `known`** and left **every other
+key unchanged**, prerequisite and dependants included.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open and
+stepped, so there is nothing for a reduced-motion setting to suppress. The only
+self-moving thing is the optional six-step run, which is opt-in and carries a
+Stop button throughout.
+
 ### "Explore this idea" was a control that did nothing — 2026-09-12
 
 Reported by the owner while reviewing the experiment above, and older than it:

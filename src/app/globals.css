@@ -1534,3 +1534,81 @@ fieldset:disabled .neuron-choice { cursor: default; }
         gap: .75rem;
     }
 }
+
+/*
+ * The small-steps experiment — `gradient-descent`.
+ *
+ * Same rule as the how-far-off panel above it: the headline numbers are
+ * `foreground` on a plain surface and `--band-learning` appears only as a
+ * border, because that band measures 4.30:1 as text in light mode.
+ *
+ * Nothing here animates. The one moving thing is the optional short run, and
+ * what moves is the numbers, so there is no motion for a reduced-motion setting
+ * to suppress and no animation competing with the values being read.
+ */
+.steps-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+/*
+ * The band as a 3px accent down the leading edge rather than a bordered box —
+ * the map's own idiom, and measured: as a box this line put the first action
+ * 517px below the panel title, which is the top of the range the other
+ * experiments sit in rather than somewhere a first action belongs.
+ */
+.steps-direction {
+    padding-left: .75rem;
+    border-left: 3px solid var(--band-learning);
+    line-height: 1.5;
+}
+.steps-guesses {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+.steps-guess {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+/* Where the guess stands now, which is the one of the pair to read first. */
+.steps-guess-now { border-color: var(--band-learning); }
+.steps-readout {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    line-height: 1.6;
+}
+.steps-refusal {
+    padding: .625rem .75rem;
+    border: 1px solid var(--band-learning);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.steps-options, .steps-name {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.steps-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .25rem .75rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    font-size: .875rem;
+}
+.steps-row-index { flex: 0 0 auto; font-weight: 500; }
+.steps-row-move { flex: 0 0 auto; }
+.steps-row-off, .steps-row-verdict { flex: 0 0 auto; color: var(--muted-foreground); }
+@media (max-width: 560px) {
+    .steps-guesses { grid-template-columns: 1fr; }
+}
