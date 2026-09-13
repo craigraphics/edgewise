@@ -1,3 +1,20 @@
+> **Reaching an experiment, 2026-09-13:** On `experiment/08-experiment-links`,
+> branched from merged `main`. Every neighbour on the focused view that has an
+> experiment now carries a `Try it` button, and the invitation for the idea in
+> focus moved above "Builds into" — it was 576px below the panel title with its
+> action off the bottom of a 1230x842 window, and is 325px and fully visible
+> now. Two URL forms name where you are: `#idea/<id>` and `#play/<id>`, with a
+> bare `#tokens` accepted and rewritten, `replaceState` rather than
+> `pushState`, and an unknown id landing on the ordinary first screen. It also
+> records three things worth keeping: that `react-hooks/set-state-in-effect`
+> was right about the design and not only the line, which is why `use-hash.ts`
+> is a subscription rather than a store; that a hash-link check which does not
+> reload is checking something else, because a fragment change carries React
+> state across it; and that wrapping two buttons in a row clipped to its own
+> corner radius hides their focus outlines. Read `docs/experiment-links.md` for
+> what was verified and what was not — no phone and no screen reader. Its PR
+> targets `main`.
+
 > **Did it learn the pattern, or remember the examples? 2026-09-13:** On
 > `experiment/07-generalization`, branched from merged `main`. An experiment on
 > `generalization-overfitting`: two pricing rules fitted to the same five past
