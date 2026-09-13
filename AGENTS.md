@@ -2149,6 +2149,13 @@ misconception rather than leaving it to the optional question — an overfitted
 rule is not broken and did not fail at its job; it learned one cracked phone's
 chance price very well.
 
+**The learner-facing words use everyday English.** The question is now “Can a
+perfect score still lead to bad guesses?” Short sentences explain the exact
+failure before naming it: the flexible rule followed one cracked phone's unusual
+price, that detail did not happen again, and new sales exposed the mistake. The
+experiment and the companion concept explanation contain no em dashes. Terms
+such as “capacity” and “transferable” were removed from the learner view.
+
 **The expectations are held to answers worked out on paper.** The parabola
 through (0,1) (1,3) (2,9) is `2x² + 1`, so `p(3) = 19`. The curve through two
 points is the line through them. On the clean dataset the data is exactly
@@ -2167,7 +2174,7 @@ the number only exists on a screen of a particular width. The chart is capped at
 30rem and shortened, the rule cards lost a line each, and **the button moved
 above the picture**: the drawing is optional support and everything it shows is
 printed in words, so it had no business pushing the only action off the page.
-**536 now**, with the button in view. Tenth time a defect here was found by
+**471 now**, with the button in view. Tenth time a defect here was found by
 measuring rather than reading.
 
 **`sr-only` was deliberately not used** for the narrow-width column labels. Below

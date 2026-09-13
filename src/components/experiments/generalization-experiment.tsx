@@ -58,7 +58,7 @@ export function useGeneralizationExperiment() {
 
 /**
  * The drawing. Past sales are filled dots, the two rules are two strokes, and
- * sales neither rule has seen are hollow squares — three different
+ * sales neither rule has seen are hollow squares. These are three different
  * things drawn three different ways, and the gap between a square and a stroke
  * is the miss.
  *
@@ -102,7 +102,7 @@ function Plot({ dataset, outcome, revealed }: { dataset: Dataset; outcome: Outco
     </div>
     <svg viewBox={`0 0 ${width} ${height}`} className="mt-2 h-auto w-full" role="img" aria-label={
       revealed
-        ? `A chart of ${dataset.past.length} past phone sales with both rules drawn through them, and ${dataset.heldOut.length} held-out sales neither rule was built from. Every value is listed on this page.`
+        ? `A chart of ${dataset.past.length} past phone sales with both rules drawn through them, and ${dataset.heldOut.length} new sales that were kept hidden. Every value is listed on this page.`
         : `A chart of ${dataset.past.length} past phone sales with both rules drawn through them. Every value is listed on this page.`
     }>
     <defs><clipPath id="generalization-plot"><rect x={pad.left} y={pad.top} width={width - pad.left - pad.right} height={height - pad.top - pad.bottom} /></clipPath></defs>
@@ -168,31 +168,31 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A quick experiment · runs in your browser</p>
-        <h3 id="generalization-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Can a rule price every past phone perfectly—and still miss the next one?</h3>
+        <h3 id="generalization-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Can a perfect score still lead to bad guesses?</h3>
       </div>
       <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">A shop estimates a used phone’s sale price from its age: <strong>age goes in; estimated price comes out.</strong></p>
+    <p className="mt-3 max-w-2xl text-base">A shop uses a phone’s age to guess its sale price.</p>
 
     <div className="mt-4">
-      <p className="text-sm font-medium">The only {dataset.past.length} examples either rule can learn from</p>
+      <p className="text-sm font-medium">The {dataset.past.length} past sales used to build both rules</p>
       <ul className="generalization-chips mt-2">
-        {dataset.past.map(sale => <li key={sale.ageMonths} className="generalization-chip font-mono text-xs tabular-nums">{sale.ageMonths} mo → ${sale.soldFor}</li>)}
+        {dataset.past.map(sale => <li key={sale.ageMonths} className="generalization-chip font-mono text-xs tabular-nums">{sale.ageMonths} months: ${sale.soldFor}</li>)}
       </ul>
     </div>
 
     <div className="generalization-rules mt-4">
       <div className="generalization-rule">
-        <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="line" />Simple: one steady trend</p>
-        <p className="mt-2 text-sm">One straight line across all five sales. It cannot bend for an unusual phone.</p>
+        <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="line" />Simple rule: one straight line</p>
+        <p className="mt-2 text-sm">It cannot turn to match one unusual phone.</p>
         {ruleSentence && <p className="mt-2 font-mono text-xs tabular-nums">{ruleSentence}.</p>}
-        <p className="generalization-rule-off mt-3">On the examples it learned from: <strong>{linePast ? offPhrase(linePast) : 'nothing to measure'}</strong> on average.</p>
+        <p className="generalization-rule-off mt-3">Average miss on past sales: <strong>{linePast ? offPhrase(linePast) : 'nothing to measure'}</strong>.</p>
       </div>
       <div className="generalization-rule">
-        <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="curve" />Flexible: follows every sale</p>
-        <p className="mt-2 text-sm">Enough freedom to pass through all five—even when one does not follow the overall trend.</p>
-        <p className="generalization-rule-off mt-3">On the examples it learned from: <strong>{curvePast ? offPhrase(curvePast) : 'nothing to measure'}</strong>{curvePast?.allExact ? ' — every one exactly right' : ' on average'}.</p>
+        <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="curve" />Flexible rule: matches every past sale</p>
+        <p className="mt-2 text-sm">It bends to touch every past sale, including the cracked phone.</p>
+        <p className="generalization-rule-off mt-3">Average miss on past sales: <strong>{curvePast ? offPhrase(curvePast) : 'nothing to measure'}</strong>{curvePast?.allExact ? '. It got all five right' : ''}.</p>
       </div>
     </div>
 
@@ -206,29 +206,29 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
       * button rather than pushing it down the page.
       */}
     {!revealed && <div className="mt-5">
-      <Button size="touch" onClick={reveal}>Reveal 4 phone sales kept hidden <ArrowRight aria-hidden /></Button>
+      <Button size="touch" onClick={reveal}>Show 4 new phone sales <ArrowRight aria-hidden /></Button>
       <p className="mt-2 max-w-2xl text-sm">{curvePast?.allExact
-        ? `One rule matched every example it saw. Does that tell you how it will price a phone it did not see?`
-        : `Both rules were built from those ${dataset.past.length} sales. Neither has seen anything else.`}</p>
+        ? `It got every past sale right. Will it work on new phones?`
+        : `Both rules learned from those ${dataset.past.length} sales. They have not seen any other phones.`}</p>
     </div>}
 
     <Plot dataset={dataset} outcome={outcome} revealed={revealed} />
 
     {revealed && <div className="mt-6">
-      <h4 id="generalization-new-title" tabIndex={-1} className="font-display text-xl outline-none">{dataset.heldOut.length} phone sales neither rule has seen</h4>
-      <p className="text-muted-foreground mt-1 max-w-2xl text-sm">These were kept hidden while the rules were built. Revealing them lets us check the rules; it does not let either rule learn again.</p>
+      <h4 id="generalization-new-title" tabIndex={-1} className="font-display text-xl outline-none">{dataset.heldOut.length} new phone sales</h4>
+      <p className="text-muted-foreground mt-1 max-w-2xl text-sm">These sales were hidden until both rules were finished. They test the rules. They do not change them.</p>
 
       <ul className="mt-3 space-y-2">
         {dataset.heldOut.map((sale, index) => <li key={sale.ageMonths} className="generalization-row">
           <span className="generalization-row-fact text-sm"><strong className="font-mono tabular-nums">{sale.ageMonths} months old</strong>. It actually sold for <strong className="font-mono tabular-nums">${sale.soldFor}</strong>.</span>
           <span className="generalization-said">
             <span className="generalization-said-label inline-flex items-center gap-1.5"><Swatch kind="line" />Simple rule</span>
-            <strong className="font-mono tabular-nums">{lineHeldOut ? price(lineHeldOut.answers[index]) : '—'}</strong>
+            <strong className="font-mono tabular-nums">{lineHeldOut ? price(lineHeldOut.answers[index]) : 'No result'}</strong>
             <span className="text-muted-foreground text-xs">{lineHeldOut ? (lineHeldOut.misses[index] < 0.05 ? 'exactly right' : `$${oneDecimal(lineHeldOut.misses[index])} off`) : ''}</span>
           </span>
           <span className="generalization-said">
             <span className="generalization-said-label inline-flex items-center gap-1.5"><Swatch kind="curve" />Flexible rule</span>
-            <strong className="font-mono tabular-nums">{curveHeldOut ? price(curveHeldOut.answers[index]) : '—'}</strong>
+            <strong className="font-mono tabular-nums">{curveHeldOut ? price(curveHeldOut.answers[index]) : 'No result'}</strong>
             <span className="text-muted-foreground text-xs">{curveHeldOut ? (curveHeldOut.misses[index] < 0.05 ? 'exactly right' : `$${oneDecimal(curveHeldOut.misses[index])} off`) : ''}</span>
           </span>
         </li>)}
@@ -248,46 +248,46 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
           */}
         <div className="generalization-scores mt-4">
           <p className="generalization-score-head" />
-          <p className="generalization-score-head">On examples it learned from</p>
-          <p className="generalization-score-head">On sales kept hidden</p>
+          <p className="generalization-score-head">Past sales used to build it</p>
+          <p className="generalization-score-head">New sales kept hidden</p>
 
           <p className="generalization-score-rule inline-flex items-center gap-2"><Swatch kind="line" />Simple rule</p>
-          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Learned from</span>{linePast ? offPhrase(linePast) : '—'}</p>
-          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Kept hidden</span>{lineHeldOut ? offPhrase(lineHeldOut) : '—'}</p>
+          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Past sales</span>{linePast ? offPhrase(linePast) : 'No result'}</p>
+          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">New sales</span>{lineHeldOut ? offPhrase(lineHeldOut) : 'No result'}</p>
 
           <p className="generalization-score-rule inline-flex items-center gap-2"><Swatch kind="curve" />Flexible rule</p>
-          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Learned from</span>{curvePast ? offPhrase(curvePast) : '—'}</p>
-          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Kept hidden</span>{curveHeldOut ? offPhrase(curveHeldOut) : '—'}</p>
+          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">Past sales</span>{curvePast ? offPhrase(curvePast) : 'No result'}</p>
+          <p className="generalization-score-value font-mono tabular-nums"><span className="generalization-when">New sales</span>{curveHeldOut ? offPhrase(curveHeldOut) : 'No result'}</p>
         </div>
 
         <div className="generalization-readout mt-4">
           {verdict === 'line-better' ? <>
-            <p className="font-display text-xl">The rule with the perfect past score missed the hidden sales most.</p>
-            <p className="mt-2 text-sm">The flexible rule was {curvePast?.allExact ? 'exactly right on every example it learned from' : `${curvePast && offPhrase(curvePast)} on those examples`}, then {curveHeldOut && offPhrase(curveHeldOut)} on the {dataset.heldOut.length} hidden sales. The simple rule started at {linePast && offPhrase(linePast)}, then was {lineHeldOut && offPhrase(lineHeldOut)} on the hidden sales{ratio === null ? '' : ` — ${oneDecimal(ratio)} times closer`}.</p>
-            <p className="mt-2 text-sm">The cracked screen happened once; it was not a pattern about all phones of that age. {oddOne && `The ${oddOne.ageMonths}-month-old phone sold for $${oneDecimal(oddOne.off)} less than the steady trend expected. Bending through that accident pulled the flexible rule away from the other phones around that age.`}</p>
+            <p className="font-display text-xl">A perfect score on past sales did not mean the rule would work on new phones.</p>
+            <p className="mt-2 text-sm">The flexible rule got all five past sales exactly right. On the new sales, it was {curveHeldOut && offPhrase(curveHeldOut)} on average. The simple rule was {linePast && offPhrase(linePast)} on the past sales and {lineHeldOut && offPhrase(lineHeldOut)} on the new sales.{ratio === null ? '' : ` On the new sales, the simple rule was ${oneDecimal(ratio)} times closer.`}</p>
+            <p className="mt-2 text-sm">Why? The cracked screen happened once. It was not a pattern about phone age. {oddOne && `The ${oddOne.ageMonths}-month-old phone sold for $${oneDecimal(oddOne.off)} less than the main trend expected. The flexible rule treated that one unusual price as a pattern for other phones around that age. The new phones did not repeat it.`}</p>
           </> : verdict === 'curve-better' ? <>
-            <p className="font-display text-xl">This time, the bend was a real pattern.</p>
-            <p className="mt-2 text-sm">Phones really did lose value faster while nearly new and more slowly later. The flexible rule was {curveHeldOut && offPhrase(curveHeldOut)} on the hidden sales; the straight line was {lineHeldOut && offPhrase(lineHeldOut)}{ratio === null ? '' : `, about ${oneDecimal(ratio)} times further off`}.</p>
-            <p className="mt-2 text-sm">A more detailed rule is not worse by nature. What went wrong in the first example was following something that was not going to happen again.</p>
+            <p className="font-display text-xl">This time, the bend is part of the real pattern.</p>
+            <p className="mt-2 text-sm">These phones really did lose value faster when almost new and more slowly later. The flexible rule was {curveHeldOut && offPhrase(curveHeldOut)} on the new sales. The simple rule was {lineHeldOut && offPhrase(lineHeldOut)}{ratio === null ? '.' : `. It was ${oneDecimal(ratio)} times further off.`}</p>
+            <p className="mt-2 text-sm">More detail can help when the bend is real and appears again in new sales.</p>
           </> : <>
-            <p className="font-display text-xl">Here both rules do the same thing.</p>
-            <p className="mt-2 text-sm">These past sales contain one clean price pattern and no unusual phone, so there is nothing extra for the flexible rule to chase. Free to bend, it comes out straight, and both rules price the hidden phones identically.</p>
-            <p className="mt-2 text-sm">Following the examples closely costs nothing when the examples contain nothing but the pattern. The cost appears when they also contain chance.</p>
+            <p className="font-display text-xl">This time, both rules find the same pattern.</p>
+            <p className="mt-2 text-sm">These prices follow one steady pattern. There is no unusual sale for the flexible rule to follow. So it becomes the same straight line as the simple rule. Both rules get the new phones exactly right.</p>
+            <p className="mt-2 text-sm">In this experiment, the problem appears when a rule follows a one-off detail that does not happen again.</p>
           </>}
         </div>
       </div>
 
       {/* The names, only now that both numbers are on screen. */}
       <div className="generalization-name mt-6">
-        <p className="eyebrow">The names for this</p>
-        <p className="mt-2 text-base">The phone sales a rule is built from are its <strong>training data</strong>. Keeping some sales hidden and only trying them afterwards makes a <strong>held-out</strong> or <strong>test</strong> set. It separates the examples a model could remember from the examples that can reveal whether its rule travels.</p>
-        <p className="mt-2 text-base">Matching the training data at the cost of new data is <strong>overfitting</strong>. Doing well on data it has never seen is <strong>generalising</strong>. The number that matters is the second one, and the first is the only one you can see while training.</p>
-        <p className="text-muted-foreground mt-2 text-sm">An overfitted rule is not broken. It learned something very well—the cracked phone’s one-off price—as if it were a reusable pattern about age. That is why a perfect training score is a reason to check, not proof of success.</p>
+        <p className="eyebrow">What this is called</p>
+        <p className="mt-2 text-base">The five past sales are the <strong>training data</strong>. They are the examples used to build each rule. The four new sales are <strong>test data</strong>. They stayed hidden until both rules were finished.</p>
+        <p className="mt-2 text-base"><strong>Overfitting</strong> happens when a rule matches its training examples but does not work well on new examples. <strong>Generalising</strong> means the rule also works on examples it has never seen.</p>
+        <p className="text-muted-foreground mt-2 text-sm">The flexible rule was not broken. It learned the cracked phone’s unusually low price as if that price were a pattern that would happen again. A perfect training score cannot tell you whether a rule will work on new examples. You have to test it.</p>
       </div>
 
       <div className="border-border mt-6 border-t pt-5">
-        <p className="font-display text-xl">Why did the cracked phone help one rule on the examples it saw, but hurt it on the sales kept hidden?</p>
-        <p className="text-muted-foreground mt-2 text-sm">Explain it in your own words if you want to. Nothing you do in this panel changes a mark on your map; only an explanation you give yourself can do that.</p>
+        <p className="font-display text-xl">Why did the flexible rule get every past sale right but do worse on the new sales?</p>
+        <p className="text-muted-foreground mt-2 text-sm">Say it in your own words if you want. This panel does not change your map. Your own explanation can.</p>
         <Button className="mt-3" size="touch" onClick={onExplain}>Explain what happened <ArrowRight aria-hidden /></Button>
       </div>
     </div>}
@@ -295,11 +295,11 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
     {!moreExamples
       ? <div className="mt-6">
         <Button size="touch" variant="outline" onClick={openMore}>Try another example <ArrowRight aria-hidden /></Button>
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm">Other sets of phone sales, where the same two rules come out differently.</p>
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm">See two cases where the same kinds of rule behave differently.</p>
       </div>
       : <div className="mt-6">
         <h4 id="generalization-more-title" tabIndex={-1} className="font-display text-xl outline-none">Other sets of phone sales</h4>
-        <p className="text-muted-foreground mt-1 max-w-2xl text-sm">Each set rebuilds both rules from its own five visible sales and keeps another {dataset.heldOut.length} hidden. Everything above updates.</p>
+        <p className="text-muted-foreground mt-1 max-w-2xl text-sm">Each case builds both rules from five past sales. Four new sales stay hidden until testing. The results above update when you choose a case.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {DATASETS.map(option => <Button key={option.label} type="button" size="touch" variant={option.label === dataset.label ? 'default' : 'outline'} onClick={() => chooseDataset(option)}>{option.label}</Button>)}
         </div>
@@ -309,20 +309,20 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
     <details className="text-muted-foreground mt-6 text-sm">
       <summary className="min-h-10 cursor-pointer py-2 underline underline-offset-4">How it works</summary>
       <div className="space-y-2 pt-2">
-        <p><strong>The simple rule</strong> is the same straight-line fit as the predictor experiment: of all the straight lines, it picks the one whose misses are smallest overall. Usually no straight line can pass through every sale, so it accepts a small miss to keep one steady trend.</p>
-        <p><strong>The flexible rule</strong> is the one curve with exactly enough freedom to pass through every visible sale—five sales give it four bends. Nothing was chosen afterwards to make it look good or bad.</p>
-        <p><strong>Both rules receive exactly the same input:</strong> a phone’s age. Both are built from the same five sale prices. The four hidden sales never reach either fitting step; they are used only to check the finished rules.</p>
-        <p>“How far off” is the dollar gap between the price a rule estimated and the price the phone actually sold for. Everything is computed in your browser and nothing is sent anywhere.</p>
+        <p><strong>The simple rule</strong> draws the straight line that gets closest to all five past sales. It accepts small misses so it can keep one steady pattern.</p>
+        <p><strong>The flexible rule</strong> bends as much as needed to touch all five past sales. Nothing was changed later to make it look good or bad.</p>
+        <p><strong>Both rules get exactly the same input:</strong> a phone’s age. Both learn from the same five past prices. The four new prices are only used after the rules are finished.</p>
+        <p>“How far off” is the difference between a rule’s guess and the phone’s real sale price. Your browser does all the work. Nothing is sent anywhere.</p>
       </div>
     </details>
 
     <details className="text-muted-foreground mt-2 text-sm">
       <summary className="min-h-10 cursor-pointer py-2 underline underline-offset-4">What this leaves out</summary>
       <div className="space-y-2 pt-2">
-        <p><strong>A more detailed rule is not worse by nature.</strong> The early-price-drop set is a case where extra flexibility helps because the bend is real. What decides it is whether what the rule follows will happen again—a fact about the world, not about the rule.</p>
-        <p>Real models do not copy rows. A large one has enough flexibility to bend through millions of examples, and the effect is the same one you have just seen at this size.</p>
-        <p>Holding data back is the standard check and it is not a guarantee. Hidden sales can share the same quirks as the training ones, and a set consulted often enough starts being fitted to as well.</p>
-        <p>Real phone prices depend on model, condition, storage and many other inputs—not age alone. Four held-back sales is far too few to settle anything in real work, and every number here was invented for this panel.</p>
+        <p><strong>A rule with more detail is not always worse.</strong> In the early price drop case, the curve helps because the bend is real and happens again.</p>
+        <p>Real models do not copy rows one by one. But a large model can still learn details that only happen in its training examples. The result is the same problem shown here.</p>
+        <p>Testing on hidden examples helps, but it does not guarantee that a rule will work everywhere. The hidden examples can have the same unusual details as the training examples. They can also stop being a fair test if people use them again and again while changing the rule.</p>
+        <p>Real phone prices depend on the model, condition, storage, and many other facts. Age alone is not enough. Four new sales are also far too few for a real test. Every number here was made up for this experiment.</p>
       </div>
     </details>
   </section>;

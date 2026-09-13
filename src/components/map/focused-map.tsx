@@ -47,7 +47,7 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'training-vs-inference': { tint: 'playable-invitation-foundations', title: 'If the answer changes, did it learn something?', blurb: 'Change a customer’s distance and the delivery estimate moves. The rule behind it does not.', action: 'Try the experiment' },
   loss: { tint: 'playable-invitation-learning', title: 'Are all wrong answers equally wrong?', blurb: 'A delivery took 30 minutes. Two guesses were wrong. Move one closer and watch what changes.', action: 'Try the experiment' },
   'gradient-descent': { tint: 'playable-invitation-learning', title: 'How can a model improve an answer a little at a time?', blurb: 'A guess of 40 minutes, for a delivery that took 30. Take one step and watch it move.', action: 'Take one step' },
-  'generalization-overfitting': { tint: 'playable-invitation-learning', title: 'Can a perfect past score still miss the next phone?', blurb: 'Two pricing rules learn from the same five used-phone sales. One bends around a cracked phone. Then reveal the sales both were kept from.', action: 'Try the experiment' },
+  'generalization-overfitting': { tint: 'playable-invitation-learning', title: 'Can a perfect score still lead to bad guesses?', blurb: 'Two rules learn from the same five phone sales. One follows the low price of a cracked phone. See what happens on four new sales.', action: 'Try the experiment' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */

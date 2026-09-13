@@ -10,7 +10,7 @@
  * them exactly.
  *
  * So both rules are really fitted, and both are fitted from the past sales
- * alone. `fitLine` and `fitCurve` take a list of sales and nothing else — a
+ * alone. `fitLine` and `fitCurve` take a list of sales and nothing else. A
  * dataset's `heldOut` rows are never in scope inside either. That is
  * the same structural move as `answerWith` in `phases.ts`: "the answers cannot
  * influence the rule" is the shape of the function rather than a promise in a
@@ -160,7 +160,7 @@ export type Dataset = {
 export const DATASETS: readonly Dataset[] = [
   {
     label: 'One damaged phone',
-    note: 'Five past sales. The 30-month-old phone had a cracked screen; the others were in similar condition.',
+    note: 'Five past sales. The 30-month-old phone had a cracked screen. The other phones were in similar condition.',
     past: [
       { ageMonths: 6, soldFor: 650 },
       { ageMonths: 18, soldFor: 555 },
@@ -177,7 +177,7 @@ export const DATASETS: readonly Dataset[] = [
   },
   {
     label: 'The early price drop',
-    note: 'Phones lose value fastest while they are nearly new, then the fall slows. The real pattern bends.',
+    note: 'Nearly new phones lose value quickly. After that, prices fall more slowly. The real pattern curves.',
     past: [
       { ageMonths: 6, soldFor: 760 },
       { ageMonths: 18, soldFor: 590 },
@@ -194,7 +194,7 @@ export const DATASETS: readonly Dataset[] = [
   },
   {
     label: 'One clean pattern',
-    note: 'Every extra year takes exactly $120 from the resale price, with no unusual phones in the examples.',
+    note: 'Each extra year lowers the sale price by exactly $120. None of the past sales are unusual.',
     past: [
       { ageMonths: 6, soldFor: 760 },
       { ageMonths: 18, soldFor: 640 },
@@ -271,7 +271,7 @@ export function timesFurther(outcome: Outcome): number | null {
 export function describeLine(fit: FitResult): string | null {
   if (fit.status !== 'fitted') return null;
   const rate = round(fit.slope, 2);
-  return `About $${round(fit.intercept, 1)} new, then $${Math.abs(rate)} ${rate < 0 ? 'less' : 'more'} per month`;
+  return `At 0 months: about $${round(fit.intercept, 1)}. Each month makes the guess $${Math.abs(rate)} ${rate < 0 ? 'lower' : 'higher'}`;
 }
 
 export { round };

@@ -183,16 +183,16 @@
         "training-vs-inference"
       ],
       "probes": [
-        "A model gets every single training example exactly right. Is that good news? Why or why not?",
-        "What would you actually want a model to have picked up, as opposed to what it could pick up?"
+        "A model gets every training example right. Does that prove it learned the pattern? Why?",
+        "What should the model learn so it can handle a new example?"
       ],
       "misconceptions": [
-        "Reading perfect training performance as success, rather than as the classic warning sign.",
-        "Thinking overfitting means the model is bad, rather than that it learned the wrong thing very well."
+        "Thinking a perfect score on the training examples proves the model will work on new examples.",
+        "Thinking an overfitted model learned nothing. It learned the examples very closely, including details that do not repeat."
       ],
       "explanations": {
-        "intuition": "A model with enough capacity can simply memorise its training data — get everything right and have learned nothing transferable. What you actually want is a rule that works on examples it has never seen. Perfect scores on the data you trained on are evidence of memorisation at least as often as evidence of understanding.",
-        "example": "A student who memorises last year's exam paper scores full marks on it and fails this year's. Nothing about the full marks was fake; it just measured the wrong thing."
+        "intuition": "A model can get every practice example right by following small details that will not happen again. That does not mean it found a useful pattern. The real test is whether its rule also works on new examples it has never seen.",
+        "example": "A student memorises last year's test and gets full marks on that same paper. Then the questions change and the student struggles. The first score was real, but it only showed that they remembered those questions."
       },
       "simplificationCost": null
     },

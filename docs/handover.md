@@ -30,7 +30,8 @@
 > defect worth keeping: the first action sat 982px below the panel title because
 > a `w-full` chart stretched to 664px and stood 415px tall on its own, invisible
 > in the code and found only by measuring against the four sibling panels (334 /
-> 431 / 445 / 520). It is 536 now, with the picture below the button. Read
+> 431 / 445 / 520). A plain-English copy pass shortened it further to 471, with
+> the picture below the button and no em dashes in the learner-facing text. Read
 > `docs/memorising-or-learning.md` for what was verified and what was not —
 > including a real assessed explanation submitted end to end. Its PR targets
 > `main`.

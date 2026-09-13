@@ -46,7 +46,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'training-vs-inference': 'Try the training-and-using experiment',
   loss: 'Try the how-far-off experiment',
   'gradient-descent': 'Try the one-step-at-a-time experiment',
-  'generalization-overfitting': 'Try the memorising-or-learning experiment',
+  'generalization-overfitting': 'Try the perfect-score experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -58,7 +58,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'training-vs-inference': 'One rule, many answers.',
   loss: 'Wrong, and how wrong.',
   'gradient-descent': 'Closer, one step at a time.',
-  'generalization-overfitting': 'A perfect score, and what it hid.',
+  'generalization-overfitting': 'A perfect score can hide the wrong pattern.',
 };
 
 /**
@@ -73,5 +73,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'training-vs-inference': 'When the answer changes, what has actually changed — the question, or the rule? How can you tell?',
   loss: 'Why would “wrong by this much” be more useful to a model than just “wrong”?',
   'gradient-descent': 'Why can a step in the helpful direction still leave the guess further away, if the step is too big?',
-  'generalization-overfitting': 'Why did the cracked phone help one rule on the examples it saw, but hurt it on the sales kept hidden?',
+  'generalization-overfitting': 'Why did the flexible rule get every past sale right but do worse on the new sales?',
 };

@@ -9,9 +9,9 @@ something, inspect the consequence, optionally explain it.
 
 | | |
 |---|---|
-| **The question** | *Can a rule price every past phone perfectly—and still miss the next one?* |
-| **The first action** | **Reveal 4 phone sales kept hidden** |
-| **The result** | *The flexible rule was exactly right on every example it learned from, then $100 off on the 4 hidden sales. The simple rule started at $51.2 off, then was $34.5 off on the hidden sales—2.9 times closer.* |
+| **The question** | *Can a perfect score still lead to bad guesses?* |
+| **The first action** | **Show 4 new phone sales** |
+| **The result** | *The flexible rule got all five past sales exactly right. On the new sales, it was $100 off on average. The simple rule was $51.2 off on the past sales and $34.5 off on the new sales. On the new sales, the simple rule was 2.9 times closer.* |
 
 Every number in that sentence is computed from the phone sales on screen. None is
 written into the copy.
@@ -81,11 +81,11 @@ about a phone much older or newer than anything it saw.
 
 | | |
 |---|---|
-| `pnpm test` | 511 passing, 29 files. 19 tests in one new file. |
+| `pnpm test` | 519 passing, 30 files. 19 tests in the generalization suite. |
 | `pnpm lint` | clean |
 | `pnpm typecheck` | clean |
 | `pnpm build --webpack` | passes |
-| `pnpm validate-graph` | passes; `content/graph.json` is untouched |
+| `pnpm validate-graph` | passes; the node's wording changed, but its graph structure is untouched |
 | `pnpm calibrate --explain --runs 3` | **fails outside this experiment:** 2/72 false passes on `hallucination/parroted`, 1/24 false blocks on `neuron/technical`; this canary has no `generalization-overfitting` fixture |
 
 ### The arithmetic, held to answers worked out by hand
@@ -169,7 +169,7 @@ particular width.
 Three changes: the drawing is capped at 30rem and shortened, the two rule cards
 lost a line each, and **the button moved above the picture**. The drawing is
 optional support and everything it shows is also printed in words, so it had no
-business pushing the only action off the page. **536px now**, and the button is
+business pushing the only action off the page. **471px now**, and the button is
 in view at 1230×842.
 
 Tenth time a defect in this project was found by measuring rather than reading.
