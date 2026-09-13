@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -20,6 +20,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'prediction-from-examples': 0,
   'features-and-representation': 0,
   'training-vs-inference': 0,
+  loss: 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -29,6 +30,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'prediction-from-examples': 'predictor-lab-title',
   'features-and-representation': 'representation-lab-title',
   'training-vs-inference': 'phases-lab-title',
+  loss: 'loss-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -38,6 +40,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'prediction-from-examples': 'Try the predictor experiment',
   'features-and-representation': 'Try the representation playground',
   'training-vs-inference': 'Try the training-and-using experiment',
+  loss: 'Try the how-far-off experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -47,6 +50,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'prediction-from-examples': 'A rule, worked out from examples.',
   'features-and-representation': 'The picture, as numbers.',
   'training-vs-inference': 'One rule, many answers.',
+  loss: 'Wrong, and how wrong.',
 };
 
 /**
@@ -59,4 +63,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'prediction-from-examples': 'If nobody typed the final rule, where did this model’s predictions come from?',
   'features-and-representation': 'If both pictures become the same number, what has the model lost?',
   'training-vs-inference': 'When the answer changes, what has actually changed — the question, or the rule? How can you tell?',
+  loss: 'Why would “wrong by this much” be more useful to a model than just “wrong”?',
 };
