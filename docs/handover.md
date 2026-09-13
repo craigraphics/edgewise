@@ -1,3 +1,30 @@
+> **How can numbers help us find related words? 2026-09-13:** On
+> `experiment/09-embeddings`, branched from `main` after the experiment-links
+> work. An experiment on `embeddings`: pick a familiar word and see its five
+> nearest words, then pick one from another part of life and compare. Every
+> number is real learned GloVe 6B (100d) under PDDL v1.0, 163 words checked in
+> with their source and extraction script; neighbours are computed from all 100
+> numbers and never off the optional flat picture, which reports that **146 of
+> the 163 words have a different closest word in it** than they do in the full
+> lists. `mouse` carries both the animal and the thing beside a keyboard in one
+> saved list, which is the node's second misconception acted out rather than
+> asserted. A missing word is said to be missing; a typo retries on shorter
+> openings; an unusable collection names its reason instead of printing `NaN`.
+> The first action sits **286px** below the panel title at 1230x842, the
+> shortest of the nine experiment panels. Read `docs/word-neighbours.md` for
+> what was verified and what was not — including a real assessed explanation
+> submitted end to end, and no phone and no screen reader. Its PR targets
+> `main`.
+>
+> `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders and never
+> sends, so the assessor prompt, schema and model list are untouched here. The
+> canary was run anyway and **fails** on the two fixtures the previous session
+> already recorded — 2/72 false passes for `hallucination/parroted` and 3/24
+> false blocks for `neuron/technical`, the latter up from 1 on unchanged
+> fixtures, prompt and model. Not evidence about this experiment, which has no
+> fixture there, but it is the current state of the shared assessor. Full
+> figures in `docs/word-neighbours.md`.
+
 > **Required checks, 2026-09-13:** The `main` ruleset requires a status named
 > `checks`. Its matching GitHub Actions workflow had only been committed on the
 > still-open `seo-and-icons` PR #2, so every other PR waited for a check that
