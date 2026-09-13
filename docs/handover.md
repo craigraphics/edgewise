@@ -1,3 +1,20 @@
+> **One step at a time, 2026-09-12:** On `experiment/06-small-steps`, branched
+> from merged `main`. An experiment on `gradient-descent`, continuing the
+> delivery from `loss`: the model guessed 40 minutes for a delivery that took 30,
+> and one button takes one real slope-based step. Small steps improve steadily,
+> a bigger step goes past the answer and still lands closer, and a much bigger
+> one goes past and lands further away until the guess would leave a sensible
+> delivery time — at which point the step is refused and the number it would have
+> reached is printed rather than clamped. The names arrive only after the thing
+> they name has happened on screen. It also records two things worth keeping: a
+> row that printed "0 off → 0 off · past it, and closer" because display
+> precision and the classification tolerance disagreed, found only by driving the
+> panel to its cap; and that the first action sat 517px below the panel title
+> until the three sibling panels were measured as a control (334 / 445 / 520),
+> which is now 431. Read `docs/one-step-at-a-time.md` for what was verified and
+> what was not — including a real assessed explanation submitted end to end,
+> which the how-far-off experiment left open. Its PR targets `main`.
+
 > **How far off was the answer? 2026-09-12:** On `experiment/05-loss`, branched
 > from merged `main`. An experiment on the `loss` node: a delivery took 30
 > minutes, guesses of 29 and 60 are both "Wrong" and are 1 and 30 minutes off,
