@@ -1,3 +1,17 @@
+> **How far off was the answer? 2026-09-12:** On `experiment/05-loss`, branched
+> from merged `main`. An experiment on the `loss` node: a delivery took 30
+> minutes, guesses of 29 and 60 are both "Wrong" and are 1 and 30 minutes off,
+> and moving the second guess leaves right-or-wrong saying Wrong the whole way
+> while how-far-off shrinks. A second example scores four deliveries two ways —
+> every minute counted the same, and big misses counted more — on two sets that
+> tie on the first and differ four-fold on the second. The name arrives only once
+> both measures are on screen. It also records that `--band-learning` measures
+> 4.30:1 as text, so the two existing experiment readouts pass AA only because
+> `foundations` is the darkest band; `BANDS_USED_AS_TEXT` in `globals.test.ts`
+> now holds that. Read `docs/how-far-off.md` for what was verified and what was
+> not — in particular, no end-to-end assessed explanation was run. Its PR targets
+> `main`.
+
 > **Training vs. using, 2026-09-12:** On `experiment/04-training-vs-inference`,
 > branched from merged `main`. The predictor's delivery setting reused on the
 > `training-vs-inference` node: change the new customer's distance and the answer

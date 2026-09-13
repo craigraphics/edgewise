@@ -1835,6 +1835,99 @@ all left storage at zero keys, read before and after. One real assessed
 explanation then cleared **only** this node, with the prerequisite and all three
 dependants unchanged.
 
+### How far off was the answer? — 2026-09-12
+
+On `experiment/05-loss`, branched from `main` after the training-vs-inference
+experiment merged. An experiment on `loss`, built to the same rule as the four
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/how-far-off.md` for the verification tables and the limits.
+
+**Right-or-wrong sits beside how-far-off, and one of them moves.** A delivery
+took 30 minutes; guesses of 29 and 60 both read **Wrong**, and read "1 minute
+off" and "30 minutes off". Moving the second guess leaves the first column saying
+Wrong the whole way and shrinks the second continuously. That is the node's own
+sentence — *"'Wrong' gives you nowhere to go; 'wrong by this much' tells you
+which direction is better"* — acted out rather than asserted, and nothing on the
+first screen names a loss, a metric or an error function.
+
+**No prediction step.** The neuron asks for one because it has a single
+arithmetic result worth committing to. Here the interesting move is moving the
+guess and watching which readout responds, so every change shows at once rather
+than being gated behind a number nobody has been given a way to work out.
+
+**Two real measures, and the units are not pretended away.** The second example
+scores four deliveries both ways: the average size of the miss, in minutes, and
+the average of each miss multiplied by itself, which is a score in minutes times
+minutes and is never printed as minutes. Two ready-made sets are off by 5 minutes
+on average and score 25 against 100, so the first measure cannot choose between
+them and the second calls one four times worse. **That tie is asserted in
+`loss.test.ts` rather than described in the copy**, so editing those numbers later
+cannot quietly remove the disagreement the panel claims to show.
+
+**The name comes last**, once both measures are on screen with numbers in them —
+and the card then carries the half of the node that is easy to miss: neither
+measure is more correct, a person picks, and whatever the chosen number does not
+notice, the model has no reason to fix. That is the node's second recorded
+misconception, stated rather than left to the optional question.
+
+**The expectations are written out by hand.** Asserting a measure against itself
+is the trap the tokenizer closed by decoding `bpe_ranks` independently, the
+predictor by checking the least-squares conditions, and the representation
+playground by brute-forcing all 65,536 pictures. This one closes it with
+arithmetic anybody can check in their head. Exact guesses give zero on both;
+equal misses in either direction score identically; the 20-minute miss changes
+the two measures differently and by exactly four; an empty list returns `null`
+rather than 0, because printing 0 for "no guesses" would say the guesses were
+perfect when none was made.
+
+**A rounding defect, found by driving the panel rather than reading it.**
+Switching back from the blunder set printed "3.3 times worse" where the answer is
+4: `timesWorse` rounded to one decimal and the panel then inverted, and 1 ÷ 0.3
+is not 4. Display rounding belongs at the point of display. Tested in both
+directions.
+
+**`--band-learning` is 4.30:1 as text, and the two existing readouts pass by
+luck.** Generalising the readout check to every band shows `foundations` is the
+only one that clears AA against those cards in light mode — `networks` 4.45,
+`behaviour` 4.36, `learning` 4.30, `language` 4.02. So the reason the predictor
+and the two-phase panel are legible is that their band happens to be the darkest
+of the six, not anything about the design, and the same treatment here would have
+been a contrast defect. This panel prints its numbers in `foreground` with the
+band on the border, and `BANDS_USED_AS_TEXT` in `globals.test.ts` records the
+measurement so adding a band to that list is a deliberate act. The band-accent
+block now checks all three surfaces too, since these panels draw band-coloured
+borders on all of them. Eighth time a defect here was found by measuring rather
+than reading, and the third time in the same place: **text sitting on the band
+colour, in a combination nothing had measured.**
+
+**The grading check banned this node's subject.** `registry.test.ts` rejected any
+prompt containing "wrong", and this node exists entirely to separate "wrong" from
+"wrong by this much". The rule was never about vocabulary — it is about handing
+the learner a verdict — so judging words are now checked against the prompt's own
+words with quoted text stripped first, verdict *phrases* are still checked against
+the whole prompt, and a test asserts the quote-stripping cannot be used to smuggle
+a verdict through in quotation marks. **Worth keeping: a rule stated as a word
+list eventually collides with a subject that is about those words.**
+
+**The verdict pair at 320px was measured, not argued about.** Two columns puts
+"30 minutes off" on three lines in a 100px card and stands 98px tall; two stacked
+cards is taller still and pushes the slider — the first thing there is to do — a
+long way below the fold; two label-left, value-right rows is 80px and reads in one
+line each. That is what it does below 420px.
+
+**Nothing here touches the map.** No learner-model access. Checked against a
+**populated** model — ten marks including this node, its prerequisite and its
+dependants — rather than an empty one: moving the guess, editing every delivery,
+switching all three sets and opening both explanations left storage
+byte-identical. The follow-up question opens the existing `ExplainBack` empty with
+a disabled submit.
+
+**No end-to-end assessed explanation was run.** The predictor and two-phase
+experiments each submitted one and confirmed it cleared only their node; this one
+did not, so that claim rests on the absence of learner-model access and on the
+before/after storage reads. Recorded in `docs/how-far-off.md` under "Not
+verified".
+
 ### "Explore this idea" was a control that did nothing — 2026-09-12
 
 Reported by the owner while reviewing the experiment above, and older than it:

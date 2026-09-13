@@ -935,6 +935,11 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
     background: color-mix(in oklch, var(--band-foundations) 7%, var(--surface-0));
 }
 .playable-invitation-foundations:hover { background: color-mix(in oklch, var(--band-foundations) 12%, var(--surface-0)); }
+.playable-invitation-learning {
+    border-color: var(--band-learning);
+    background: color-mix(in oklch, var(--band-learning) 7%, var(--surface-0));
+}
+.playable-invitation-learning:hover { background: color-mix(in oklch, var(--band-learning) 12%, var(--surface-0)); }
 .neuron-lab {
     padding: clamp(1rem, 2.5vw, 1.75rem);
     border: 1px solid var(--border);
@@ -1383,4 +1388,149 @@ fieldset:disabled .neuron-choice { cursor: default; }
         transform: rotate(90deg);
     }
     .phases-compare-grid { grid-template-columns: 1fr; }
+}
+
+/*
+ * The two-measures panel — `loss`.
+ *
+ * Built out of the predictor's vocabulary rather than sharing its class names,
+ * for the reason recorded on `.phases-lab`: these panels sit on adjacent
+ * concepts and one changing its look must not silently restyle another.
+ *
+ * The headline numbers are `foreground` on a plain surface, and the band appears
+ * only as a border. The predictor prints its number in `--band-foundations`,
+ * which clears AA; measured, `--band-learning` is 4.30:1 in light mode against
+ * the same card, so the same treatment here would have been a contrast defect.
+ * `BANDS_USED_AS_TEXT` in `globals.test.ts` records that.
+ */
+.loss-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.loss-guesses {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+.loss-guess {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.loss-verdicts {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.loss-verdict {
+    display: flex;
+    min-width: 0;
+    min-height: 3.75rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: .125rem;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-2);
+}
+/* The measure that can tell two wrong answers apart is the one the band marks. */
+.loss-verdict-distance {
+    border-color: var(--band-learning);
+    background: var(--surface-0);
+}
+.loss-verdict-label {
+    color: var(--muted-foreground);
+    font-size: .75rem;
+    line-height: 1.3;
+}
+.loss-verdict strong { font-size: 1rem; line-height: 1.3; }
+.loss-slider { min-height: 2.75rem; accent-color: var(--band-learning); cursor: pointer; width: 100%; }
+.loss-slider:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; border-radius: .25rem; }
+.loss-readout {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    line-height: 1.6;
+}
+.loss-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .5rem .75rem;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.loss-row-actual { flex: 1 1 10rem; }
+/* Measured on the phases rows: a field free to shrink collapsed to 22px at 320px. */
+.loss-row .loss-field { flex: 0 1 8.5rem; min-width: 8rem; max-width: 11rem; }
+.loss-row-miss { flex: 1 1 100%; color: var(--muted-foreground); }
+.loss-measures {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.loss-measure {
+    padding: .875rem 1rem;
+    border: 1px solid var(--band-learning);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.loss-measure-label {
+    color: var(--muted-foreground);
+    font-size: .75rem;
+    line-height: 1.3;
+}
+.loss-measure-value {
+    display: block;
+    margin-top: .25rem;
+    font-size: 1.75rem;
+    line-height: 1.2;
+}
+.loss-compare, .loss-name {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.loss-compare-grid {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.loss-compare-side {
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.loss-compare-now { border-color: var(--band-learning); }
+@media (max-width: 560px) {
+    .loss-guesses { grid-template-columns: 1fr; }
+    .loss-measures { grid-template-columns: 1fr; }
+    .loss-compare-grid { grid-template-columns: 1fr; }
+}
+/*
+ * Below 420px the pair becomes two label-left/value-right rows rather than two
+ * columns. Measured at 320px: as columns each card is 100px wide, so "30 minutes
+ * off" takes three lines and the pair stands 98px tall; as rows it is two single
+ * lines and 80px, and the slider — the first thing there is to do — sits that
+ * much closer to the top. Stacking them as tall cards was tried first and was
+ * worse than either.
+ */
+@media (max-width: 420px) {
+    .loss-verdicts { grid-template-columns: 1fr; gap: .375rem; }
+    .loss-verdict {
+        min-height: 2.5rem;
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .75rem;
+    }
 }

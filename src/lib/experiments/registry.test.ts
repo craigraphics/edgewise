@@ -39,14 +39,32 @@ describe('the experiment registry', () => {
    * The prompt opens the existing explanation form. It has to ask for the
    * mechanism, and it must never hand the learner a verdict or an answer to
    * repeat back — the same rule the walkthrough openers are held to.
+   *
+   * The judging words are checked against the prompt's OWN words, with anything
+   * it quotes removed first. The `loss` node's whole subject is the difference
+   * between "wrong" and "wrong by this much", so a flat ban on the string would
+   * have forced that node to ask its question in words it does not use. What is
+   * being banned is a verdict on the learner, not a piece of vocabulary, and
+   * the verdict phrases below are still checked against the entire prompt.
    */
+  const unquoted = (prompt: string) => prompt.replace(/[“"][^”"]*[”"]/g, ' ');
+
   it('asks for a mechanism and never grades', () => {
     for (const id of EXPERIMENT_IDS) {
       const prompt = EXPERIMENT_PROMPT[id].toLowerCase();
       expect(prompt).toContain('?');
       for (const banned of ['correct', 'wrong', 'score', 'well done', 'you got']) {
-        expect(prompt, `${id} prompt`).not.toContain(banned);
+        expect(unquoted(prompt), `${id} prompt`).not.toContain(banned);
+      }
+      for (const verdict of ['well done', 'you got', 'your answer', 'you are right', 'you are wrong', 'incorrect']) {
+        expect(prompt, `${id} prompt`).not.toContain(verdict);
       }
     }
+  });
+
+  /** The quote-stripping must not be a way round the rule it relaxes. */
+  it('still rejects a verdict that happens to sit inside quotation marks', () => {
+    expect(unquoted('that was “correct”, well done')).toContain('well done');
+    expect(unquoted('was your answer “wrong”?')).toContain('your answer');
   });
 });
