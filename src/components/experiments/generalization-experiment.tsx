@@ -72,7 +72,7 @@ export function useGeneralizationExperiment() {
  */
 function Plot({ dataset, outcome, revealed }: { dataset: Dataset; outcome: Outcome; revealed: boolean }) {
   const width = 320;
-  const height = 200;
+  const height = 172;
   const pad = { left: 34, right: 12, top: 12, bottom: 26 };
   const shown: readonly Delivery[] = revealed ? [...dataset.past, ...dataset.fresh] : dataset.past;
   const low = Math.min(...dataset.past.map(d => d.distance));
@@ -97,7 +97,7 @@ function Plot({ dataset, outcome, revealed }: { dataset: Dataset; outcome: Outco
   const linePath = outcome.rules.lineRule ? path(outcome.rules.lineRule) : null;
   const curvePath = outcome.rules.curveRule ? path(distance => curveAt(outcome.rules.curve, distance)) : null;
 
-  return <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-auto w-full" role="img" aria-label={
+  return <svg viewBox={`0 0 ${width} ${height}`} className="mt-4 h-auto w-full max-w-[30rem]" role="img" aria-label={
     revealed
       ? `A chart of ${dataset.past.length} past deliveries with both rules drawn through them, and ${dataset.fresh.length} new deliveries neither rule was built from. Every value is listed in the tables on this page.`
       : `A chart of ${dataset.past.length} past deliveries with both rules drawn through them. Every value is listed in the lists on this page.`
@@ -169,10 +169,10 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
       <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">A restaurant has {dataset.past.length} past deliveries: how far each customer was, and how long the food took. Two rules were worked out from those {dataset.past.length} deliveries, and from nothing else.</p>
+    <p className="mt-3 max-w-2xl text-base">A restaurant kept {dataset.past.length} past deliveries: how far each customer was, and how long the food took.</p>
 
     <div className="mt-4">
-      <p className="text-sm font-medium">The past deliveries both rules were built from</p>
+      <p className="text-sm font-medium">The {dataset.past.length} past deliveries, and the only thing either rule was built from</p>
       <ul className="generalization-chips mt-2">
         {dataset.past.map(delivery => <li key={delivery.distance} className="generalization-chip font-mono text-xs tabular-nums">{delivery.distance} {DISTANCE_UNIT} → {delivery.minutes} {MINUTES_UNIT}</li>)}
       </ul>
@@ -181,26 +181,34 @@ export function GeneralizationExperiment({ onExplain, experiment }: Props) {
     <div className="generalization-rules mt-4">
       <div className="generalization-rule">
         <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="line" />A simple rule</p>
-        <p className="mt-2 text-sm">One straight line. It cannot bend, so it settles for the line that comes closest to all of them at once.</p>
+        <p className="mt-2 text-sm">One straight line. It cannot bend, so it settles for the line closest to all of them at once.</p>
         {ruleSentence && <p className="mt-2 font-mono text-xs tabular-nums">{ruleSentence}.</p>}
         <p className="generalization-rule-off mt-3">On the past deliveries: <strong>{linePast ? offPhrase(linePast) : 'nothing to measure'}</strong> on average.</p>
       </div>
       <div className="generalization-rule">
         <p className="eyebrow inline-flex items-center gap-2"><Swatch kind="curve" />A rule that follows them closely</p>
-        <p className="mt-2 text-sm">A curve free to bend as much as it needs to, so it can pass through every past delivery instead of settling.</p>
-        <p className="mt-2 font-mono text-xs tabular-nums">Bends through all {dataset.past.length} of them.</p>
+        <p className="mt-2 text-sm">A curve free to bend as much as it needs to, so it passes through every past delivery instead of settling.</p>
         <p className="generalization-rule-off mt-3">On the past deliveries: <strong>{curvePast ? offPhrase(curvePast) : 'nothing to measure'}</strong>{curvePast?.allExact ? ' — every one exactly right' : ' on average'}.</p>
       </div>
     </div>
 
-    <Plot dataset={dataset} outcome={outcome} revealed={revealed} />
-
-    {!revealed && <div className="mt-4">
+    {/*
+      * The first action sits above the picture, not below it.
+      * Measured at 1230x842: the chart stretched to the pane's full 664px and
+      * stood 415px tall on its own, which put the button 982px below the panel
+      * title and off the bottom of the window. The sibling panels put their
+      * first action at 334, 431, 445 and 520. The drawing is optional support
+      * and everything it shows is also printed here in words, so it follows the
+      * button rather than pushing it down the page.
+      */}
+    {!revealed && <div className="mt-5">
       <Button size="touch" onClick={reveal}>Try both rules on new deliveries <ArrowRight aria-hidden /></Button>
       <p className="mt-2 max-w-2xl text-sm">{curvePast?.allExact
         ? `One rule matched every past delivery. Does that tell you how it will do on the next one?`
         : `Both rules were built from those ${dataset.past.length} deliveries. Neither has seen anything else.`}</p>
     </div>}
+
+    <Plot dataset={dataset} outcome={outcome} revealed={revealed} />
 
     {revealed && <div className="mt-6">
       <h4 id="generalization-new-title" tabIndex={-1} className="font-display text-xl outline-none">{dataset.fresh.length} deliveries neither rule has seen</h4>

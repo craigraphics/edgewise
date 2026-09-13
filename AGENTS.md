@@ -2035,3 +2035,94 @@ inline comparison.
 survived three experiment sessions on this card. Nothing measures whether a
 control does anything, which is the one thing this project has never had a probe
 for.
+
+### Did it learn the pattern, or remember the examples? — 2026-09-13
+
+On `experiment/07-generalization`, branched from `main` after the small-steps
+experiment merged. An experiment on `generalization-overfitting`, built to the
+same rule as the six before it: change something, inspect the consequence,
+optionally explain it. See `docs/memorising-or-learning.md` for the verification
+tables and the limits.
+
+**Two rules, one set of past deliveries, and the reversal is the experiment.** A
+straight line, which cannot bend and so settles for the line closest to all five
+at once. A curve free to bend as much as it needs to, which therefore passes
+through every one of them exactly. On the five it was built from, the curve is
+**nothing off** and the line is 3.0 minutes off. On four deliveries neither has
+seen, the curve is 6.1 and the line is 1.9. The rule with the perfect score is
+the one that is 3.2 times further out.
+
+**Exactness is the point, so the curve is real interpolation.** Newton divided
+differences: the one curve of exactly the right flexibility to pass through every
+past delivery. "Nothing off on any past delivery" has to be a fact about the
+arithmetic, or the panel is asserting the very thing it exists to demonstrate.
+The straight line is the predictor's `fitLine`, unchanged — this node is about
+what a fit is worth on unseen data, not about how fitting works.
+
+**The held-out deliveries cannot reach a rule.** `fitLine` and `fitCurve` take a
+list of deliveries and nothing else; a dataset's `fresh` rows are never in scope
+inside either. Same structural move as `answerWith(learned, distance)` in
+`phases.ts`, and there is a test that swaps the held-out rows for nonsense and
+requires both rules to come out byte-identical. "The new answers were never used"
+is the shape of the function rather than a promise in a comment.
+
+**Three datasets, because one of them would be a lie.** The usual deliveries has
+the curve chasing a road closure and losing. **A road that speeds up** has
+delivery time genuinely not rising in a straight line, and there the closer fit
+is **8.7 times better** on new deliveries. **One clean pattern** has no chance in
+the past deliveries at all, so the flexible rule comes out straight and both
+answer identically. Each is held to the case it claims in the test rather than
+described in the copy. Teaching that a more detailed rule always fails would be a
+new misconception planted on the node whose job is removing one — what decides it
+is whether the thing being followed will happen again, which is a fact about the
+world and not about the rule.
+
+**Every held-out delivery sits inside the fitted range**, and at a distance no
+past delivery used — both asserted. So the failure is genuine overfitting rather
+than a rule being asked about a distance far outside anything it saw.
+
+**No prediction step.** The learner has been given nothing they could use to work
+out how far off either rule will be on unseen data, and asking for a guess at an
+unexplained number is what this file already forbids. The interesting move is one
+button and watching one score hold while the other collapses.
+
+**The names come last**, once both numbers are on screen: training data, held-out
+set, overfitting, generalising. The card then carries the node's second recorded
+misconception rather than leaving it to the optional question — an overfitted
+rule is not broken and did not fail at its job, it learned a set of chance delays
+very well.
+
+**The expectations are held to answers worked out on paper.** The parabola
+through (0,1) (1,3) (2,9) is `2x² + 1`, so `p(3) = 19`. The curve through two
+points is the line through them. On the clean dataset the data is exactly
+`14 + 3d`, so the curve must be too — checked against that expression and against
+`fitLine`, a different implementation. That is the "do not assert the encoder
+against itself" trap closed by a fifth route, after `bpe_ranks` decoded
+independently, the least-squares conditions, brute force over 65,536 pictures,
+and hand arithmetic.
+
+**The first action sat 982px below the panel title, and only a measurement found
+it.** The siblings put theirs at 334, 431, 445 and 520. The cause was the
+drawing: its `<svg>` is `h-auto w-full`, and in the map pane at 1230×842 that is
+664px wide, so a 320×200 viewBox stood **415px tall on its own** — 42% of the
+whole distance. Nothing about that is visible in the code, which says `w-full`;
+the number only exists on a screen of a particular width. The chart is capped at
+30rem and shortened, the rule cards lost a line each, and **the button moved
+above the picture**: the drawing is optional support and everything it shows is
+printed in words, so it had no business pushing the only action off the page.
+**536 now**, with the button in view. Tenth time a defect here was found by
+measuring rather than reading.
+
+**`sr-only` was deliberately not used** for the narrow-width column labels. Below
+460px the 2×2 becomes one column per rule and each value carries its own heading
+inline, switched with `display` rather than hidden with `sr-only`, so exactly one
+label is in the accessibility tree at each width. The recorded reason stands: an
+absolutely positioned hidden span inside one of this app's scrolling panes
+escapes the shell's clip and adds page scroll.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+revealing, switching all three datasets, opening both disclosures, traversing by
+keyboard and resetting left a **populated** ten-mark model byte-identical —
+including this node, both prerequisites and both dependants. Then one real
+explanation through the live assessor moved `generalization-overfitting`
+**`shaky` → `known`** and left **every other key unchanged**.
