@@ -907,17 +907,45 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
     padding: 1.25rem;
     background: var(--surface-1);
 }
+/* A row, not a button: an idea with an experiment carries a second control. */
 .focus-neighbour {
     display: flex;
-    align-items: center;
-    gap: .75rem;
+    align-items: stretch;
     border: 1px solid var(--border);
     border-radius: .625rem;
-    padding: .75rem 1rem;
-    min-height: 3.5rem;
     background: var(--surface-1);
 }
 .focus-neighbour:hover { border-color: var(--muted-foreground); }
+.focus-neighbour-open {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    min-height: 3.5rem;
+}
+/* 56px tall and never narrower than a finger, the same floor as `size="touch"`. */
+.focus-neighbour-play {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: .375rem;
+    padding: 0 .875rem;
+    min-height: 3.5rem;
+    min-width: 2.5rem;
+    border-left: 1px solid var(--border);
+    /* The row cannot clip to its own corners: the focus outline sits 3px
+       outside each button and `overflow: hidden` would cut it off. So the
+       right-hand control carries the inner radius itself. */
+    border-radius: 0 .5625rem .5625rem 0;
+    background: var(--surface-2);
+    font-size: .8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.focus-neighbour-play:hover { background: var(--surface-1); }
 .playable-invitation {
     padding: 1.5rem;
     border: 1px solid var(--band-networks);
