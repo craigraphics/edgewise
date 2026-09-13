@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -22,6 +22,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'training-vs-inference': 0,
   loss: 0,
   'gradient-descent': 0,
+  'generalization-overfitting': 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -33,6 +34,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'training-vs-inference': 'phases-lab-title',
   loss: 'loss-lab-title',
   'gradient-descent': 'steps-lab-title',
+  'generalization-overfitting': 'generalization-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -44,6 +46,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'training-vs-inference': 'Try the training-and-using experiment',
   loss: 'Try the how-far-off experiment',
   'gradient-descent': 'Try the one-step-at-a-time experiment',
+  'generalization-overfitting': 'Try the memorising-or-learning experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -55,6 +58,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'training-vs-inference': 'One rule, many answers.',
   loss: 'Wrong, and how wrong.',
   'gradient-descent': 'Closer, one step at a time.',
+  'generalization-overfitting': 'A perfect score, and what it hid.',
 };
 
 /**
@@ -69,4 +73,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'training-vs-inference': 'When the answer changes, what has actually changed — the question, or the rule? How can you tell?',
   loss: 'Why would “wrong by this much” be more useful to a model than just “wrong”?',
   'gradient-descent': 'Why can a step in the helpful direction still leave the guess further away, if the step is too big?',
+  'generalization-overfitting': 'What did the past deliveries fail to tell us about how this rule would work next time?',
 };

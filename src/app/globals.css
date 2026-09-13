@@ -1612,3 +1612,136 @@ fieldset:disabled .neuron-choice { cursor: default; }
 @media (max-width: 560px) {
     .steps-guesses { grid-template-columns: 1fr; }
 }
+
+/*
+ * The memorising-vs-learning experiment — `generalization-overfitting`.
+ *
+ * Built out of the loss panel's vocabulary rather than sharing its class names,
+ * for the reason recorded on `.phases-lab`: these panels sit on adjacent
+ * concepts and one changing its look must not silently restyle another.
+ *
+ * Same colour rule as the two `learning` panels above: the headline numbers are
+ * `foreground` on a plain surface and `--band-learning` appears only as a
+ * border or a stroke, because that band measures 4.30:1 as text in light mode.
+ * `BANDS_USED_AS_TEXT` in `globals.test.ts` records that measurement.
+ */
+.generalization-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.generalization-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .375rem;
+}
+.generalization-chip {
+    padding: .3125rem .5rem;
+    border: 1px solid var(--border);
+    border-radius: .375rem;
+    background: var(--surface-0);
+}
+.generalization-rules {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+.generalization-rule {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.generalization-rule-off {
+    padding-top: .625rem;
+    border-top: 1px solid var(--border);
+    font-size: .875rem;
+}
+.generalization-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .5rem .875rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.generalization-row-fact { flex: 1 1 100%; }
+.generalization-said {
+    display: flex;
+    flex: 1 1 12rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .375rem .5rem;
+}
+.generalization-said-label {
+    flex: 1 1 100%;
+    font-size: .75rem;
+    color: var(--muted-foreground);
+}
+/*
+ * The 2x2 the whole experiment turns on: each rule read on the deliveries it was
+ * built from and on the ones it was not. A grid rather than a table because the
+ * two headings and two row labels are the only structure there is, and a table
+ * at 320px puts "nothing off" on three lines.
+ */
+.generalization-scores {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: .5rem .75rem;
+    align-items: baseline;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.generalization-score-head {
+    font-size: .75rem;
+    line-height: 1.3;
+    color: var(--muted-foreground);
+}
+.generalization-score-rule { font-size: .8125rem; line-height: 1.3; }
+.generalization-score-value { font-size: .875rem; }
+.generalization-when {
+    display: none;
+    color: var(--muted-foreground);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: .75rem;
+}
+.generalization-readout, .generalization-name {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.generalization-readout { border-color: var(--band-learning); }
+@media (max-width: 560px) {
+    .generalization-rules { grid-template-columns: 1fr; }
+}
+/*
+ * Below 460px the three columns stop fitting: "On the past deliveries" wraps to
+ * four lines against a 90px column. Each rule becomes its own block with the two
+ * readings as label-left/value-right rows, which is the same move the loss
+ * panel's verdict pair makes at 420px and for the same measured reason.
+ */
+@media (max-width: 460px) {
+    .generalization-scores { grid-template-columns: 1fr; gap: .25rem; }
+    .generalization-score-head:first-child { display: none; }
+    .generalization-score-head { display: none; }
+    .generalization-score-rule {
+        margin-top: .625rem;
+        font-weight: 500;
+        font-size: .875rem;
+    }
+    .generalization-score-rule:first-of-type { margin-top: 0; }
+    .generalization-score-value {
+        display: flex;
+        justify-content: space-between;
+        gap: .75rem;
+        min-height: 1.75rem;
+    }
+    .generalization-when { display: block; }
+}
