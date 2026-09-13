@@ -1815,3 +1815,78 @@ fieldset:disabled .neuron-choice { cursor: default; }
     }
     .generalization-when { display: block; }
 }
+
+/*
+ * The word-neighbours playground — `embeddings`.
+ *
+ * The band is `language`, which measures 4.02:1 against these cards and so is
+ * never used as text here — the same rule the `loss` panel records. It carries
+ * the similarity bars, which are graphics and are held to 3:1 by the band-accent
+ * block in `globals.test.ts`, and every number is printed as text beside its bar.
+ */
+.embeddings-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.embeddings-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: .75rem;
+    align-items: start;
+}
+.embeddings-slot {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-language);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.embeddings-neighbours { display: flex; flex-direction: column; gap: .375rem; }
+.embeddings-neighbour {
+    display: grid;
+    grid-template-columns: minmax(5rem, auto) minmax(2rem, 1fr) auto;
+    align-items: center;
+    gap: .5rem;
+    min-height: 1.75rem;
+    font-size: .875rem;
+}
+.embeddings-neighbour-word { min-width: 0; overflow-wrap: anywhere; }
+.embeddings-neighbour-score { color: var(--muted-foreground); font-size: .75rem; }
+.embeddings-bar {
+    display: block;
+    height: .375rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+}
+.embeddings-bar-fill { display: block; height: 100%; background: var(--band-language); }
+.embeddings-readout, .embeddings-values {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    font-size: .875rem;
+    line-height: 1.6;
+}
+.embeddings-numbers { overflow-wrap: anywhere; }
+.embeddings-chip {
+    min-height: 2.5rem;
+    padding: .25rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+    color: var(--foreground);
+    font-size: .8125rem;
+}
+.embeddings-chip:hover { border-color: var(--muted-foreground); }
+.embeddings-chip:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }
+.embeddings-plot {
+    display: block;
+    width: 100%;
+    max-width: 30rem;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}

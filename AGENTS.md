@@ -2197,3 +2197,107 @@ fixtures: 2/72 false passes for `hallucination/parroted` and one false block for
 `neuron/technical`. That canary has no `generalization-overfitting` fixture, so
 it says nothing direct about this question, but it is the current evidence for
 the shared assessor and must travel with the work.
+
+### How can numbers help us find related words? — 2026-09-13
+
+On `experiment/09-embeddings`, branched from `main` after the experiment-links
+work merged. An experiment on `embeddings`, built to the same rule as the eight
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/word-neighbours.md` for the verification table and the limits.
+
+**Real learned values, named and licensed.** 163 words of **GloVe 6B, 100
+dimensions** (Wikipedia 2014 + Gigaword 5; Pennington, Socher and Manning, EMNLP
+2014), released under the Open Data Commons **PDDL v1.0**, which is why a slice
+can sit in the repo. `scripts/extract-word-vectors.ts` copies them out of the
+published file and refuses to emit a partial collection. Random numbers presented
+as meaning would teach the exact thing this node exists to correct.
+
+**Static, and the panel keeps that separate.** One fixed list per word, learned
+from how often words appear near each other. `SOURCE.kind` is `'static'` and a
+test pins it, because the node's second recorded misconception is precisely the
+confusion with the context-dependent values a model computes inside a sentence.
+That distinction is also the panel's best moment: **`mouse` comes back as cat,
+rabbit, dog, keyboard, screen, computer** — both meanings mixed into one saved
+list, because a static vector cannot choose.
+
+**The grouping is ours; the neighbours are the numbers'.** Fourteen everyday
+areas exist so a word can be found, and the panel says nothing in the numbers
+knows about them. The collection is chosen so several words land somewhere else
+entirely — `rock` is filed under Outdoors and sits with `band`, `album`, `song`;
+`hedge` is filed under the garden and sits with `money`, `bank`, `cash`. Both are
+asserted in the test rather than described in the copy.
+
+**"The flat picture leaves a lot out" is a count.** `projectionDisagreesWith`
+compares each word's nearest neighbour in two dimensions with its nearest in the
+full lists: **146 of 163 differ**, and the panel prints that number. A test
+requires the disagreement to cover more than half the collection, so a copy line
+that stopped being true would fail there. Neighbours are read from all 100
+numbers and never off the drawing — `guitar`'s nearest in the full lists is
+`bass`, and in two dimensions it is something else, which is also tested.
+
+**The projection is deterministic on purpose.** Power iteration needs a starting
+direction, and a random one moves the picture between two readings of the same
+collection. Fixed seed, and the sign pinned to the loading of largest magnitude,
+because an SVD is free to settle on either end of the same axis and a mirrored
+drawing is not the same drawing.
+
+**Nothing is guessed at when a word is missing.** `aubergine` is reported as not
+in this small saved collection; a typo retries on shorter openings, so `guitarr`
+offers `guitar`; only when nothing matches at all do the four opening words stand
+in. `invalidReason` rejects a list of the wrong length, a value that is not
+finite, and an all-zero list — the last of which would otherwise divide by zero
+and print `NaN` as though it were an answer.
+
+**The fixtures are held to the same quantity computed a different way.** Cosine
+similarity is checked against the straight-line gap between the two lists scaled
+to length 1, which shares no arithmetic with the dot-product form, plus fixtures
+anybody can check in their head. That is the "do not assert the measure against
+itself" trap closed by a sixth route, after `bpe_ranks` decoded independently,
+the least-squares conditions, brute force over 65,536 pictures, hand arithmetic,
+and answers worked out on paper. The shipped values are additionally **pinned to
+the opening numbers of the published `guitar` and `garden` lines**, so
+regenerating the file from some other source fails the test rather than quietly
+changing what the panel calls meaning.
+
+**No prediction step.** The learner has been given nothing they could use to work
+out which words will come back, and asking somebody to guess an unexplained
+result is what this file already forbids. One press, and the answer is there.
+
+**The first action is 286px below the panel title** at 1230x842 — the shortest of
+the nine, against 334 / 431 / 445 / 471 / 520 for its siblings. At 320 it is 415,
+which is the intro wrapping rather than anything added.
+
+**`sr-only` was deliberately not used**, on the recorded grounds that an
+absolutely positioned hidden span inside one of this app's scrolling panes
+escapes the shell's clip and adds page scroll. The consequence is written down in
+`docs/word-neighbours.md` rather than left implicit: a screen reader hears
+`bass 0.85`, with the meaning of the number carried by the sentence under the
+list rather than by the row.
+
+**`--band-language` is still never used as text.** It measures 4.02:1 against
+these cards, under AA, which `BANDS_USED_AS_TEXT` in `globals.test.ts` already
+records. It carries the similarity bars, which are graphics held to 3:1 by the
+band-accent block, and the card's leading edge. Every number is printed as text
+beside its bar.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+choosing words, changing them, typing a missing word, opening the numbers, the
+two-meanings card and the picture, and resetting left a **populated** ten-mark
+model byte-identical. Then one real explanation through the live assessor moved
+`embeddings` **`shaky` → `known`** and left every other key unchanged.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open and
+both words chosen, so there is nothing for a reduced-motion setting to suppress.
+
+**`EXPERIMENT_PROMPT` is display copy.** `ExplainBack` renders it and never sends
+it, so the assessor prompt, the decision schema and the model list are untouched
+by this work. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on the two fixtures the previous session already
+recorded: 2/72 false passes for `hallucination/parroted`, which this file
+records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical`, which was 1 in the generalization session and is 3 here on
+the same unchanged fixtures, prompt and model. That is run-to-run variance in
+the shared assessor rather than anything about this experiment, which has no
+fixture in that canary — but it is the current state of it and travels with the
+work rather than being summarised away. Full figures in
+`docs/word-neighbours.md`.
