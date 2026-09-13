@@ -8,6 +8,7 @@ import { PredictorExperiment, type usePredictorExperiment } from '@/components/e
 import { RepresentationExperiment, type useRepresentationExperiment } from '@/components/experiments/representation-experiment';
 import { PhasesExperiment, type usePhasesExperiment } from '@/components/experiments/phases-experiment';
 import { LossExperiment, type useLossExperiment } from '@/components/experiments/loss-experiment';
+import { StepsExperiment, type useStepsExperiment } from '@/components/experiments/steps-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -22,6 +23,7 @@ type Props = {
   representationExperiment: ReturnType<typeof useRepresentationExperiment>;
   phasesExperiment: ReturnType<typeof usePhasesExperiment>;
   lossExperiment: ReturnType<typeof useLossExperiment>;
+  stepsExperiment: ReturnType<typeof useStepsExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -42,10 +44,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'features-and-representation': { tint: 'playable-invitation-foundations', title: 'How can an H and a T become the same number?', blurb: 'Follow two pixel letters into the model, then change which details their numbers preserve.', action: 'Open the playground' },
   'training-vs-inference': { tint: 'playable-invitation-foundations', title: 'If the answer changes, did it learn something?', blurb: 'Change a customer’s distance and the delivery estimate moves. The rule behind it does not.', action: 'Try the experiment' },
   loss: { tint: 'playable-invitation-learning', title: 'Are all wrong answers equally wrong?', blurb: 'A delivery took 30 minutes. Two guesses were wrong. Move one closer and watch what changes.', action: 'Try the experiment' },
+  'gradient-descent': { tint: 'playable-invitation-learning', title: 'How can a model improve an answer a little at a time?', blurb: 'A guess of 40 minutes, for a delivery that took 30. Take one step and watch it move.', action: 'Take one step' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -94,6 +97,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'features-and-representation' && <div className="mt-4"><RepresentationExperiment onExplain={() => onExplain('features-and-representation')} experiment={representationExperiment} /></div>}
       {playing && node.id === 'training-vs-inference' && <div className="mt-4"><PhasesExperiment onExplain={() => onExplain('training-vs-inference')} experiment={phasesExperiment} /></div>}
       {playing && node.id === 'loss' && <div className="mt-4"><LossExperiment onExplain={() => onExplain('loss')} experiment={lossExperiment} /></div>}
+      {playing && node.id === 'gradient-descent' && <div className="mt-4"><StepsExperiment onExplain={() => onExplain('gradient-descent')} experiment={stepsExperiment} /></div>}
 
       <div className="focus-connections">
         {children.length > 0 ? <>
