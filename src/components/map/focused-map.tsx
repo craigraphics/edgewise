@@ -12,6 +12,7 @@ import { StepsExperiment, type useStepsExperiment } from '@/components/experimen
 import { GeneralizationExperiment, type useGeneralizationExperiment } from '@/components/experiments/generalization-experiment';
 import { EmbeddingsExperiment, type useEmbeddingsExperiment } from '@/components/experiments/embeddings-experiment';
 import { HoldoutExperiment, type useHoldoutExperiment } from '@/components/experiments/holdout-experiment';
+import { ParametersExperiment, type useParametersExperiment } from '@/components/experiments/parameters-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -30,6 +31,7 @@ type Props = {
   generalizationExperiment: ReturnType<typeof useGeneralizationExperiment>;
   embeddingsExperiment: ReturnType<typeof useEmbeddingsExperiment>;
   holdoutExperiment: ReturnType<typeof useHoldoutExperiment>;
+  parametersExperiment: ReturnType<typeof useParametersExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -54,10 +56,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'generalization-overfitting': { tint: 'playable-invitation-learning', title: 'Can a perfect score still lead to bad guesses?', blurb: 'Two rules learn from the same five phone sales. One follows the low price of a cracked phone. See what happens on four new sales.', action: 'Try the experiment' },
   embeddings: { tint: 'playable-invitation-language', title: 'Which words might belong together?', blurb: 'Pick a word and see which words sit nearest to it, worked out from nothing but lists of numbers.', action: 'Pick a word' },
   'train-test-split': { tint: 'playable-invitation-learning', title: 'Can we trust a result we helped choose?', blurb: 'Teach a junk-mail filter from six messages, make one real trade-off, then check it on four answers you did not use.', action: 'Try the experiment' },
+  'parameters-scale': { tint: '', title: 'When a model learns, what does it actually keep?', blurb: 'A bike rental shop keeps two numbers. Change one and the price moves. Change the customer and it moves for a different reason.', action: 'Change a saved number' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -144,6 +147,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'generalization-overfitting' && <div className="mt-4"><GeneralizationExperiment onExplain={() => onExplain('generalization-overfitting')} experiment={generalizationExperiment} /></div>}
       {playing && node.id === 'embeddings' && <div className="mt-4"><EmbeddingsExperiment onExplain={() => onExplain('embeddings')} experiment={embeddingsExperiment} /></div>}
       {playing && node.id === 'train-test-split' && <div className="mt-4"><HoldoutExperiment onExplain={() => onExplain('train-test-split')} experiment={holdoutExperiment} /></div>}
+      {playing && node.id === 'parameters-scale' && <div className="mt-4"><ParametersExperiment onExplain={() => onExplain('parameters-scale')} experiment={parametersExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
