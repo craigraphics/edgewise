@@ -1890,3 +1890,302 @@ fieldset:disabled .neuron-choice { cursor: default; }
     border-radius: .75rem;
     background: var(--surface-0);
 }
+
+/*
+ * The saved-messages experiment — `train-test-split`.
+ *
+ * Its own class names rather than the generalization panel's, for the reason
+ * recorded on `.phases-lab`: these sit on adjacent concepts and one changing
+ * its look must not silently restyle another.
+ *
+ * Same colour rule as every other `learning` panel: the numbers and the
+ * headline sentences are `foreground` on a plain surface, and
+ * `--band-learning` appears only as a border. That band measures 4.30:1 as
+ * text in light mode, which `BANDS_USED_AS_TEXT` in `globals.test.ts` records.
+ */
+.holdout-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+/*
+ * The one sentence the whole panel turns on, given the map's own idiom — a 3px
+ * band accent down its leading edge rather than a boxed callout, which is what
+ * the one-step-at-a-time panel measured as the cheaper way to give a line
+ * weight without adding height.
+ */
+.holdout-rule {
+    padding-left: .875rem;
+    border-left: 3px solid var(--band-learning);
+    font-size: 1rem;
+    font-weight: 500;
+}
+.holdout-groups {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.holdout-group {
+    position: relative;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.holdout-group-saved { border-style: dashed; }
+.holdout-group-active {
+    border-color: var(--band-learning);
+    box-shadow: inset 3px 0 0 var(--band-learning);
+}
+.holdout-group-done {
+    background: color-mix(in oklch, var(--band-learning) 7%, var(--surface-0));
+}
+.holdout-group .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+}
+.holdout-complete {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    max-width: 42rem;
+    padding: .75rem .875rem;
+    border-left: 3px solid var(--band-learning);
+    background: color-mix(in oklch, var(--band-learning) 7%, var(--surface-0));
+    font-size: .875rem;
+}
+.holdout-complete svg { flex: 0 0 auto; margin-top: .125rem; }
+.holdout-examples > summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    min-height: 2.75rem;
+    padding-block: .375rem;
+    cursor: pointer;
+}
+.holdout-examples > summary::after {
+    content: 'Hide';
+    color: var(--muted-foreground);
+    font-family: var(--font-sans), ui-sans-serif, sans-serif;
+    font-size: .75rem;
+}
+.holdout-examples:not([open]) > summary::after { content: 'Show'; }
+.holdout-examples:not([open]) > summary {
+    padding-inline: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.holdout-chips {
+    display: grid;
+    gap: .375rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.holdout-chip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .25rem .5rem;
+    padding: .4375rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+}
+.holdout-tag {
+    font-size: .6875rem;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+}
+.holdout-learned, .holdout-name, .holdout-refused {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.holdout-lean { display: grid; gap: .5rem; }
+.holdout-lean p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .375rem;
+}
+.holdout-lean-label {
+    min-width: 7.5rem;
+    font-size: .75rem;
+    color: var(--muted-foreground);
+}
+.holdout-word {
+    padding: .125rem .4375rem;
+    border: 1px solid var(--border);
+    border-radius: .3125rem;
+    background: var(--surface-0);
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: .75rem;
+}
+/* Two real choices, using the labelled middle group before any final answer is opened. */
+.holdout-choices {
+    display: grid;
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.holdout-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .25rem;
+    min-height: 7rem;
+    padding: .875rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    color: var(--foreground);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.holdout-choice:hover { background: var(--surface-2); }
+.holdout-choice-selected {
+    border-color: var(--foreground);
+    background: color-mix(in oklch, var(--band-learning) 8%, var(--surface-0));
+}
+.holdout-choice-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .375rem;
+}
+.holdout-choice-head > span {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--muted-foreground);
+    font-size: .6875rem;
+    white-space: nowrap;
+}
+.holdout-choice-result { font-size: .875rem; }
+.holdout-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .375rem .875rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.holdout-row-text { flex: 1 1 100%; font-size: .875rem; }
+.holdout-said {
+    display: flex;
+    flex: 1 1 9rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .25rem .5rem;
+    font-size: .875rem;
+}
+.holdout-said-label {
+    flex: 1 1 100%;
+    font-size: .75rem;
+    color: var(--muted-foreground);
+}
+.holdout-row-note {
+    flex: 1 1 100%;
+    font-size: .75rem;
+    color: var(--muted-foreground);
+}
+.holdout-row-note-mistake {
+    color: var(--foreground);
+    font-weight: 500;
+}
+.holdout-readout, .holdout-result {
+    padding: 1rem;
+    border: 1px solid var(--band-learning);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.holdout-readout { font-size: 1rem; font-weight: 500; }
+/*
+ * The note that outlives every later change. Bordered on all four sides rather
+ * than accented, because unlike the rule at the top it is about something that
+ * has already happened and has to stay findable after the screen has moved on.
+ */
+.holdout-seen {
+    padding: .625rem .875rem;
+    border: 1px dashed var(--band-learning);
+    border-radius: .625rem;
+    background: var(--surface-2);
+    font-size: .875rem;
+    font-weight: 500;
+}
+.holdout-toggles { display: grid; gap: .375rem; }
+.holdout-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    min-height: 2.5rem;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+    cursor: pointer;
+}
+.holdout-check {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: .125rem;
+    accent-color: var(--band-learning);
+    flex: 0 0 auto;
+}
+.holdout-group-head {
+    display: flex;
+    flex-direction: column;
+    gap: .125rem;
+    margin-bottom: .25rem;
+}
+.holdout-terms {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.holdout-terms p {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+    font-size: .8125rem;
+}
+.holdout-terms span { color: var(--muted-foreground); }
+/* Keep each step readable at phone width without forcing three narrow columns. */
+@media (max-width: 560px) {
+    .holdout-groups { grid-template-columns: 1fr; }
+    .holdout-chips { grid-template-columns: 1fr; }
+    .holdout-choices, .holdout-terms { grid-template-columns: 1fr; }
+    .holdout-group { padding: .5rem .625rem; }
+    .holdout-group-head {
+        flex-direction: row;
+        align-items: baseline;
+        gap: .5rem;
+        margin-bottom: .125rem;
+    }
+}
+/*
+ * Below 460px the three readings stop fitting on a row: "You wanted this"
+ * wraps to three lines in a 90px column. Each becomes a label-left,
+ * value-right row instead, which is the move the loss and generalization
+ * panels already make at this width and for the same measured reason.
+ */
+@media (max-width: 460px) {
+    .holdout-said {
+        flex: 1 1 100%;
+        justify-content: space-between;
+        gap: .75rem;
+        min-height: 1.75rem;
+    }
+    .holdout-said-label { flex: 0 1 auto; }
+}

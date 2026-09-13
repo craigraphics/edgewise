@@ -11,6 +11,7 @@ import { LossExperiment, type useLossExperiment } from '@/components/experiments
 import { StepsExperiment, type useStepsExperiment } from '@/components/experiments/steps-experiment';
 import { GeneralizationExperiment, type useGeneralizationExperiment } from '@/components/experiments/generalization-experiment';
 import { EmbeddingsExperiment, type useEmbeddingsExperiment } from '@/components/experiments/embeddings-experiment';
+import { HoldoutExperiment, type useHoldoutExperiment } from '@/components/experiments/holdout-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -28,6 +29,7 @@ type Props = {
   stepsExperiment: ReturnType<typeof useStepsExperiment>;
   generalizationExperiment: ReturnType<typeof useGeneralizationExperiment>;
   embeddingsExperiment: ReturnType<typeof useEmbeddingsExperiment>;
+  holdoutExperiment: ReturnType<typeof useHoldoutExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -51,10 +53,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'gradient-descent': { tint: 'playable-invitation-learning', title: 'How can a model improve an answer a little at a time?', blurb: 'A guess of 40 minutes, for a delivery that took 30. Take one step and watch it move.', action: 'Take one step' },
   'generalization-overfitting': { tint: 'playable-invitation-learning', title: 'Can a perfect score still lead to bad guesses?', blurb: 'Two rules learn from the same five phone sales. One follows the low price of a cracked phone. See what happens on four new sales.', action: 'Try the experiment' },
   embeddings: { tint: 'playable-invitation-language', title: 'Which words might belong together?', blurb: 'Pick a word and see which words sit nearest to it, worked out from nothing but lists of numbers.', action: 'Pick a word' },
+  'train-test-split': { tint: 'playable-invitation-learning', title: 'Can we trust a result we helped choose?', blurb: 'Teach a junk-mail filter from six messages, make one real trade-off, then check it on four answers you did not use.', action: 'Try the experiment' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -140,6 +143,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'gradient-descent' && <div className="mt-4"><StepsExperiment onExplain={() => onExplain('gradient-descent')} experiment={stepsExperiment} /></div>}
       {playing && node.id === 'generalization-overfitting' && <div className="mt-4"><GeneralizationExperiment onExplain={() => onExplain('generalization-overfitting')} experiment={generalizationExperiment} /></div>}
       {playing && node.id === 'embeddings' && <div className="mt-4"><EmbeddingsExperiment onExplain={() => onExplain('embeddings')} experiment={embeddingsExperiment} /></div>}
+      {playing && node.id === 'train-test-split' && <div className="mt-4"><HoldoutExperiment onExplain={() => onExplain('train-test-split')} experiment={holdoutExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
