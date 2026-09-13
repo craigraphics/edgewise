@@ -38,7 +38,7 @@ type Props = {
  * unrelated calls to action never stack.
  */
 const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: string; action: string }> = {
-  neuron: { tint: '', title: 'What does a neuron actually do?', blurb: 'Two inputs. One output. You control what happens in between.', action: 'Take it apart' },
+  neuron: { tint: '', title: 'How does one neuron score a movie?', blurb: 'Give two movie traits more or less influence, then watch them become one match score.', action: 'Score a movie' },
   tokens: { tint: 'playable-invitation-language', title: 'What pieces does the model get?', blurb: 'Type anything. See its actual token pieces and IDs change.', action: 'Open the tokenizer' },
   'prediction-from-examples': { tint: 'playable-invitation-foundations', title: 'Can past food deliveries predict the next one?', blurb: 'Fit a delivery-time rule, change how long one order took, and see the next prediction change.', action: 'Try the experiment' },
   'features-and-representation': { tint: 'playable-invitation-foundations', title: 'How can an H and a T become the same number?', blurb: 'Follow two pixel letters into the model, then change which details their numbers preserve.', action: 'Open the playground' },

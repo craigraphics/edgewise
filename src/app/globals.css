@@ -946,9 +946,34 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
     border-radius: 1rem;
     background: var(--surface-1);
 }
+.neuron-movie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .875rem;
+    background: linear-gradient(120deg, color-mix(in oklch, var(--band-networks) 10%, var(--surface-0)), var(--surface-0));
+}
+.neuron-movie-title { display: flex; min-width: 0; align-items: center; gap: .75rem; }
+.neuron-movie-icon {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--band-networks);
+    background: color-mix(in oklch, var(--band-networks) 12%, var(--surface-1));
+}
+.neuron-features { display: grid; grid-template-columns: repeat(2, minmax(5.5rem, 1fr)); gap: .5rem; }
+.neuron-features > span { padding: .625rem .75rem; border-radius: .625rem; background: var(--surface-2); }
+.neuron-features strong { display: block; margin-top: .125rem; font-size: 1.75rem; line-height: 1; }
 .neuron-baseline { padding: .75rem 1rem; border-left: 2px solid var(--band-networks); background: var(--surface-2); }
 .neuron-machine { display: grid; grid-template-columns: minmax(0, 1fr) 2rem minmax(100px, .55fr); align-items: stretch; gap: .75rem; }
 .neuron-input { padding: .875rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface-0); }
+.neuron-weight-value { min-width: 3.5rem; text-align: right; }
 .neuron-slider { min-height: 2.75rem; accent-color: var(--band-networks); cursor: pointer; }
 .neuron-slider:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; border-radius: .25rem; }
 .neuron-operator { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .75rem; font-size: 1.5rem; color: var(--muted-foreground); }
@@ -960,11 +985,28 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
 .neuron-choice:focus-within { outline: 2px solid var(--foreground); outline-offset: 3px; }
 fieldset:disabled .neuron-choice { cursor: default; }
 .neuron-result { border-top: 1px solid var(--border); padding-top: 1.25rem; }
+.neuron-arithmetic { padding: 1rem; border-radius: .75rem; background: var(--surface-0); }
+.neuron-arithmetic li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); align-items: start; gap: .625rem; }
+.neuron-step {
+    display: grid;
+    width: 1.5rem;
+    height: 1.5rem;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--band-networks);
+    color: var(--foreground);
+    background: var(--surface-2);
+    font-size: .6875rem;
+    font-weight: 700;
+}
+.neuron-takeaway { padding: 1rem; border-left: 2px solid var(--band-networks); background: color-mix(in oklch, var(--band-networks) 7%, var(--surface-0)); }
 @media (prefers-reduced-motion: no-preference) {
     .neuron-reveal { animation: neuron-appear 280ms ease-out; }
     @keyframes neuron-appear { from { opacity: 0; transform: translateY(.25rem); } to { opacity: 1; transform: translateY(0); } }
 }
 @media (max-width: 600px) {
+    .neuron-movie { align-items: stretch; flex-direction: column; }
+    .neuron-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .neuron-machine { grid-template-columns: minmax(0, 1fr); }
     .neuron-operator { flex-direction: row; gap: 1.5rem; }
     .neuron-output { flex-direction: row; justify-content: space-between; gap: .75rem; padding: .5rem 1rem; }

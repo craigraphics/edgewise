@@ -37,7 +37,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
 
 /** The inspector's button into the experiment. */
 export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
-  neuron: 'Try the neuron experiment',
+  neuron: 'Try the movie-score experiment',
   tokens: 'Try the tokenizer playground',
   'prediction-from-examples': 'Try the predictor experiment',
   'features-and-representation': 'Try the representation playground',
@@ -48,7 +48,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
 
 /** The workspace heading while an experiment is open. */
 export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
-  neuron: 'The neuron, up close.',
+  neuron: 'One neuron, one movie score.',
   tokens: 'Text, piece by piece.',
   'prediction-from-examples': 'A rule, worked out from examples.',
   'features-and-representation': 'The picture, as numbers.',
@@ -62,7 +62,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
  * mechanism, never for the answer, and the field is always empty.
  */
 export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
-  neuron: 'What did changing the weight do? How did the inputs become one output? Explain it in your own words.',
+  neuron: 'How did the two movie numbers become one output? What did changing a weight do? Explain it in your own words.',
   tokens: 'Why can the number of tokens differ from the number of words?',
   'prediction-from-examples': 'If nobody typed the final rule, where did this model’s predictions come from?',
   'features-and-representation': 'If both pictures become the same number, what has the model lost?',
