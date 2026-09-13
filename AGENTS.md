@@ -2292,6 +2292,15 @@ both words chosen, so there is nothing for a reduced-motion setting to suppress.
 **`EXPERIMENT_PROMPT` is display copy.** `ExplainBack` renders it and never sends
 it, so the assessor prompt, the decision schema and the model list are untouched
 by this work. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on exactly the two fixtures the previous two sessions
+recorded: **2/72 false passes for `hallucination/parroted`**, which this file
+records as deliberately left failing, and **3/24 false blocks for
+`neuron/technical`**, which is the same figure the word-neighbours session
+measured on unchanged fixtures, prompt and model. Everyday words 12/12,
+misconception flag 12/12, jargon-with-mechanism 9/12. That canary has no
+`train-test-split` fixture, so it says nothing direct about this experiment, but
+it is the current state of the shared assessor and travels with the work rather
+than being summarised away. Full figures in `docs/saved-messages.md`. `pnpm calibrate --explain --runs 3` was run anyway for current
 evidence and **fails**, on the two fixtures the previous session already
 recorded: 2/72 false passes for `hallucination/parroted`, which this file
 records as deliberately left failing, and 3/24 false blocks for
@@ -2301,3 +2310,88 @@ the shared assessor rather than anything about this experiment, which has no
 fixture in that canary — but it is the current state of it and travels with the
 work rather than being summarised away. Full figures in
 `docs/word-neighbours.md`.
+
+### How can we check a rule without showing it the answers first? — 2026-09-13
+
+On `experiment/10-train-test-split`, branched from `main` after the
+word-neighbours experiment merged. An experiment on `train-test-split`, built to
+the same rule as the nine before it: change something, inspect the consequence,
+optionally explain it. See `docs/saved-messages.md` for the verification table
+and the limits.
+
+**A junk-mail filter, and three groups of invented messages.** Six to learn
+from, four to help choose how cautious it should be, and four whose answers stay
+out of view until asked for. The rule is said once, at the top, in the learner's
+own words: *"Save some messages until you have finished choosing the filter."*
+The names — training, validation, test — arrive only after all three groups have
+been used, and the panel says plainly that the order matters more than the
+names.
+
+**The filter really learns, and the learning has one input.** Each word scores
+the log ratio of the junk examples containing it against the wanted ones, with
+one added to each count; a message's junk score is exactly the total of its
+known words' scores, and a word the examples never contained counts nothing.
+`learnFilter(examples)` takes one list, so the choosing group and the saved
+group are not in scope where the filter is built — the same structural move as
+`answerWith` in `phases.ts`, and a test swaps both of those groups for nonsense
+and requires the filter to come out byte-identical. `runOn` takes a finished
+filter, so reading any group, the saved one included, cannot be a further round
+of learning.
+
+**Two mailboxes, and they disagree about which setting is right.** In the small
+mailbox being quick catches all the junk and costs you a message you wanted. In
+the other it looks free — both junk caught, nothing hidden, nothing wrong at
+all — until the saved messages, where it hides one. So the panel cannot be read
+as teaching a rule of thumb about caution; what decides it is the data, and the
+only honest reading is the one nothing was chosen on. Each case is held to being
+the case it claims in `junk-filter.test.ts` rather than described in the copy.
+Two messages in the first mailbox score 0.7, one junk and one wanted, so no bar
+can separate them; both scores are printed rather than tidied away.
+
+**Refusing beats learning badly.** With no junk examples, or none wanted, every
+word would lean the only way there is and the filter would call everything junk
+while looking like it had learned something. `learnFilter` returns `not-enough`
+with the reason, the panel says which in words, and there is no state in which
+it holds a filter built from one kind of example. It is reachable: switch the
+three wanted examples off under "Change what it learns from".
+
+**The note that outlives everything.** Once a mailbox's final answers have been
+on screen, any later change to the filter leaves *"We have seen these answers
+now. This is no longer a fresh check."* beside the control that caused it and
+inside the result. **Reset does not un-see an answer**: it re-hides the group and
+then says so, driven by a flag this panel's own Reset deliberately does not
+clear. Each mailbox keeps its own saved messages, so switching to one whose
+check has not been opened is genuinely fresh and switching back is not.
+
+**Two defects found by measuring, both at 320px.** The first action sat **757px**
+below the panel title — three stacked group cards at 304px and a six-line intro
+at 158 — measured against the siblings at 286 / 334 / 431 / 445 / 471 / 520. The
+step number now sits beside its name below 560px and the provenance line moved
+under the button: **571**, and 361 at 1230x842. The same button was also 291px
+wide in a 242px column and hung 32px off the right, because the shared `Button`
+is `whitespace-nowrap` at a fixed height. **Eleventh time a defect here was found
+by measuring rather than reading.**
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+learning, switching settings, revealing, switching mailbox, toggling examples
+and resetting left a **populated** ten-mark model byte-identical. Then one real
+explanation through the live assessor moved `train-test-split` **`unexplored` →
+`shaky`** and left every other key unchanged. It came back half-held rather than
+solid; that is the assessor's call and is recorded rather than tuned.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open
+and every section expanded, so there is nothing for a reduced-motion setting to
+suppress. Driving the whole panel also produced **zero network requests**.
+
+**`EXPERIMENT_PROMPT` is display copy.** `ExplainBack` renders it and never sends
+it, so the assessor prompt, the decision schema and the model list are untouched
+by this work. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on exactly the two fixtures the previous two sessions
+recorded: **2/72 false passes for `hallucination/parroted`**, which this file
+records as deliberately left failing, and **3/24 false blocks for
+`neuron/technical`**, which is the same figure the word-neighbours session
+measured on unchanged fixtures, prompt and model. Everyday words 12/12,
+misconception flag 12/12, jargon-with-mechanism 9/12. That canary has no
+`train-test-split` fixture, so it says nothing direct about this experiment, but
+it is the current state of the shared assessor and travels with the work rather
+than being summarised away. Full figures in `docs/saved-messages.md`.

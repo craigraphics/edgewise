@@ -1,3 +1,36 @@
+> **How can we check a rule without showing it the answers first? 2026-09-13:**
+> On `experiment/10-train-test-split`, branched from `main` after the
+> word-neighbours experiment. An experiment on `train-test-split`: a junk-mail
+> filter, six invented messages to learn from, four to choose how cautious it
+> should be, and four whose answers stay out of view until asked for. The filter
+> really learns — word scores from log counts, a message's score the total of
+> its known words — and `learnFilter` takes one list, so the other two groups
+> are not in scope where it is built; a test swaps both for nonsense and
+> requires the filter to come out byte-identical. Two mailboxes disagree about
+> which setting is right, so the panel teaches the order of the decisions rather
+> than a rule of thumb about caution. Once a final check has been seen, any
+> later change leaves a note that does not go away, and **Reset re-hides the
+> group and then says it cannot un-see an answer**. Read `docs/saved-messages.md`
+> for what was verified and what was not — including one real assessed
+> explanation, which moved only this node and came back `shaky` rather than
+> `known`. Its PR targets `main`.
+>
+> It also records two defects found the way this project keeps finding them: the
+> first action sat 757px below the panel title at 320px until the six sibling
+> panels were measured as a control (286 / 334 / 431 / 445 / 471 / 520), and the
+> same button was 291px wide in a 242px column and hung off the right edge,
+> because the shared `Button` is `whitespace-nowrap` at a fixed height. 571 and
+> 361 now.
+>
+> `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders and never
+> sends, so the assessor prompt, schema and model list are untouched here. The
+> canary was run anyway and **fails** on exactly the two fixtures the previous
+> two sessions recorded — 2/72 false passes for `hallucination/parroted` and
+> 3/24 false blocks for `neuron/technical`, the same figure as last session on
+> unchanged fixtures, prompt and model. Not evidence about this experiment,
+> which has no fixture there, but it is the current state of the shared
+> assessor. Full figures in `docs/saved-messages.md`.
+
 > **How can numbers help us find related words? 2026-09-13:** On
 > `experiment/09-embeddings`, branched from `main` after the experiment-links
 > work. An experiment on `embeddings`: pick a familiar word and see its five
@@ -18,6 +51,12 @@
 >
 > `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders and never
 > sends, so the assessor prompt, schema and model list are untouched here. The
+> canary was run anyway and **fails** on exactly the two fixtures the previous
+> two sessions recorded — 2/72 false passes for `hallucination/parroted` and
+> 3/24 false blocks for `neuron/technical`, the same figure as last session on
+> unchanged fixtures, prompt and model. Not evidence about this experiment,
+> which has no fixture there, but it is the current state of the shared
+> assessor. Full figures in `docs/saved-messages.md`. The
 > canary was run anyway and **fails** on the two fixtures the previous session
 > already recorded — 2/72 false passes for `hallucination/parroted` and 3/24
 > false blocks for `neuron/technical`, the latter up from 1 on unchanged
