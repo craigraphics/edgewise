@@ -10,11 +10,13 @@ import {
   INITIAL_ORDER,
   PLACES,
   SENTENCES,
+  distanceMoved,
   WORDS,
   listValues,
   movement,
   percent,
   placeAt,
+  repeatedWord,
   runBlocks,
   sentenceById,
   sentenceText,
@@ -162,6 +164,9 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
   const midway = first.afterStageOne[last];
   const finished = first.afterStageTwo[last];
 
+  /** The word this note uses twice, derived — so the card below cannot claim a repeat that is not there. */
+  const twice = repeatedWord(sentence.words);
+
   const gather = first.gathers[last];
   const work = first.works[last];
 
@@ -180,7 +185,7 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
       {touched && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">We follow the last word of this note through one block: the pair of steps below.</p>
+    <p className="mt-3 max-w-2xl text-base">A transformer is one pair of steps, repeated. Here is a single turn of it, on the last word of this note.</p>
 
     <div className="transformer-note mt-4">
       <SentenceLine sentence={sentence} />
@@ -219,10 +224,22 @@ export function TransformerExperiment({ onExplain, experiment }: Props) {
         </div>
         <p className="mt-3 text-sm">
           The last word is <strong>{target}</strong>. Sharing clues from the {COUNT_WORDS[last] ?? last} words before it{' '}
-          {saidMovement(started, midway)}. The calculation after that {saidMovement(midway, finished, true)}. Two steps, one
-          after the other, and the second one worked on what the first one left.
+          {saidMovement(started, midway)}, by <strong>{value(distanceMoved(started, midway))}</strong> — that is how far the
+          description moved with all three numbers taken together. The calculation after that {saidMovement(midway, finished, true)},
+          by <strong>{value(distanceMoved(midway, finished))}</strong>. Two steps, one after the other, and the second one worked
+          on what the first one left.
         </p>
       </div>
+    </div>}
+
+    {hasRun && twice && <div className="transformer-readout mt-4">
+      <p className="eyebrow">One word, two descriptions</p>
+      <p className="mt-2 text-sm">This note uses the word &ldquo;<strong>{twice.word}</strong>&rdquo; twice. Both start from the same three numbers in the table of words, and they do not come out of the block the same.</p>
+      <div className="transformer-moments mt-3">
+        <Moment label={`${twice.word}, word ${twice.first + 1} — after the block`} row={first.afterStageTwo[twice.first]} />
+        <Moment label={`${twice.word}, word ${twice.second + 1} — after the block`} row={first.afterStageTwo[twice.second]} />
+      </div>
+      <p className="mt-3 text-sm">Two reasons, and both are the block doing its job. Its place goes in before anything else, so word {twice.second + 1} starts at {listValues(first.input[twice.second])} where word {twice.first + 1} starts at {listValues(first.input[twice.first])}. Then word {twice.second + 1} has {COUNT_WORDS[twice.second] ?? twice.second} words behind it to share clues from, and word {twice.first + 1} has none but itself.</p>
     </div>}
 
     {hasRun && <p className="text-muted-foreground mt-3 max-w-2xl text-sm">Attention combines clues from other words. A transformer repeats that step, with another small calculation in between.</p>}

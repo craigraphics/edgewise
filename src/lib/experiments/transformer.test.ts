@@ -9,11 +9,13 @@ import {
   WORD_VALUES,
   WORDS,
   attendAt,
+  distanceMoved,
   feedForward,
   listValues,
   movement,
   normalise,
   placeAt,
+  repeatedWord,
   runBlock,
   runBlocks,
   sentenceById,
@@ -391,5 +393,45 @@ describe('nothing anywhere comes out as nonsense', () => {
     const copy = rows.map(row => [...row]);
     expect(runBlock(rows, BLOCK_ONE)).toEqual(runBlock(rows, BLOCK_ONE));
     expect(rows).toEqual(copy);
+  });
+});
+
+describe('the size of a change, and the word that appears twice', () => {
+  it('measures how far a description moved, by a distance anybody can check', () => {
+    // A 3-4-5 triangle, and a move of nothing.
+    close(distanceMoved([0, 0, 0], [3, 4, 0]), 5);
+    close(distanceMoved([1, -2, 0.5], [1, -2, 0.5]), 0);
+    // And a hand-worked one: differences of 1, 2 and 2 give sqrt(9).
+    close(distanceMoved([0, 0, 0], [1, 2, 2]), 3);
+  });
+
+  it('agrees with movement about whether anything happened at all', () => {
+    expect(distanceMoved([1, 2, 3], [1, 2, 3]) === 0).toBe(movement([1, 2, 3], [1, 2, 3]) === 'same');
+  });
+
+  it('finds the word the note uses twice, and both of its places', () => {
+    expect(repeatedWord(DOG_FIRST)).toEqual({ word: 'the', first: 0, second: 3 });
+    expect(repeatedWord(CAT_FIRST)).toEqual({ word: 'the', first: 0, second: 3 });
+    expect(repeatedWord(['a', 'b', 'c'])).toBeNull();
+  });
+
+  it('has that word start and finish in two different places, in both orders', () => {
+    // The panel's strongest single claim: one word, two descriptions. Its
+    // starting rows already differ, and that difference is the place table
+    // alone — the same word's own numbers went into both.
+    for (const words of [DOG_FIRST, CAT_FIRST]) {
+      const twice = repeatedWord(words)!;
+      const [block] = runBlocks(words);
+      expect(words[twice.first]).toBe(words[twice.second]);
+      expect(movement(block.input[twice.first], block.input[twice.second])).toBe('moved');
+      expect(movement(block.afterStageTwo[twice.first], block.afterStageTwo[twice.second])).toBe('moved');
+    }
+  });
+
+  it('has both stages move the last word by an amount worth printing', () => {
+    const [block] = runBlocks(DOG_FIRST);
+    const end = DOG_FIRST.length - 1;
+    expect(distanceMoved(block.input[end], block.afterStageOne[end])).toBeGreaterThan(0.05);
+    expect(distanceMoved(block.afterStageOne[end], block.afterStageTwo[end])).toBeGreaterThan(0.05);
   });
 });

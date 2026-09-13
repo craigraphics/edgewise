@@ -386,3 +386,33 @@ export function percent(share: number): string {
   const whole = Math.round(share * 100);
   return whole === 0 && share > 0 ? 'under 1%' : `${whole}%`;
 }
+
+/**
+ * How far a description moved, all its numbers taken together.
+ *
+ * The point of the unnamed numbers is that no single one of them can be read.
+ * That leaves a learner with three figures that changed and no way to say by
+ * how much, or to compare one step with the next. This is the one honest
+ * readable quantity available: the straight-line distance between where the
+ * description was and where it ended up. Nothing is named and nothing is
+ * invented — it is the size of the change, and the panel says so in the same
+ * sentence it prints it.
+ */
+export function distanceMoved(before: Row, after: Row): number {
+  return Math.sqrt(before.reduce((total, amount, index) => total + (after[index] - amount) ** 2, 0));
+}
+
+/**
+ * The first word that appears twice in a sentence, with both of its places.
+ *
+ * Derived rather than written down, so the panel's strongest single fact — the
+ * same word does not come out of the block the same way twice — disappears
+ * rather than lying if the note ever changes to one with no repeat.
+ */
+export function repeatedWord(words: readonly string[]): { word: string; first: number; second: number } | null {
+  for (let first = 0; first < words.length; first += 1) {
+    const second = words.indexOf(words[first], first + 1);
+    if (second !== -1) return { word: words[first], first, second };
+  }
+  return null;
+}
