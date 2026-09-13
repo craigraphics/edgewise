@@ -233,6 +233,19 @@ next piece of text, which works the same way and is much harder to picture.
 
 The deliveries are invented for this panel, not measured.
 
+## The other five experiments still work
+
+Checked in a browser after the shared registry and shell change, since those are
+touched by this work:
+
+| | opens | runs |
+|---|---|---|
+| Neuron | "Make one number move." | moving a weight moves the output |
+| Tokenizer | "See the pieces the model gets." | `How many rs are in strawberry?` → 7 tokens, ` strawberry` is 73700 |
+| Predictor | "Can past food deliveries predict the next one?" | opens |
+| Representation | "How can an H and a T become the same number?" | opens |
+| Training vs. using | "If the answer changes, did the model learn something new?" | opens |
+
 ## Not verified
 
 - **No physical phone.** The 320px checks were a real Chrome window at that width
