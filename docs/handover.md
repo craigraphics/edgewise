@@ -1,3 +1,46 @@
+> **What happens inside one repeated block? 2026-09-13:** On
+> `experiment/13-transformer`, branched from `main` after the attention
+> experiment. An experiment on `transformer`: a five-word note about pets, the
+> last word marked, two named stages and one button. Run one block and the last
+> word's numbers are shown before, after sharing clues from the earlier words,
+> and after the calculation that follows — with how far the description moved at
+> each stage, so the two can be compared. It is a complete single-head causal
+> decoder block in the modern arrangement, run twice; post-norm was built first
+> and rejected by measurement, because after normalising every row the second
+> block's gathering step moved the last word by 0.007 and the panel would have
+> been claiming a change it could not show. Read `docs/one-block.md` for what was
+> verified and what was not — including one real assessed explanation submitted
+> end to end, which moved only this node, `unexplored` → `known`. Its PR targets
+> `main`.
+>
+> It is the first experiment whose subject is an authored simplification's own
+> confession rather than a disagreement with one. The node's `simplificationCost`
+> says position handling is left out and that attention alone treats a sentence
+> as an unordered bag; this puts it back and **proves** it — the test removes the
+> place rows, shuffles the earlier words and requires the last word's result to
+> come out byte-identical, then puts them back and requires it to differ. The
+> dimensions are deliberately unnamed, which is the opposite call from the
+> attention panel next door and creates no new disagreement. Nothing in the
+> branch changes the graph, the assessor prompt, the schema or the model list.
+>
+> A first build was mechanically clear and thin — three rows of unnamed numbers
+> and a sentence saying they changed. Two fixes, neither inventing a meaning: a
+> real distance so the stages can be compared, and the strongest fact in the
+> panel promoted out of the third section — the note uses *the* twice, both
+> copies start from the same numbers, and after the block they are
+> `0.20 · 0.35 · -0.51` and `-0.46 · -0.98 · 0.75`, with both reasons named.
+>
+> Three defects found the way this project keeps finding them: the result
+> sentence said "changed its numbers" twice in a row; Reset was offered on a
+> screen with nothing to reset and at 390px wrapped above the panel's actual
+> first action (474px below the title at 390 and 341 at 1230x842, now 418 and
+> **285**); and "done" had no space in front of it. Plus one about the probe: a
+> contrast check that read a computed `oklch()` string as if it were `r, g, b`
+> reported everything at 1.1–1.5 in both themes, and the identical figures across
+> themes were the tell. And one pre-existing condition, measured against the
+> attention and embeddings panels as a control rather than blamed on this branch:
+> at 720x450 the focused-map pane is 20px tall for all three.
+
 > **How can the words around "bank" change what it means here? 2026-09-13:** On
 > `experiment/12-attention`, branched from `main` after the saved-numbers
 > experiment. An experiment on `attention`: one sentence, one word being

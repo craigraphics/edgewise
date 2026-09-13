@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'attention'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'attention', 'transformer'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -27,6 +27,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'train-test-split': 0,
   'parameters-scale': 0,
   attention: 0,
+  transformer: 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -43,6 +44,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'train-test-split': 'holdout-lab-title',
   'parameters-scale': 'parameters-lab-title',
   attention: 'attention-lab-title',
+  transformer: 'transformer-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -59,6 +61,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'train-test-split': 'Try the saved-messages experiment',
   'parameters-scale': 'Try the saved-numbers experiment',
   attention: 'Try the words-around-it experiment',
+  transformer: 'Try the one-block experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -75,6 +78,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'train-test-split': 'Save some messages for the final check.',
   'parameters-scale': 'Two saved numbers, every answer.',
   attention: 'The words around it change what it means.',
+  transformer: 'Two small steps, repeated.',
 };
 
 /**
@@ -94,4 +98,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'train-test-split': 'Why was the saved group a fairer check than the group used to choose the setting? What would stop it being a fair check?',
   'parameters-scale': 'The price changed twice, for two different reasons. What does the shop keep between customers, and what does it do with it?',
   attention: 'The word “bank” has one description on its own, and a different one in each sentence. What made the difference, and where did it come from?',
+  transformer: 'One block did two things to the last word, one after the other. What were they, and what did the second block start from?',
 };
