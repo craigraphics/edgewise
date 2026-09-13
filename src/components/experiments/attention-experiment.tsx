@@ -9,6 +9,7 @@ import {
   descriptionOf,
   INITIAL_SENTENCE,
   percent,
+  roundingShows,
   SENTENCES,
   sentenceById,
   updateAt,
@@ -98,16 +99,17 @@ function Shares({ update }: { update: Update }) {
         </span>
         <span className="attention-bar" aria-hidden><span className="attention-bar-fill" style={{ width: `${(contribution.share / widest) * 100}%` }} /></span>
         <span className="attention-share-figures font-mono tabular-nums">
-          match {value(contribution.match)} · share {percent(contribution.share)}
-        </span>
-        <span className="attention-share-adds font-mono tabular-nums">
-          adds {COLUMNS.map((column, index) => `${column} ${value(contribution.adds[index])}`).join(' · ')}
+          match {value(contribution.match)} · share {percent(contribution.share)} ·{' '}
+          {contribution.adds.every(amount => Math.abs(amount) < 5e-3)
+            ? 'adds nothing'
+            : `adds ${COLUMNS.map((column, index) => `${column} ${value(contribution.adds[index])}`).join(' · ')}`}
         </span>
       </li>)}
     </ol>
     <p className="attention-total font-mono tabular-nums">
       totals: {COLUMNS.map((column, index) => `${column} ${value(update.after[index])}`).join(' · ')}
     </p>
+    {roundingShows(update) && <p className="text-muted-foreground mt-1 text-xs">Every figure above is rounded to two places, so adding the column by hand can land a hundredth away from the total. The unrounded ones add up exactly.</p>}
   </>;
 }
 
@@ -130,10 +132,9 @@ export function AttentionExperiment({ onExplain, experiment }: Props) {
       <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">A word can mean two different things. The words near it are what settle which one. Below is a sentence, and the last word is the one being updated.</p>
-    <p className="text-muted-foreground mt-2 max-w-2xl text-sm">The word-neighbours experiment gave each word one saved list of numbers. Here its description changes with the words around it.</p>
+    <p className="mt-3 max-w-2xl text-base">The last word below can mean two different things. Watch what the words before it do to it.</p>
 
-    <div className="attention-stage mt-5">
+    <div className="attention-stage mt-4">
       <SentenceLine sentence={sentence} targetPosition={update.position} />
       <p className="attention-caption">Updating the last word: <strong>{update.target}</strong></p>
     </div>
@@ -163,6 +164,8 @@ export function AttentionExperiment({ onExplain, experiment }: Props) {
       </p>
     </div>
 
+    <p className="text-muted-foreground mt-3 max-w-2xl text-sm">The word-neighbours experiment gave each word one saved list of numbers. Here that description changes with the words around it.</p>
+
     <details className="attention-details mt-5" open={showShares} onToggle={event => setShowShares(event.currentTarget.open)}>
       <summary className="attention-summary">See the shares</summary>
       <div className="pt-3">
@@ -186,7 +189,7 @@ export function AttentionExperiment({ onExplain, experiment }: Props) {
     <details className="attention-details mt-2" open={showHow} onToggle={event => setShowHow(event.currentTarget.open)}>
       <summary className="attention-summary">How it works, and what it leaves out</summary>
       <div className="space-y-3 pt-3 text-sm">
-        <p>Every word here has one hand-written description of {COLUMNS.length} numbers:</p>
+        <p><strong>Every number here was chosen by hand.</strong> Each word has one description, and these are all of them:</p>
         <ul className="attention-vocab">
           {WORDS.map(word => <li key={word}>
             <span>{word}</span>

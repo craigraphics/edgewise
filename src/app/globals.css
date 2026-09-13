@@ -2430,7 +2430,14 @@ fieldset:disabled .neuron-choice { cursor: default; }
     overflow: hidden;
 }
 .attention-bar-fill { display: block; height: 100%; background: var(--band-language); }
-.attention-share-figures, .attention-share-adds {
+/*
+ * Match, share and what it added on one wrapping line. Two separate lines made
+ * every row three lines tall, and the five words that contribute nothing said
+ * "adds outdoors 0.00 · money 0.00" five times over — which is true, and reads
+ * as noise. Those say "adds nothing" now, which is the same fact and is also
+ * the point: a share of the blend, and nothing to put into it.
+ */
+.attention-share-figures {
     grid-column: 1 / -1;
     font-size: .75rem;
     color: var(--muted-foreground);
@@ -2474,5 +2481,12 @@ fieldset:disabled .neuron-choice { cursor: default; }
 
 @media (max-width: 420px) {
     .attention-before-after { flex-direction: column; align-items: stretch; }
+    /*
+     * `flex-basis` is the MAIN axis, so the 11rem that sets a sensible column
+     * width side by side became an 11rem minimum HEIGHT once the pair stacked,
+     * and each card stood 176px tall with 90px of nothing under its two
+     * numbers. Measured at 320px, not noticed in the code.
+     */
+    .attention-state { flex: 0 0 auto; }
     .attention-state-arrow { transform: rotate(90deg); align-self: center; }
 }

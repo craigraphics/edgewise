@@ -207,12 +207,36 @@ export function leadingColumn(description: Description): string | null {
   return level ? null : COLUMNS[best];
 }
 
-/** 0.428 → "43%". Whole percentages: the panel is not claiming a tenth of one. */
+/**
+ * 0.428 → "43%". Whole percentages: the panel is not claiming a tenth of one.
+ *
+ * A share too small to round up to 1% says so rather than printing "0%". Every
+ * word the target may use gets a real share, the panel says so in words, and a
+ * printed zero would contradict it — the same rule the one-step-at-a-time panel
+ * follows when a real distance is too small to print.
+ */
 export function percent(share: number): string {
-  return `${Math.round(share * 100)}%`;
+  const whole = Math.round(share * 100);
+  return whole === 0 && share > 0 ? 'under 1%' : `${whole}%`;
 }
 
 /** Two decimals everywhere a description is printed, so 1.00 and 0.21 line up. */
 export function value(amount: number): string {
   return (Math.abs(amount) < 5e-3 ? 0 : amount).toFixed(2);
+}
+
+/**
+ * Whether the contributions, AS PRINTED, fail to total the blend as printed.
+ *
+ * They always total exactly; two decimal places is what loses the hundredth.
+ * The panel tells the learner to add the column up, so when the column will not
+ * add up on screen it has to say why — and it is derived rather than written
+ * next to the list, because a note that is always there would be claiming a
+ * discrepancy on the readings that have none.
+ */
+export function roundingShows(update: Update): boolean {
+  return COLUMNS.some((_, column) => {
+    const parts = update.contributions.reduce((sum, contribution) => sum + Number(value(contribution.adds[column])), 0);
+    return Math.abs(parts - Number(value(update.after[column]))) >= 5e-3;
+  });
 }

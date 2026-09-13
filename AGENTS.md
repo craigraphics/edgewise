@@ -2499,3 +2499,105 @@ exactly two fixtures — 2/72 false passes for `hallucination/parroted`, which
 this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical` — and that remains the current state of the shared assessor.
 Recorded in `docs/saved-numbers.md` under "What was not verified".
+
+### How can the words around "bank" change what it means here? — 2026-09-13
+
+On `experiment/12-attention`, branched from `main` after the saved-numbers
+experiment merged. An experiment on `attention`, built to the same rule as the
+eleven before it: change something, inspect the consequence, optionally explain
+it. See `docs/words-around-it.md` for the verification tables and the limits.
+
+**No arrows, because arrows are the misconception.** The node's two recorded
+misconceptions are that the model "pays attention to the important words" and
+that the shares explain its reasoning. A diagram of arrows between words makes
+both worse — an arrow looks like choosing, and a thick arrow looks like a
+reason. So there is one sentence, one word being updated, and the same word
+updated again in a second sentence. *We walked beside the river to the bank*
+leaves `bank` at **outdoors 1.60 / money 0.21**; *We took cash to the bank*
+leaves it at **0.24 / 1.78**. On its own it is an even **1.00 / 1.00**, which is
+asserted in the test rather than described in the copy, so nothing but the words
+around it breaks the tie.
+
+**Real single-head causal self-attention, with the identity left in.**
+`match = (q · k) / √2`, softmax, blend — and the query, key and value settings
+are the identity. That is a simplification and the panel says so: it makes every
+number on screen one the learner can check against the nine-word vocabulary
+table, which is worth more here than three matrices nobody would multiply. Real
+models **learn** those three sets of numbers, and *How it works* says that too.
+
+**Causality is the shape of the function.** `updateAt(words, index)` slices to
+`index` and stops, so a later word is not scored, not weighted and not blended —
+it is not in scope. The same structural move as `answerWith` in `phases.ts` and
+`learnFilter` in `junk-filter.ts`. A test swaps every word after the target for
+nonsense and requires the contributions, the blend and the leading word to come
+out byte-identical. Because `bank` is last in both sentences the rule is
+invisible on the first screen, so an optional section runs the same arithmetic on
+`river` — word 5 of 8 — with the three later words struck through: *"Not a small
+share. No share, no match number, not in the arithmetic."* It earns a second
+point for free: `river` keeps 98% of its own description, because it is already a
+clear word.
+
+**Several shares, never a single winner.** River 43%, bank 21%, walked 10%, and
+the five all-zero words at 5% each. A test rejects a leader above 60%, because a
+single winner reads as the model picking one word, which is the misconception
+this node exists to remove. Nothing is at zero either — `percent` prints
+`under 1%` rather than `0%` when a share is genuinely above zero, found by
+driving the look-ahead section where three words sit at 0.19% beside the panel's
+own sentence *"They still get one. Nothing is dropped."* Same rule as the
+one-step-at-a-time panel's `under 0.01 minutes off`.
+
+**The column adds up, or the panel says why.** At two decimals 1.28 + 0.21 +
+0.10 prints as 1.59 under a total of 1.60; the unrounded parts total exactly.
+`roundingShows` compares the printed parts to the printed sum, so the note
+appears only where the discrepancy is real — a note that was always there would
+be claiming one on readings that have none.
+
+**The expectations are read straight off the vocabulary table.** The query is
+`bank`'s own description `[1, 1]`, so each match before scaling is just a word's
+two numbers added up: 0, 1, 0, 0, 3, 0, 0, 2. The shares are then recomputed in
+the test from literal `Math.exp` calls and the blend from a second loop. That is
+the "do not assert the measure against itself" trap closed by a seventh route,
+after `bpe_ranks` decoded independently, the least-squares conditions, brute
+force over 65,536 pictures, hand arithmetic, answers worked out on paper, and
+pinning to a published file.
+
+**Three defects found by measuring or driving, not by reading.** The first action
+sat 502px below the panel title at 390px and 416 at 1100x700 with the button off
+the bottom; moving the connection sentence below the readout — where it reads
+better, since it is about a description changing — put it at **306 at 1230x842**,
+the second shortest of the twelve panels. Each before/after card stood 176px tall
+at 320px with 90px of nothing under its numbers, because `flex-basis` is the main
+axis and the 11rem that set a column width side by side became a minimum *height*
+the moment the pair stacked. And each share row was three lines tall with five of
+the eight saying "adds outdoors 0.00 · money 0.00" — true, and noise; they say
+**"adds nothing"** now, which is the same fact and also the point.
+
+**A note on the probe, not the panel.** A first contrast probe composited every
+colour over black, so the share track — a `color-mix` with `transparent` — read
+as near-black and reported the bar at 1.52:1 in light mode. The real figure is
+3.36. The failure mode is this project's oldest: **the measurement was aimed at
+the wrong quantity**, and a wrong number costs more than no number.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+switching sentences, opening and closing every section, twenty rapid presses and
+Reset left a **populated** ten-mark model byte-identical. Then one real
+explanation through the live assessor moved `attention` **`blocked` → `known`**
+and left every other key unchanged. Zero network requests while driving the whole
+panel, and `document.getAnimations()` is empty with it open.
+
+**A disagreement with an authored simplification, recorded rather than acted
+on.** The `embeddings` node's authored text says *"nobody decided what any single
+dimension means"*, which is true of real models. This panel **names** its two
+columns, because a blend of two unnamed numbers cannot be read and reading it is
+the whole experiment. **Nothing was changed** — the graph, the assessor prompt,
+the schema and the model list are untouched — and the exemption is stated on
+screen under *How it works* rather than left implicit. Whether the authored
+sentence should acquire a clause is the owner's call.
+
+**`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
+display copy that `ExplainBack` renders and never sends, and this work changes no
+prompt, schema or model-list file. The last four sessions recorded that canary
+failing on exactly two fixtures — 2/72 false passes for `hallucination/parroted`,
+which this file records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical`. One end-to-end assessed explanation was submitted through the
+live path instead, and is reported in `docs/words-around-it.md`.

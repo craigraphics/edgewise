@@ -5,6 +5,8 @@ import {
   descriptionOf,
   INITIAL_SENTENCE,
   leadingColumn,
+  percent,
+  roundingShows,
   SCALE,
   SENTENCES,
   sentenceText,
@@ -258,6 +260,30 @@ describe('the two sentences, and what the panel says about them', () => {
     expect(INITIAL_SENTENCE.id).toBe('river');
     expect(river.words[river.words.length - 1]).toBe('bank');
     expect(money.words[money.words.length - 1]).toBe('bank');
+  });
+
+  it('never prints a real share as zero', () => {
+    expect(percent(0.428)).toBe('43%');
+    expect(percent(0.0019)).toBe('under 1%');
+    expect(percent(0.004)).toBe('under 1%');
+    expect(percent(0)).toBe('0%');
+    for (const sentence of SENTENCES) {
+      for (let index = 0; index < sentence.words.length; index += 1) {
+        for (const contribution of updateAt(sentence.words, index).contributions) {
+          expect(percent(contribution.share)).not.toBe('0%');
+        }
+      }
+    }
+  });
+
+  /**
+   * The note is derived, so it appears exactly when the column will not add up
+   * on screen. The river sentence's outdoors column is the case that made it
+   * necessary: 1.28 + 0.21 + 0.10 prints as 1.59 under a total of 1.60.
+   */
+  it('owns up to rounding only where rounding shows', () => {
+    expect(roundingShows(updateLast(river))).toBe(true);
+    expect(roundingShows(updateAt(['bank'], 0))).toBe(false);
   });
 
   it('uses the scale real attention uses', () => {
