@@ -1,4 +1,4 @@
-> **How can we check a rule without showing it the answers first? 2026-09-13:**
+> **Can we trust a result we helped choose? 2026-09-13:**
 > On `experiment/10-train-test-split`, branched from `main` after the
 > word-neighbours experiment. An experiment on `train-test-split`: a junk-mail
 > filter, six invented messages to learn from, four to choose how cautious it
@@ -15,12 +15,21 @@
 > explanation, which moved only this node and came back `shaky` rather than
 > `known`. Its PR targets `main`.
 >
+> A later clarity pass made the middle group a real decision rather than a
+> silent default: the final check does not appear until the learner has compared
+> both outcomes and explicitly chosen a setting. Completed message rows collapse
+> out of the main path, the final conclusion now comes before row-level evidence,
+> and the three technical names arrive as a one-to-one job map. The pristine
+> screen no longer offers a Reset that has nothing to reset.
+>
 > It also records two defects found the way this project keeps finding them: the
 > first action sat 757px below the panel title at 320px until the six sibling
 > panels were measured as a control (286 / 334 / 431 / 445 / 471 / 520), and the
 > same button was 291px wide in a 242px column and hung off the right edge,
-> because the shared `Button` is `whitespace-nowrap` at a fixed height. 571 and
-> 361 now.
+> because the shared `Button` is `whitespace-nowrap` at a fixed height. The
+> clarity pass moved the action before the progress tracker: **344px at 320px
+> and 190px at 1230px now**, with no horizontal overflow after resizing between
+> them.
 >
 > `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders and never
 > sends, so the assessor prompt, schema and model list are untouched here. The

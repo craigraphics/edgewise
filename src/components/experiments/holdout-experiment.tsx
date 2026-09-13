@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { ArrowRight, EyeOff, RotateCcw } from 'lucide-react';
+import { ArrowRight, Check, EyeOff, RotateCcw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,12 +9,12 @@ import {
   cautionById,
   compareGroups,
   describeOutcome,
-  INITIAL_CAUTION,
   INITIAL_SET,
   leaningWords,
   learnFilter,
   MESSAGE_SETS,
   runOn,
+  type Caution,
   type CautionId,
   type Learned,
   type MessageSet,
@@ -48,7 +48,8 @@ export function useHoldoutExperiment() {
   /** Learn-group messages the learner has switched off. Ids, so they survive a set change. */
   const [excluded, setExcluded] = useState<readonly string[]>([]);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [caution, setCaution] = useState<CautionId>(INITIAL_CAUTION);
+  /** No implicit choice: choosing the setting is the point of the middle group. */
+  const [caution, setCaution] = useState<CautionId | null>(null);
   /** Mailboxes whose final check has been opened. Each mailbox has its own saved messages. */
   const [revealedSets, setRevealedSets] = useState<readonly string[]>([]);
   /** Mailboxes where the filter changed after its final answers were on screen. */
@@ -94,7 +95,7 @@ export function useHoldoutExperiment() {
     setSet(next);
     setSnapshot(null);
     setExcluded([]);
-    setCaution(INITIAL_CAUTION);
+    setCaution(null);
   }, []);
 
   const reveal = useCallback(() => {
@@ -106,7 +107,7 @@ export function useHoldoutExperiment() {
     setSet(INITIAL_SET);
     setExcluded([]);
     setSnapshot(null);
-    setCaution(INITIAL_CAUTION);
+    setCaution(null);
     setRevealedSets([]);
     setTamperedSets([]);
     setMoreExamples(false);
@@ -152,12 +153,26 @@ function MessageRow({ row, bar }: { row: Row; bar: number }) {
   </li>;
 }
 
-/** A setting read on the choosing group, as one line, so the trade is visible at a glance. */
-function SettingLine({ label, outcome }: { label: string; outcome: Outcome }) {
-  return <p className="holdout-compare-line">
-    <span className="holdout-compare-name">{label}</span>
-    <span className="text-sm">Caught {outcome.junkCaught} of {outcome.junkTotal} junk · {outcome.wantedHidden === 0 ? 'hid nothing you wanted' : `hid ${outcome.wantedHidden} you wanted`}</span>
-  </p>;
+/** The middle group exists to make this an explicit decision, not a silent default. */
+function SettingChoice({ option, outcome, selected, onChoose }: {
+  option: Caution;
+  outcome: Outcome;
+  selected: boolean;
+  onChoose: () => void;
+}) {
+  return <button
+    type="button"
+    className={cn('holdout-choice', selected && 'holdout-choice-selected')}
+    aria-pressed={selected}
+    onClick={onChoose}
+  >
+    <span className="holdout-choice-head">
+      <strong>{option.label}</strong>
+      <span>{selected ? <><Check size={14} aria-hidden />Chosen</> : 'Choose this'}</span>
+    </span>
+    <span className="holdout-choice-result">Caught {outcome.junkCaught} of {outcome.junkTotal} junk</span>
+    <span className={cn('text-sm', outcome.wantedHidden > 0 && 'font-medium')}>{outcome.wantedHidden === 0 ? 'Hid none of the mail you wanted' : `Hid ${outcome.wantedHidden} message you wanted`}</span>
+  </button>;
 }
 
 /** Local arithmetic only: this component deliberately has no learner-model access. */
@@ -165,7 +180,7 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
   const { set, excluded, snapshot, caution, moreExamples, everRevealed, used, revealed, tampered,
     learn, toggleExample, chooseCaution, chooseSet, reveal, reset, setMoreExamples } = experiment;
 
-  const chosen = cautionById(caution);
+  const chosen = caution === null ? null : cautionById(caution);
   const filter = snapshot?.learned.status === 'learned' ? snapshot.learned.filter : null;
   const refused = snapshot?.learned.status === 'not-enough' ? snapshot.learned.reason : null;
   const stale = snapshot !== null && (snapshot.setLabel !== set.label
@@ -173,8 +188,8 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
     || snapshot.ids.some((id, index) => id !== used[index]?.id));
   const live = stale ? null : filter;
 
-  const choosing = live ? runOn(live, set.choose, chosen.bar) : null;
-  const finalCheck = live ? runOn(live, set.final, chosen.bar) : null;
+  const choosing = live && chosen ? runOn(live, set.choose, chosen.bar) : null;
+  const finalCheck = live && chosen ? runOn(live, set.final, chosen.bar) : null;
   const comparison = choosing && finalCheck ? compareGroups(choosing, finalCheck) : null;
   const leaning = live ? leaningWords(live, 4) : null;
 
@@ -192,43 +207,57 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
     ? 'We have seen these answers now. This is no longer a fresh check.'
     : null;
 
+  const step = !live ? 1 : caution === null ? 2 : 3;
+  const canReset = snapshot !== null
+    || caution !== null
+    || revealed
+    || moreExamples
+    || excluded.length > 0
+    || set.label !== INITIAL_SET.label;
+
   return <section className="holdout-lab" aria-labelledby="holdout-lab-title">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A quick experiment · runs in your browser</p>
-        <h3 id="holdout-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How can we check a rule without showing it the answers first?</h3>
+        <h3 id="holdout-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Can we trust a result we helped choose?</h3>
       </div>
-      <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
+      {canReset && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
 
-    <p className="mt-3 max-w-2xl text-base">Can this filter spot junk without throwing away mail you wanted?</p>
+    <p className="mt-3 max-w-2xl text-base">You’ll build a tiny junk-mail filter, choose how cautious it should be, then check it on messages whose answers you have not used.</p>
 
-    <p className="holdout-rule mt-4 max-w-2xl">Save some messages until you have finished choosing the filter.</p>
-
-    <ol className="holdout-groups mt-4">
-      <li className="holdout-group"><p className="holdout-group-head"><span className="eyebrow">Step 1</span><strong className="text-sm">Examples to learn from</strong></p><span className="text-muted-foreground block text-xs">{set.learn.length} messages · answers shown</span></li>
-      <li className="holdout-group"><p className="holdout-group-head"><span className="eyebrow">Step 2</span><strong className="text-sm">Examples to help choose</strong></p><span className="text-muted-foreground block text-xs">{set.choose.length} messages · answers shown</span></li>
-      <li className="holdout-group holdout-group-saved"><p className="holdout-group-head"><span className="eyebrow">Step 3</span><strong className="text-sm">Final check</strong></p><span className="text-muted-foreground flex items-center gap-1.5 text-xs"><EyeOff size={12} aria-hidden />{set.final.length} messages · answers hidden</span></li>
-    </ol>
+    <p className="holdout-rule mt-4 max-w-2xl"><strong>The rule:</strong> do not open the four saved messages until the filter and its setting are finished.</p>
 
     <div className="mt-5">
-      {/*
-        * `whitespace-normal` and an auto height: the label is long enough to
-        * run past a 242px column, and measured at 320px it was 291px wide and
-        * hanging 32px off the right of the panel. Wrapping is the fix that
-        * keeps the label saying what the button does.
-        */}
-      <Button size="touch" onClick={learn} disabled={!stale && snapshot !== null} className="h-auto max-w-full py-2 text-left whitespace-normal">Learn from these {used.length} {used.length === 1 ? 'message' : 'messages'} <ArrowRight aria-hidden /></Button>
-      <p className={cn('mt-2 max-w-2xl text-sm', snapshot && !stale ? 'text-muted-foreground' : 'font-medium')}>{
-        !snapshot ? 'It will use the first group only. The other two stay out of it for now.'
-          : stale ? 'You changed what it learns from. The filter below is still the old one. Learn again to see what changes.'
-          : 'This filter was built from the messages in step 1, and from nothing else.'
-      }</p>
+      {(!snapshot || stale) && <>
+        <Button size="touch" onClick={learn} className="h-auto max-w-full py-2 text-left whitespace-normal">{stale ? 'Teach it again with these messages' : `Start with step 1 · teach it with ${used.length} messages`} <ArrowRight aria-hidden /></Button>
+        <p className="mt-2 max-w-2xl text-sm font-medium">{stale ? 'You changed the examples. Teach it again before using the other groups.' : 'The filter sees which of these are junk and which you wanted. It will not see either later group.'}</p>
+      </>}
+      {live && <p className="holdout-complete"><Check size={17} aria-hidden /><span><strong>Step 1 complete.</strong> The filter was built from these {used.length} messages, and nothing else.</span></p>}
       <p className="text-muted-foreground mt-2 max-w-2xl text-xs">Every message here is invented for this page. No mailbox is connected, and nothing leaves your browser.</p>
     </div>
 
-    <div className="mt-5">
-      <h4 className="font-display text-xl">The {used.length} messages it learns from</h4>
+    <ol className="holdout-groups mt-4">
+      <li className={cn('holdout-group', live && 'holdout-group-done', step === 1 && 'holdout-group-active')} aria-current={step === 1 ? 'step' : undefined}>
+        <p className="holdout-group-head"><span className="eyebrow">{live ? <><Check size={12} aria-hidden />Done</> : 'Step 1'}</span><strong className="text-sm">Teach the filter</strong></p>
+        <span className="text-muted-foreground block text-xs">{set.learn.length} labelled messages build its word scores.</span>
+      </li>
+      <li className={cn('holdout-group', caution !== null && 'holdout-group-done', step === 2 && 'holdout-group-active')} aria-current={step === 2 ? 'step' : undefined}>
+        <p className="holdout-group-head"><span className="eyebrow">{caution !== null ? <><Check size={12} aria-hidden />Done</> : 'Step 2'}</span><strong className="text-sm">Choose a setting</strong></p>
+        <span className="text-muted-foreground block text-xs">{set.choose.length} labelled messages show the trade-off.</span>
+      </li>
+      <li className={cn('holdout-group', 'holdout-group-saved', revealed && 'holdout-group-done', step === 3 && !revealed && 'holdout-group-active')} aria-current={step === 3 && !revealed ? 'step' : undefined}>
+        <p className="holdout-group-head"><span className="eyebrow">{revealed ? <><Check size={12} aria-hidden />Opened</> : 'Step 3'}</span><strong className="text-sm">Check once</strong></p>
+        <span className="text-muted-foreground flex items-center gap-1.5 text-xs"><EyeOff size={12} aria-hidden />{set.final.length} messages stay hidden until your choice is made.</span>
+      </li>
+    </ol>
+
+    <details className="holdout-examples mt-5" open={!live}>
+      <summary>
+        <span className="font-display text-xl">What the filter gets to see</span>
+        <span className="text-muted-foreground text-xs">{used.length} labelled messages</span>
+      </summary>
+      <p className="text-muted-foreground mt-1 text-sm">These labels are the answers it learns from.</p>
       <ul className="holdout-chips mt-2">
         {used.map(message => <li key={message.id} className="holdout-chip">
           <span className="text-sm">“{message.text}”</span>
@@ -236,7 +265,7 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
         </li>)}
       </ul>
       {used.length < set.learn.length && <p className="text-muted-foreground mt-2 text-xs">{set.learn.length - used.length} of this mailbox’s example messages are switched off, under “Change what it learns from”.</p>}
-    </div>
+    </details>
 
     <div>
       {refused && !stale && <div className="holdout-refused mt-5" aria-live="polite" aria-atomic="true">
@@ -247,6 +276,7 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
             : 'Every example left is junk. With nothing wanted to compare against, every word would look suspicious, and the filter would hide everything.'
         }</p>
         <p className="text-muted-foreground mt-2 text-sm">It needs at least one of each. Switch some back on under “Change what it learns from”, then learn again.</p>
+        {!moreExamples && <Button className="mt-3" size="touch" variant="outline" onClick={openMore}>Change the examples <ArrowRight aria-hidden /></Button>}
       </div>}
 
       {live && leaning && <>
@@ -261,34 +291,39 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
         </div>
 
         <div className="mt-6">
-          <h4 className="font-display text-xl">How cautious should it be about calling something junk?</h4>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">A message is called junk when its score clears the bar. A high bar means it needs to be sure. This is the choice the second group is here to help with.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {CAUTIONS.map(option => <Button key={option.id} type="button" size="touch" variant={option.id === caution ? 'default' : 'outline'} onClick={() => chooseCaution(option.id)}>{option.label}</Button>)}
+          <p className="eyebrow">Step 2 · Choose before you peek</p>
+          <h4 className="font-display mt-2 text-xl">Which mistake would you rather risk?</h4>
+          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">We can read the answers for these four choosing messages. One setting catches more junk; the other protects more mail you wanted. Compare them, then make a choice.</p>
+          <div className="holdout-choices mt-3" role="group" aria-label="Choose how cautious the filter should be">
+            {CAUTIONS.map(option => <SettingChoice
+              key={option.id}
+              option={option}
+              outcome={runOn(live, set.choose, option.bar)}
+              selected={option.id === caution}
+              onChoose={() => chooseCaution(option.id)}
+            />)}
           </div>
-          <p className="mt-2 max-w-2xl text-sm">{chosen.blurb} The bar is {chosen.bar.toFixed(1)}.</p>
+          {chosen && <p className="mt-3 max-w-2xl text-sm"><strong>Your choice:</strong> {chosen.blurb}</p>}
         </div>
 
         {seenNote && <p className="holdout-seen mt-4">{seenNote}</p>}
 
-        {choosing && <div className="mt-5">
-          <h4 className="font-display text-xl">The {set.choose.length} messages that help us choose</h4>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">These answers are shown. Reading them is how we pick the setting. The filter itself does not change: the word scores stay exactly as they came out of step 1.</p>
-
-          <div className="holdout-compare mt-3">
-            {CAUTIONS.map(option => <SettingLine key={option.id} label={option.id === caution ? `${option.label} (chosen)` : option.label} outcome={runOn(live, set.choose, option.bar)} />)}
-          </div>
-
-          <ul className="mt-3 space-y-2">
-            {choosing.rows.map(row => <MessageRow key={row.id} row={row} bar={chosen.bar} />)}
-          </ul>
-
-          <p className="holdout-readout mt-3" aria-live="polite" aria-atomic="true">{describeOutcome(choosing)}</p>
+        {choosing && chosen && <div className="mt-5">
+          <p className="holdout-readout" aria-live="polite" aria-atomic="true">On the choosing messages: {describeOutcome(choosing)}</p>
+          <details className="text-muted-foreground mt-2 text-sm">
+            <summary className="min-h-10 cursor-pointer py-2 underline underline-offset-4">See what happened to each choosing message</summary>
+            <p className="pb-2">These answers are allowed to help with your choice. Looking at them does not change the word scores learned in step 1.</p>
+            <ul className="space-y-2 text-foreground">
+              {choosing.rows.map(row => <MessageRow key={row.id} row={row} bar={chosen.bar} />)}
+            </ul>
+          </details>
         </div>}
 
         {choosing && !revealed && <div className="mt-6">
-          <Button size="touch" onClick={openCheck}>Try the saved messages <ArrowRight aria-hidden /></Button>
-          <p className="mt-2 max-w-2xl text-sm">Those {set.final.length} messages have been out of view since the start. Their answers have not helped build the filter, and have not helped choose the setting.</p>
+          <p className="eyebrow">Step 3 · The honest check</p>
+          <h4 className="font-display mt-2 text-xl">Your filter and setting are finished. Now open the saved messages.</h4>
+          <p className="mt-2 max-w-2xl text-sm">These {set.final.length} answers have been out of view since the start. They could not help build the filter or influence your choice.</p>
+          <Button className="mt-3" size="touch" onClick={openCheck}>Open saved messages with this choice <ArrowRight aria-hidden /></Button>
           {/*
             * Reset puts the screen back. It cannot put back not having seen the
             * answers, and saying otherwise would be this panel making the exact
@@ -297,15 +332,12 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
           {everRevealed && <p className="holdout-seen mt-3">You have opened a final check already in this visit. Resetting clears the screen, not what you remember, so treat a second reading as less independent than the first.</p>}
         </div>}
 
-        {revealed && finalCheck && comparison && <div className="mt-6">
-          <h4 id="holdout-check-title" tabIndex={-1} className="font-display text-xl outline-none">Final check · {set.final.length} saved messages</h4>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">First reading. Nothing here helped build the filter or choose the setting.</p>
+        {revealed && chosen && finalCheck && comparison && <div className="mt-6">
+          <p className="eyebrow">Step 3 · First unseen result</p>
+          <h4 id="holdout-check-title" tabIndex={-1} className="font-display mt-2 text-xl outline-none">The filter had no chance to prepare for these {set.final.length} messages.</h4>
+          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">Nothing in this group helped build the filter or choose its setting.</p>
 
-          <ul className="mt-3 space-y-2">
-            {finalCheck.rows.map(row => <MessageRow key={row.id} row={row} bar={chosen.bar} />)}
-          </ul>
-
-          <div className="holdout-result mt-4">
+          <div className="holdout-result mt-3">
             {/*
               * Only the sentence that moves is announced. A live region around
               * the whole results area re-read the entire experiment every time
@@ -319,21 +351,32 @@ export function HoldoutExperiment({ onExplain, experiment }: Props) {
                   ? `It did better here than on the messages we used to choose: ${comparison.mistakesOnFinal} of ${set.final.length} wrong, against ${comparison.mistakesWhenChoosing} of ${set.choose.length}.`
                   : `It made the same share of mistakes here as on the messages we used to choose.`
             }{comparison.hidMoreOnFinal ? ' It hid more of the mail you wanted here than it did while we were choosing.' : ''}{comparison.missedMoreOnFinal ? ' It let more junk through here than it did while we were choosing.' : ''}</p>
-            <p className="mt-2 text-sm">The second group was read while the setting was being picked, so it was always going to make that setting look good. These messages were not. That is the whole reason they were saved.</p>
+            <p className="mt-2 text-sm"><strong>Why this result tells us something new:</strong> the choosing group helped pick the setting, so a good result there is partly expected. These answers influenced no decision. That is the whole reason they were saved.</p>
             {seenNote && <p className="holdout-seen mt-3">{seenNote}</p>}
           </div>
 
+          <details className="text-muted-foreground mt-2 text-sm">
+            <summary className="min-h-10 cursor-pointer py-2 underline underline-offset-4">See what happened to each saved message</summary>
+            <ul className="space-y-2 pt-2 text-foreground">
+              {finalCheck.rows.map(row => <MessageRow key={row.id} row={row} bar={chosen.bar} />)}
+            </ul>
+          </details>
+
           <div className="holdout-name mt-5">
-            <p className="eyebrow">What this is called</p>
-            <p className="mt-2 text-base">The first group is the <strong>training</strong> set. The filter is built from it. The second group is the <strong>validation</strong> set: its answers are spent choosing a setting. The saved group is the <strong>test</strong> set, and it is only worth opening once.</p>
-            <p className="text-muted-foreground mt-2 text-sm">The names matter less than the order. Each group answers a different question, and a group can only answer its question while its answers are still unused.</p>
+            <p className="eyebrow">Now the names have something to attach to</p>
+            <div className="holdout-terms mt-3">
+              <p><strong>Training set</strong><span>Build the filter</span></p>
+              <p><strong>Validation set</strong><span>Choose a setting</span></p>
+              <p><strong>Test set</strong><span>Check once, after every choice</span></p>
+            </div>
+            <p className="text-muted-foreground mt-3 text-sm">The names matter less than the order. Each group answers a different question, and it can only do that job while its answers are unused.</p>
             <p className="text-muted-foreground mt-2 text-sm">Looking at a final result does not literally add those messages to the filter. But if you look, then change the setting, then look again, you are choosing with their answers, and the check stops being independent.</p>
           </div>
 
           <p className="mt-4 max-w-2xl text-base">This follows on from the phone-price experiment: a rule can do well on examples it has seen. Saved messages help us find out whether it works on new ones too.</p>
 
           <div className="border-border mt-5 border-t pt-5">
-            <p className="font-display text-xl">Which messages helped us choose how cautious the filter should be, and which ones were still new when we checked it?</p>
+            <p className="font-display text-xl">Why was the saved group a fairer check, and what would stop it being fair?</p>
             <p className="text-muted-foreground mt-2 text-sm">Say it in your own words if you want. This panel does not change your map. Your own explanation can.</p>
             <Button className="mt-3" size="touch" onClick={onExplain}>Explain what happened <ArrowRight aria-hidden /></Button>
           </div>

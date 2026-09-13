@@ -1927,12 +1927,58 @@ fieldset:disabled .neuron-choice { cursor: default; }
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .holdout-group {
+    position: relative;
     padding: .625rem .75rem;
     border: 1px solid var(--border);
     border-radius: .625rem;
     background: var(--surface-0);
 }
 .holdout-group-saved { border-style: dashed; }
+.holdout-group-active {
+    border-color: var(--band-learning);
+    box-shadow: inset 3px 0 0 var(--band-learning);
+}
+.holdout-group-done {
+    background: color-mix(in oklch, var(--band-learning) 7%, var(--surface-0));
+}
+.holdout-group .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+}
+.holdout-complete {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    max-width: 42rem;
+    padding: .75rem .875rem;
+    border-left: 3px solid var(--band-learning);
+    background: color-mix(in oklch, var(--band-learning) 7%, var(--surface-0));
+    font-size: .875rem;
+}
+.holdout-complete svg { flex: 0 0 auto; margin-top: .125rem; }
+.holdout-examples > summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    min-height: 2.75rem;
+    padding-block: .375rem;
+    cursor: pointer;
+}
+.holdout-examples > summary::after {
+    content: 'Hide';
+    color: var(--muted-foreground);
+    font-family: var(--font-sans), ui-sans-serif, sans-serif;
+    font-size: .75rem;
+}
+.holdout-examples:not([open]) > summary::after { content: 'Show'; }
+.holdout-examples:not([open]) > summary {
+    padding-inline: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
 .holdout-chips {
     display: grid;
     gap: .375rem;
@@ -1979,26 +2025,48 @@ fieldset:disabled .neuron-choice { cursor: default; }
     font-family: var(--font-mono), ui-monospace, monospace;
     font-size: .75rem;
 }
-/* The two settings read on the same group, one line each, so the trade is one glance. */
-.holdout-compare {
+/* Two real choices, using the labelled middle group before any final answer is opened. */
+.holdout-choices {
     display: grid;
-    gap: .375rem;
-    padding: .75rem;
-    border: 1px solid var(--border);
-    border-radius: .625rem;
-    background: var(--surface-2);
+    gap: .625rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.holdout-compare-line {
+.holdout-choice {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: .25rem .75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .25rem;
+    min-height: 7rem;
+    padding: .875rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    color: var(--foreground);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 }
-.holdout-compare-name {
-    min-width: 12rem;
-    font-size: .8125rem;
-    font-weight: 500;
+.holdout-choice:hover { background: var(--surface-2); }
+.holdout-choice-selected {
+    border-color: var(--foreground);
+    background: color-mix(in oklch, var(--band-learning) 8%, var(--surface-0));
 }
+.holdout-choice-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .375rem;
+}
+.holdout-choice-head > span {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--muted-foreground);
+    font-size: .6875rem;
+    white-space: nowrap;
+}
+.holdout-choice-result { font-size: .875rem; }
 .holdout-row {
     display: flex;
     flex-wrap: wrap;
@@ -2077,14 +2145,27 @@ fieldset:disabled .neuron-choice { cursor: default; }
     gap: .125rem;
     margin-bottom: .25rem;
 }
-/*
- * Three stacked cards cost 304px at 320px wide, which put the one action on
- * this screen 757px below the panel title. Laying the step number beside its
- * name rather than above it makes each card two lines instead of three.
- */
+.holdout-terms {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.holdout-terms p {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+    font-size: .8125rem;
+}
+.holdout-terms span { color: var(--muted-foreground); }
+/* Keep each step readable at phone width without forcing three narrow columns. */
 @media (max-width: 560px) {
     .holdout-groups { grid-template-columns: 1fr; }
     .holdout-chips { grid-template-columns: 1fr; }
+    .holdout-choices, .holdout-terms { grid-template-columns: 1fr; }
     .holdout-group { padding: .5rem .625rem; }
     .holdout-group-head {
         flex-direction: row;
@@ -2107,5 +2188,4 @@ fieldset:disabled .neuron-choice { cursor: default; }
         min-height: 1.75rem;
     }
     .holdout-said-label { flex: 0 1 auto; }
-    .holdout-compare-name { min-width: 100%; }
 }

@@ -83,5 +83,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'gradient-descent': 'Why can a step in the helpful direction still leave the guess further away, if the step is too big?',
   'generalization-overfitting': 'Why did the flexible rule get every past sale right but do worse on the new sales?',
   embeddings: 'What can these lists of numbers help us compare, and what does the flat picture miss?',
-  'train-test-split': 'Which messages helped us choose how cautious the filter should be, and which ones were still new when we checked it?',
+  'train-test-split': 'Why was the saved group a fairer check than the group used to choose the setting? What would stop it being a fair check?',
 };

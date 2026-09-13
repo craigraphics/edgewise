@@ -2311,7 +2311,7 @@ fixture in that canary — but it is the current state of it and travels with th
 work rather than being summarised away. Full figures in
 `docs/word-neighbours.md`.
 
-### How can we check a rule without showing it the answers first? — 2026-09-13
+### Can we trust a result we helped choose? — 2026-09-13
 
 On `experiment/10-train-test-split`, branched from `main` after the
 word-neighbours experiment merged. An experiment on `train-test-split`, built to
@@ -2326,6 +2326,14 @@ own words: *"Save some messages until you have finished choosing the filter."*
 The names — training, validation, test — arrive only after all three groups have
 been used, and the panel says plainly that the order matters more than the
 names.
+
+**The middle group is now a real decision, not a silent default.** The first
+version preselected the cautious setting, which meant somebody could open the
+final answers without making the choice the experiment exists to explain.
+`caution` begins at `null`; two whole clickable outcome cards expose the
+trade-off, and no final-check control exists until one is explicitly chosen.
+After learning, the six labelled messages collapse out of the main path. After
+the reveal, the conclusion comes before the optional row-level evidence.
 
 **The filter really learns, and the learning has one input.** Each word scores
 the log ratio of the junk examples containing it against the wanted ones, with
@@ -2367,7 +2375,9 @@ check has not been opened is genuinely fresh and switching back is not.
 below the panel title — three stacked group cards at 304px and a six-line intro
 at 158 — measured against the siblings at 286 / 334 / 431 / 445 / 471 / 520. The
 step number now sits beside its name below 560px and the provenance line moved
-under the button: **571**, and 361 at 1230x842. The same button was also 291px
+under the button. The clarity pass then moved the action before the tracker and
+removed Reset from the pristine state: **344px now, and 190px at 1230x842.**
+The same button was also 291px
 wide in a 242px column and hung 32px off the right, because the shared `Button`
 is `whitespace-nowrap` at a fixed height. **Eleventh time a defect here was found
 by measuring rather than reading.**

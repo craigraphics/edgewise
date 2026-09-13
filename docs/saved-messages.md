@@ -5,10 +5,11 @@ word-neighbours experiment merged. An experiment on `train-test-split`, built to
 the same rule as the nine before it: change something, inspect the consequence,
 optionally explain it.
 
-**The question:** how can we check a rule without showing it the answers first?
+**The question:** can we trust a result we helped choose?
 
-**The first action:** *Learn from these 6 messages*. It is the only button on the
-first screen and it sits 361px below the panel title at 1230x842.
+**The first action:** *Start with step 1 · teach it with 6 messages*. It is the
+only button on the pristine screen and sits 190px below the panel title at
+1230x842, or 344px at 320x568.
 
 **An example of the result sentence:** *"It caught both junk messages, but also
 hid a message you wanted."* It is built from the counts of the rows on screen,
@@ -28,6 +29,13 @@ A junk-mail filter, and fourteen invented messages in three groups:
 
 The groups arrive ready to use. Nobody sorts a pile of cards before anything
 happens.
+
+The flow makes that order unavoidable. After learning, the six labelled
+messages collapse into a disclosure and the middle group presents two outcome
+cards. There is no preselected setting and no control that opens the saved
+messages until the learner makes an explicit choice. Once opened, the main
+result appears before the four row-level results; the evidence stays one tap
+away without burying the point.
 
 ## The filter really learns
 
@@ -139,13 +147,14 @@ numbers the tests require, written out rather than read off the implementation.
 
 | | |
 |---|---|
-| First action below the panel title, 1230x842 | **361px**, fully on screen (siblings: 286 / 334 / 431 / 445 / 471 / 520) |
-| First action below the panel title, 320x568 | 571px, button 63px tall, on screen after scrolling |
+| First action below the panel title, 1230x842 | **190px**, fully on screen (siblings: 286 / 334 / 431 / 445 / 471 / 520) |
+| First action below the panel title, 320x568 | **344px**, button 63px tall, on screen after scrolling |
 | Page scroll, every width | 0 vertical, 0 horizontal |
 | Panel horizontal overflow, every width | 0 |
 | Controls off the right edge | none |
-| Widths measured | 320x568, 390x600, 720x450, 1100x600, 1230x842, 1440x720 |
-| Focusable controls in the panel at 320, everything open | 15, none clipped by an `overflow: hidden` ancestor |
+| Widths measured for the initial build | 320x568, 390x600, 720x450, 1100x600, 1230x842, 1440x720 |
+| Clarity-pass resize check | 320x568 → 1230x842; 0 page or panel horizontal overflow at both widths |
+| Focusable controls in the panel at 320, everything open | 17; none off the right edge, all inside the panel scroller |
 | Example toggles | 82px rows at 320, whole row is the target, keyboard-focusable |
 | Last control reachable by scrolling at 720x450 | yes, with both details open |
 | Animations with the panel open | **none**, so nothing for reduced motion to suppress |
@@ -167,12 +176,25 @@ than solid; that is its call and is recorded rather than tuned.
    against the siblings. The cause was three stacked group cards costing 304px
    and a six-line intro paragraph costing 158. The step number now sits beside
    its name instead of above it below 560px, and the provenance line moved
-   under the button. **571 now.**
+   under the button. A later clarity pass moved the action before the progress
+   tracker and hid the useless pristine Reset. **344px now; 190px at 1230.**
 2. **The first action ran off the right of the panel at 320px.** The button was
    291px wide in a 242px column, hanging 32px past the edge, because the shared
    `Button` is `whitespace-nowrap` with a fixed height. The label is shorter and
    this one button wraps. Eleventh time a defect here was found by measuring
    rather than reading.
+
+### The interaction defect found in the clarity pass
+
+The first version selected **Only when it is sure** before the learner did
+anything. Both outcomes were visible, but the cautious setting already looked
+chosen and the final-check button was live immediately. A learner could finish
+the experiment without making the decision the middle group exists to teach.
+
+`caution` now starts at `null`. Both settings state their trade-off in a whole
+clickable card, and the final-check control is absent until one is chosen. This
+is a functional constraint rather than instructional copy hoping the learner
+does the steps in the intended order.
 
 ## What was not verified
 
