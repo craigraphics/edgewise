@@ -1,3 +1,10 @@
+> **Required checks, 2026-09-13:** The `main` ruleset requires a status named
+> `checks`. Its matching GitHub Actions workflow had only been committed on the
+> still-open `seo-and-icons` PR #2, so every other PR waited for a check that
+> could not start. `experiment/07-generalization` now carries that existing
+> workflow. When PR #15 merges, later PRs will receive the required
+> check from `main` normally.
+>
 > **Reaching an experiment, 2026-09-13:** On `experiment/08-experiment-links`,
 > branched from merged `main`. Every neighbour on the focused view that has an
 > experiment now carries a `Try it` button, and the invitation for the idea in
