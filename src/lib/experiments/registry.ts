@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -23,6 +23,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   loss: 0,
   'gradient-descent': 0,
   'generalization-overfitting': 0,
+  embeddings: 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -35,6 +36,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   loss: 'loss-lab-title',
   'gradient-descent': 'steps-lab-title',
   'generalization-overfitting': 'generalization-lab-title',
+  embeddings: 'embeddings-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -47,6 +49,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   loss: 'Try the how-far-off experiment',
   'gradient-descent': 'Try the one-step-at-a-time experiment',
   'generalization-overfitting': 'Try the perfect-score experiment',
+  embeddings: 'Try the word-neighbours experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -59,6 +62,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   loss: 'Wrong, and how wrong.',
   'gradient-descent': 'Closer, one step at a time.',
   'generalization-overfitting': 'A perfect score can hide the wrong pattern.',
+  embeddings: 'Words used alike, near each other.',
 };
 
 /**
@@ -74,4 +78,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   loss: 'Why would “wrong by this much” be more useful to a model than just “wrong”?',
   'gradient-descent': 'Why can a step in the helpful direction still leave the guess further away, if the step is too big?',
   'generalization-overfitting': 'Why did the flexible rule get every past sale right but do worse on the new sales?',
+  embeddings: 'What can these lists of numbers help us compare, and what does the flat picture miss?',
 };
