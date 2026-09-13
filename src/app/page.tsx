@@ -18,10 +18,12 @@ import { Conversation } from '@/components/session/conversation';
 import { Inspector, MARKS } from '@/components/session/inspector';
 import { Setup, setupLabel } from '@/components/session/setup';
 import { Walkthrough } from '@/components/session/walkthrough';
+import { useHashRoute, writeHash } from '@/hooks/use-hash';
 import { SHEET_QUERY, useMedia } from '@/hooks/use-media';
 import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
 import { GRAPH } from '@/lib/graph/load';
 import { coveredBy } from '@/lib/graph/order';
+import { hashFor, parseDeepLink, type DeepLink } from '@/lib/map/deep-link';
 import { panelAlreadyShows } from '@/lib/map/panel';
 import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
@@ -77,11 +79,38 @@ export default function Page() {
     mark(id, upgrade(stateOf(latestModel.current, id), earned));
   }, [mark]);
 
+  /**
+   * The hash the app itself last wrote, or last read out of the address bar.
+   *
+   * `replaceState` fires no event, so the subscription below never hears our
+   * own writes. This is for the other direction: a delivery of a hash that has
+   * already been acted on — a `popstate` back onto the place we are on, or the
+   * repeated mount React does in development — must not re-run the move and
+   * throw away where somebody had got to.
+   */
+  const appliedHash = useRef<string | null>(null);
+  const goto = useCallback((link: DeepLink | null) => {
+    const next = hashFor(link);
+    appliedHash.current = next;
+    writeHash(next);
+  }, []);
+
+  /*
+   * Opening an idea's text leaves any experiment that was open.
+   *
+   * That mostly used to happen by itself, because selecting a different idea
+   * moves the focused view off the one being played. It did not happen when
+   * the idea was the same one — so `#idea/tokens`, typed while the tokenizer
+   * was open, left the experiment running under a URL that said otherwise.
+   * `playExperiment` sets it back immediately afterwards.
+   */
   const openNode = useCallback((id: string) => {
     if (!selectedId) returnFocus.current = document.activeElement;
     setSelectedId(id);
+    setPractice(null);
     setSurface('guide');
-  }, [selectedId]);
+    goto({ kind: 'idea', id });
+  }, [goto, selectedId]);
 
   const playExperiment = (id: ExperimentId) => {
     setView('session');
@@ -90,6 +119,7 @@ export default function Page() {
     setPractice(id);
     setMapFormat('focus');
     setSurface('map');
+    goto({ kind: 'play', id });
     requestAnimationFrame(() => {
       const title = document.getElementById(EXPERIMENT_TITLE_ID[id]);
       title?.focus();
@@ -103,15 +133,27 @@ export default function Page() {
     setSurface('guide');
   };
 
+  /** A link somebody opened, reloaded, pasted, or typed into the address bar. */
+  useHashRoute(hash => {
+    if (hash === appliedHash.current) return;
+    appliedHash.current = hash;
+    const requested = parseDeepLink(hash, GRAPH);
+    if (requested?.kind === 'play') playExperiment(requested.id);
+    else if (requested) openNode(requested.id);
+  });
+
   const closeNode = useCallback(() => {
+    // `practice` is deliberately left alone: on a wide screen the experiment
+    // lives in the map pane and this button closes the guide beside it.
     setSelectedId(null);
+    goto(null);
     if (compact) setSurface('map');
     requestAnimationFrame(() => {
       const target = returnFocus.current;
       if (target?.isConnected && (target instanceof HTMLElement || target instanceof SVGElement)) target.focus({ preventScroll: true });
       else document.getElementById('concept-map')?.focus({ preventScroll: true });
     });
-  }, [compact]);
+  }, [compact, goto]);
 
   useEffect(() => {
     if (selectedId) panelRef.current?.querySelector<HTMLElement>('#concept-title')?.focus({ preventScroll: true });
@@ -122,6 +164,19 @@ export default function Page() {
     setView(next);
     setSurface('guide');
     setPresenting(false);
+    goto(null);
+  };
+
+  /**
+   * An experiment is only open in the focused view — `playing` is false in the
+   * full map and the list — so switching away from it leaves the experiment
+   * and switching back re-enters it. The address bar follows, rather than
+   * going on claiming an experiment is open while the full map is on screen.
+   */
+  const changeFormat = (next: 'focus' | 'diagram' | 'list') => {
+    setMapFormat(next);
+    if (next === 'focus' && practice !== null && practice === focusNode.id) goto({ kind: 'play', id: practice });
+    else if (playing) goto(selectedId ? { kind: 'idea', id: selectedId } : null);
   };
 
   const reset = () => {
@@ -130,6 +185,7 @@ export default function Page() {
     setDraft('');
     setSelectedId(null);
     setPractice(null);
+    goto(null);
     neuronExperiment.reset();
     tokenizerExperiment.reset();
     predictorExperiment.reset();
@@ -218,7 +274,7 @@ export default function Page() {
                 <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing && isExperimentId(focusNode.id) ? EXPERIMENT_HEADLINE[focusNode.id] : 'Ideas build on ideas.'}</h1>
               </div>
               <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
-                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => setMapFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
+                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => changeFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
               </div>
             </div>
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
