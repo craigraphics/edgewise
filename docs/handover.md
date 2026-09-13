@@ -1,3 +1,10 @@
+> **Required checks, 2026-09-13:** The `main` ruleset requires a status named
+> `checks`. Its matching GitHub Actions workflow had only been committed on the
+> still-open `seo-and-icons` PR #2, so every other PR waited for a check that
+> could not start. `experiment/07-generalization` now carries that existing
+> workflow. When PR #15 merges, later PRs will receive the required
+> check from `main` normally.
+>
 > **Reaching an experiment, 2026-09-13:** On `experiment/08-experiment-links`,
 > branched from merged `main`. Every neighbour on the focused view that has an
 > experiment now carries a `Try it` button, and the invitation for the idea in
@@ -14,6 +21,34 @@
 > corner radius hides their focus outlines. Read `docs/experiment-links.md` for
 > what was verified and what was not — no phone and no screen reader. Its PR
 > targets `main`.
+
+> **Did it learn the pattern, or remember the examples? 2026-09-13:** On
+> `experiment/07-generalization`, branched from merged `main`. An experiment on
+> `generalization-overfitting`: two pricing rules fitted to the same five past
+> used-phone sales, one a straight trend and one a curve free to bend through
+> every sale. The flexible rule is nothing off on the past sales and $100 off on
+> four held-out sales; the line is $51.2 and $34.5. A cracked phone makes the
+> one-off detail concrete. Two further datasets carry the honesty — one where a
+> real early price drop makes the flexible rule 25.8 times better, one where both
+> rules come out identical — so the panel cannot be read as teaching that detail
+> always fails. Both fitting functions take past sales and nothing else, so the
+> held-out rows cannot reach a rule; a test swaps them
+> for nonsense and requires the rules to be byte-identical. It also records a
+> defect worth keeping: the first action sat 982px below the panel title because
+> a `w-full` chart stretched to 664px and stood 415px tall on its own, invisible
+> in the code and found only by measuring against the four sibling panels (334 /
+> 431 / 445 / 520). A plain-English copy pass shortened it further to 471, with
+> the picture below the button and no em dashes in the learner-facing text. Read
+> `docs/memorising-or-learning.md` for what was verified and what was not —
+> including a real assessed explanation submitted end to end. Its PR targets
+> `main`.
+>
+> The phone-specific explanation was accepted end to end (`unexplored → known`).
+> The required repository-wide `pnpm calibrate --explain --runs 3` rerun failed
+> on unrelated fixtures: 2/72 false passes for `hallucination/parroted` and one
+> false block for `neuron/technical`. The explain canary does not include this
+> experiment, so the result is not evidence against the new question, but it is
+> current assessor evidence and must not be hidden.
 
 > **One step at a time, 2026-09-12:** On `experiment/06-small-steps`, branched
 > from merged `main`. An experiment on `gradient-descent`, continuing the

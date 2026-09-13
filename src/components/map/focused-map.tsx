@@ -9,6 +9,7 @@ import { RepresentationExperiment, type useRepresentationExperiment } from '@/co
 import { PhasesExperiment, type usePhasesExperiment } from '@/components/experiments/phases-experiment';
 import { LossExperiment, type useLossExperiment } from '@/components/experiments/loss-experiment';
 import { StepsExperiment, type useStepsExperiment } from '@/components/experiments/steps-experiment';
+import { GeneralizationExperiment, type useGeneralizationExperiment } from '@/components/experiments/generalization-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -24,6 +25,7 @@ type Props = {
   phasesExperiment: ReturnType<typeof usePhasesExperiment>;
   lossExperiment: ReturnType<typeof useLossExperiment>;
   stepsExperiment: ReturnType<typeof useStepsExperiment>;
+  generalizationExperiment: ReturnType<typeof useGeneralizationExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -45,10 +47,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'training-vs-inference': { tint: 'playable-invitation-foundations', title: 'If the answer changes, did it learn something?', blurb: 'Change a customer’s distance and the delivery estimate moves. The rule behind it does not.', action: 'Try the experiment' },
   loss: { tint: 'playable-invitation-learning', title: 'Are all wrong answers equally wrong?', blurb: 'A delivery took 30 minutes. Two guesses were wrong. Move one closer and watch what changes.', action: 'Try the experiment' },
   'gradient-descent': { tint: 'playable-invitation-learning', title: 'How can a model improve an answer a little at a time?', blurb: 'A guess of 40 minutes, for a delivery that took 30. Take one step and watch it move.', action: 'Take one step' },
+  'generalization-overfitting': { tint: 'playable-invitation-learning', title: 'Can a perfect score still lead to bad guesses?', blurb: 'Two rules learn from the same five phone sales. One follows the low price of a cracked phone. See what happens on four new sales.', action: 'Try the experiment' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -132,6 +135,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'training-vs-inference' && <div className="mt-4"><PhasesExperiment onExplain={() => onExplain('training-vs-inference')} experiment={phasesExperiment} /></div>}
       {playing && node.id === 'loss' && <div className="mt-4"><LossExperiment onExplain={() => onExplain('loss')} experiment={lossExperiment} /></div>}
       {playing && node.id === 'gradient-descent' && <div className="mt-4"><StepsExperiment onExplain={() => onExplain('gradient-descent')} experiment={stepsExperiment} /></div>}
+      {playing && node.id === 'generalization-overfitting' && <div className="mt-4"><GeneralizationExperiment onExplain={() => onExplain('generalization-overfitting')} experiment={generalizationExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
