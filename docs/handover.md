@@ -1,3 +1,28 @@
+> **When a model learns, what does it actually keep? 2026-09-13:** On
+> `experiment/11-parameters-scale`, branched from `main` after the
+> train-test-split experiment. An experiment on `parameters-scale`: a bike
+> rental shop keeps two numbers, a customer brings one, and one button changes
+> the price per hour from $3 to $4 so the price moves for a reason the panel
+> names. Then the hours change and it moves for the *other* reason. Under "How
+> were these numbers chosen?" the same two settings are worked out from past
+> rentals with the predictor's `fitLine`, unchanged — four rentals give $1.50
+> and $3.40, ten give $2.10 and $3.20, and a set where every rental was two
+> hours long is **refused with the reason** rather than handed an invented rate.
+> The count of saved numbers is derived from the named list, so "still 2
+> numbers" holds across four rentals and ten, and a test fits every count from
+> 2 to 12. Read `docs/saved-numbers.md` for what was verified and what was not —
+> including a recorded disagreement with the node's authored "no copy of the
+> training text", which was **not** acted on, and the fact that no assessed
+> explanation was submitted and the explain canary was not run. Its PR targets
+> `main`.
+>
+> It also records two defects worth keeping: the first action sat 863px below
+> the panel title at 320px until the six sibling panels were measured as a
+> control, fixed by moving the action into the board grid under the rule card it
+> changes rather than by trimming copy (**521 at 320px, 382 at 1230px now**);
+> and that emptying a saved-number field and typing it back produced no sentence
+> at all, because the comparison snapshot had been overwritten with nothing.
+
 > **Can we trust a result we helped choose? 2026-09-13:**
 > On `experiment/10-train-test-split`, branched from `main` after the
 > word-neighbours experiment. An experiment on `train-test-split`: a junk-mail

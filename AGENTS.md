@@ -2405,3 +2405,97 @@ misconception flag 12/12, jargon-with-mechanism 9/12. That canary has no
 `train-test-split` fixture, so it says nothing direct about this experiment, but
 it is the current state of the shared assessor and travels with the work rather
 than being summarised away. Full figures in `docs/saved-messages.md`.
+
+### When a model learns, what does it actually keep? — 2026-09-13
+
+On `experiment/11-parameters-scale`, branched from `main` after the
+train-test-split experiment merged. An experiment on `parameters-scale`, built
+to the same rule as the ten before it: change something, inspect the
+consequence, optionally explain it. See `docs/saved-numbers.md` for the
+verification table and the limits.
+
+**Three kinds of number, told apart by the layout.** A bike rental shop keeps
+two — *"Start at $2, then add $3 for each hour"*, named as **Starting price**
+and **Price per hour** — a customer brings one, *2 hours*, and the price for
+this rental is $8. The two kept numbers sit in one card with the band down its
+leading edge; the customer's input sits in a dashed card marked *"Not kept by
+the shop."* Nothing on that screen says billions, weights or layers, there is no
+network drawing and no wall of sliders, and the arithmetic is under a
+disclosure.
+
+**The three build checks are the node's own claims.** `priceFor(params, hours)`
+takes the rule and the hours and nothing else, so every visible price is the
+same arithmetic. `fitParams(rentals)` takes past rentals and nothing else, so
+the customer's input is not in scope where the numbers are worked out — the same
+structural move as `answerWith` in `phases.ts`, checked by driving the panel:
+with a fit on screen, changing 2 hours to 5 moved only what each rule *reads
+off* and left both rules where they were. And `parametersOf` returns the named
+list that the panel *counts*, so "the rule still keeps 2 numbers" is derived
+rather than printed; two of the three rental sets differ only in size, four
+against ten, and a test fits every count from 2 to 12.
+
+**The fit is `fitLine` unchanged, and it refuses rather than inventing.** This
+node is about what a fit leaves behind, not about how fitting works. Four past
+rentals give $1.50 and $3.40; ten give $2.10 and $3.20; a set where every rental
+was two hours long leaves the price per hour completely undetermined and is
+**refused with the reason**, rather than dividing by a spread of zero. A cleared
+saved number is withheld the same way — it is not a price of zero.
+
+**The expectations are worked out on paper and by the normal equations.**
+Asserting a fit against the function that produced it is the trap closed by
+`bpe_ranks` decoded independently, the least-squares conditions, brute force
+over 65,536 pictures, hand arithmetic, answers on paper and pinning to a
+published file. This one closes it with a seventh and eighth route: the four
+rentals give 17 ÷ 5 = $3.40 and 10 − 3.4 × 2.5 = $1.50, checkable in your head,
+and the misses are then required to sum to zero and not lean with the hours.
+
+**The names and the scale come last, and carry what is easy to get wrong.** No
+single number is a stored fact — **and they are not empty either**: training
+pushes information from the examples into them, and pieces of training text have
+been pulled back out of trained models. More numbers means a model *can* fit
+more; it does not mean better answers on its own. There is no bigger-model-wins
+race, and "What this leaves out" adds that some large models use only a fraction
+of their saved numbers on any one step.
+
+**A disagreement with an authored simplification, recorded rather than acted
+on.** The node's `explanations.example` says *"Nothing else is stored. No
+database of facts, no copy of the training text."* The first half is the point
+of the node. The second half is stronger than the evidence — training-data
+extraction is a documented result — and telling a learner recovery is impossible
+hands them a new false belief in place of an old one. **Nothing was changed**:
+the graph, the assessor prompt, the schema and the model list are untouched. The
+panel's wording is chosen to be *true beside* the authored text, which is visible
+in the inspector at the same time on a wide screen. Softening that second
+sentence is the owner's call.
+
+**The first action was 863px below the panel title at 320px**, measured against
+the six sibling panels as a control (286 / 334 / 344 / 431 / 445 / 471 / 520).
+The fix was structural, not a copy trim: the action moved **into the board
+grid**, directly under the rule card whose numbers it changes, with the input and
+the price in the second column. On a wide screen the rule and its button hold
+the left column; at 320px the same order stacks. Reading order and visual order
+match at both widths, which is why this is grid placement and not `order`.
+**521 at 320px and 382 at 1230x842 now.** Twelfth time a defect here was found
+by measuring rather than reading.
+
+**Restoring a cleared number said nothing at all.** Emptying a field left no
+complete reading to compare against and overwrote the snapshot with nothing, so
+typing the value back produced no sentence — the learner acted and the panel
+went quiet. The snapshot keeps the last *complete* reading now. Found by driving
+the panel, not by reading the code.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+changing either saved number, changing the hours, clearing and restoring a
+field, switching all three rental sets, learning, being refused, applying a fit
+and resetting left a **populated** ten-mark model byte-identical. Driving the
+whole panel produced **zero network requests**, and
+`document.getAnimations()` is empty with it open.
+
+**`pnpm calibrate --explain --runs 3` was not run**, and no end-to-end assessed
+explanation was submitted. `EXPERIMENT_PROMPT` is display copy that
+`ExplainBack` renders and never sends, and this work changes no prompt, schema
+or model-list file. The last three sessions recorded the canary failing on
+exactly two fixtures — 2/72 false passes for `hallucination/parroted`, which
+this file records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical` — and that remains the current state of the shared assessor.
+Recorded in `docs/saved-numbers.md` under "What was not verified".
