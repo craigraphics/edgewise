@@ -26,6 +26,16 @@
 > contrast check that composited over black reported the share bar at 1.52:1 in
 > light mode when the real figure is 3.36.
 >
+> A later legibility pass fixed the thing most likely to stop this working: the
+> readout printed `outdoors 1.00 money 1.00` before anything had said that words
+> carry numbers, and used *description* and *share* before either was defined.
+> One sentence now sits inside the readout card — at the moment the numbers
+> appear, not in front of the button — and the result sentence grounds *share*
+> by using it, with "balanced" and the direction it leans both read off
+> `leadingColumn` rather than written down. *See the shares* now says what the
+> match number actually is, derived: "river overlaps bank by 3.00, so it reads
+> 2.12 below." The first action did not move, because the readout is below it.
+>
 > A disagreement with an authored simplification is recorded and **not acted
 > on**: the panel names its two columns, where the `embeddings` node's authored
 > text says nobody decides what a dimension means. The graph, the assessor

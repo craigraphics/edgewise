@@ -37,6 +37,48 @@ beside the action, as required.
 out which way the blend will move, and asking somebody to guess an unexplained
 number is what `AGENTS.md` already forbids. One press, and the answer is there.
 
+## The numbers are defined where they appear, not before the button
+
+A first pass put three undefined terms in front of a learner: the columns
+`outdoors` and `money`, the word *description*, and the word *share* — all of
+them in or beside the readout, none of them explained until an optional section
+further down. The interaction was simple; the readout was not readable.
+
+The fix is one sentence, and it sits **inside the readout card** rather than
+above the first action, so it arrives at the moment the numbers do instead of
+standing in front of the button as a lesson:
+
+> In this example every word carries two numbers: how much of an **outdoors**
+> word it is, and how much of a **money** word. Those two numbers are the
+> word's **description**.
+
+It is outside the `aria-live` region, which now wraps only the part that
+changes, so a screen reader does not hear the definition on every press.
+
+The result sentence then grounds *share* by using it rather than defining it,
+and both of its claims are **read off the arithmetic**:
+
+> On its own, bank is *balanced between the two*. In this sentence it leans
+> **outdoors**: the words before it were mixed in, and most of the mixture came
+> from **river**, which supplied 43% of it. Nothing was left out — every earlier
+> word, and the word itself, put something in.
+
+"Balanced" comes from `leadingColumn(before)` returning `null` and the direction
+from `leadingColumn(after)`, so editing the vocabulary can change what the
+sentence says but cannot make it disagree with the numbers printed directly
+above it.
+
+Inside *See the shares*, the match number is now checkable rather than asserted:
+*"how much the two descriptions overlap, divided by the same fixed number every
+time to keep the figures in a comfortable range. river overlaps bank by 3.00, so
+it reads 2.12 below."* Both figures are derived from the update on screen — the
+raw overlap is `match × √2` — so the same sentence is correct in the money
+sentence (cash, 3.00 → 2.12) and in the look-ahead section (river against
+itself, 9.00 → 6.36). Without it a learner reads "overlap" and then sees 2.12,
+with nothing accounting for the gap.
+
+None of this moved the first action: the readout sits below the button.
+
 ## The connection to the earlier idea
 
 Directly under the result, so it lands once the change has been seen:
@@ -162,6 +204,7 @@ BrowserOS neo against `pnpm dev`, viewport emulated through CDP.
 | After a 1920 → 1300 resize | 0 scroll, 0 clipped, no control off-screen |
 | Controls under 40px inside the panel | **none, at any width** |
 | First action below the panel title, 1230×842 | **306px** (siblings: 286 / 334 / 344 / 431 / 445 / 471 / 520 / 521) |
+| First action at 720×450 / 390 / 320 | 331 / 370 / 431 |
 | First action visible without scrolling | yes at 1440×900, 1230×842, 1100×700, 390×800 |
 | 200% zoom (615×421 at dsf 2) | 0 page scroll, nothing off-screen, last control reachable |
 | Scroll owners around the panel | exactly one (`focus-map`); no nested scrolling pane |

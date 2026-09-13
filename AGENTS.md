@@ -2594,6 +2594,22 @@ the schema and the model list are untouched — and the exemption is stated on
 screen under *How it works* rather than left implicit. Whether the authored
 sentence should acquire a clause is the owner's call.
 
+**The numbers are defined where they appear, not in front of the button.** A
+first pass put three undefined terms in a learner's way — the two column names,
+*description*, and *share* — all in or beside the readout and none explained
+until an optional section further down. The interaction was simple and the
+readout was not readable, which is the more common failure of the two. One
+sentence now sits **inside the readout card**, so it arrives at the moment the
+numbers do rather than standing in front of the first action as a lesson, and it
+is outside the `aria-live` region so it is not re-announced on every press. The
+result sentence grounds *share* by using it, and both of its claims —
+&ldquo;balanced between the two&rdquo; and which way it leans — are read off
+`leadingColumn` rather than written down. Inside *See the shares*, the match
+number became checkable: *"how much the two descriptions overlap, divided by the
+same fixed number every time&hellip; river overlaps bank by 3.00, so it reads
+2.12 below"*, with both figures derived from the update on screen. None of it
+moved the first action, because the readout sits below the button.
+
 **`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
 display copy that `ExplainBack` renders and never sends, and this work changes no
 prompt, schema or model-list file. The last four sessions recorded that canary

@@ -8,8 +8,10 @@ import {
   COLUMNS,
   descriptionOf,
   INITIAL_SENTENCE,
+  leadingColumn,
   percent,
   roundingShows,
+  SCALE,
   SENTENCES,
   sentenceById,
   updateAt,
@@ -144,24 +146,42 @@ export function AttentionExperiment({ onExplain, experiment }: Props) {
       <p className="text-muted-foreground text-sm">A small example with numbers chosen to show the steps.</p>
     </div>
 
-    <div className="attention-readout mt-4" aria-live="polite" aria-atomic="true">
+    <div className="attention-readout mt-4">
       <p className="eyebrow">What came out</p>
-      <div className="attention-before-after mt-3">
-        <span className="attention-state">
-          <span className="attention-state-label">{update.target} on its own</span>
-          <Columns description={update.before} />
-        </span>
-        <ArrowRight className="attention-state-arrow" aria-hidden />
-        <span className="attention-state">
-          <span className="attention-state-label">{update.target} in this sentence</span>
-          <Columns description={update.after} className="attention-columns-after" />
-        </span>
+      {/*
+        * The one sentence that makes the numbers readable, and it sits here
+        * rather than above the button on purpose: a learner meets it at the
+        * moment the numbers appear, not as a lesson in front of the first
+        * action. It is also outside the live region below, because it never
+        * changes and a screen reader should not hear it on every press.
+        */}
+      <p className="mt-2 text-sm">In this example every word carries two numbers: how much of an <strong>outdoors</strong> word it is, and how much of a <strong>money</strong> word. Those two numbers are the word&rsquo;s <strong>description</strong>.</p>
+      <div aria-live="polite" aria-atomic="true">
+        <div className="attention-before-after mt-3">
+          <span className="attention-state">
+            <span className="attention-state-label">{update.target} on its own</span>
+            <Columns description={update.before} />
+          </span>
+          <ArrowRight className="attention-state-arrow" aria-hidden />
+          <span className="attention-state">
+            <span className="attention-state-label">{update.target} in this sentence</span>
+            <Columns description={update.after} className="attention-columns-after" />
+          </span>
+        </div>
+        {/*
+          * "Balanced", and the column it ends up leaning towards, are both read
+          * off the arithmetic rather than written down. Editing the vocabulary
+          * can make this sentence say something else; it cannot make it
+          * disagree with the numbers printed above it.
+          */}
+        <p className="mt-3 text-sm">
+          On its own, {update.target} is {leadingColumn(update.before) === null ? 'balanced between the two' : `mostly ${leadingColumn(update.before)}`}.
+          In this sentence it leans {leadingColumn(update.after) === null ? 'neither way' : <strong>{leadingColumn(update.after)}</strong>}:
+          the words before it were mixed in, and most of the mixture came from <strong>{update.leading.word}</strong>,
+          which supplied {percent(update.leading.share)} of it. Nothing was left out — every earlier word,
+          and the word itself, put something in.
+        </p>
       </div>
-      <p className="mt-3 text-sm">
-        The earlier words changed what went into the last word&rsquo;s description.
-        The largest share came from <strong>{update.leading.word}</strong> ({percent(update.leading.share)}).
-        Nothing was left out: every earlier word, and the word itself, got a share.
-      </p>
     </div>
 
     <p className="text-muted-foreground mt-3 max-w-2xl text-sm">The word-neighbours experiment gave each word one saved list of numbers. Here that description changes with the words around it.</p>
@@ -169,7 +189,8 @@ export function AttentionExperiment({ onExplain, experiment }: Props) {
     <details className="attention-details mt-5" open={showShares} onToggle={event => setShowShares(event.currentTarget.open)}>
       <summary className="attention-summary">See the shares</summary>
       <div className="pt-3">
-        <p className="text-sm">Each earlier word gets a <strong>match number</strong>: how well it fits what {update.target} is looking for. The match numbers are turned into proportions that add up to 1, and each word then contributes its own description in that proportion. Add those up and you have the new description above.</p>
+        <p className="text-sm">Each earlier word gets a <strong>match number</strong>: how well it fits what {update.target} is looking for. In this small example that is just how much the two descriptions overlap, divided by the same fixed number every time to keep the figures in a comfortable range. <em>{update.leading.word}</em> overlaps {update.target} by {value(update.leading.match * SCALE)}, so it reads {value(update.leading.match)} below.</p>
+        <p className="text-sm">The match numbers are then turned into proportions that add up to 1, and each word contributes its own description in that proportion. Add those up and you have the new description above.</p>
         <Shares update={update} />
         <p className="text-muted-foreground mt-3 text-sm">Words carrying nothing this example measures &mdash; <em>we</em>, <em>the</em>, <em>to</em>, <em>beside</em> &mdash; all match equally, so they all get the same share. They still get one. Nothing is dropped.</p>
       </div>
