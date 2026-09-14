@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition', 'attention', 'transformer', 'context-window'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -27,6 +27,9 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'train-test-split': 0,
   'parameters-scale': 0,
   'backprop-intuition': 0,
+  attention: 0,
+  transformer: 0,
+  'context-window': 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -43,6 +46,9 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'train-test-split': 'holdout-lab-title',
   'parameters-scale': 'parameters-lab-title',
   'backprop-intuition': 'backprop-lab-title',
+  attention: 'attention-lab-title',
+  transformer: 'transformer-lab-title',
+  'context-window': 'context-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -59,6 +65,9 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'train-test-split': 'Try the saved-messages experiment',
   'parameters-scale': 'Try the saved-numbers experiment',
   'backprop-intuition': 'Try the working-backwards experiment',
+  attention: 'Try the words-around-it experiment',
+  transformer: 'Try the one-block experiment',
+  'context-window': 'Try the what-gets-sent experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -75,6 +84,9 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'train-test-split': 'Save some messages for the final check.',
   'parameters-scale': 'Two saved numbers, every answer.',
   'backprop-intuition': 'One difference, worked back through two settings.',
+  attention: 'The words around it change what it means.',
+  transformer: 'Two small steps, repeated.',
+  'context-window': 'Still in the chat, not in the request.',
 };
 
 /**
@@ -94,4 +106,7 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'train-test-split': 'Why was the saved group a fairer check than the group used to choose the setting? What would stop it being a fair check?',
   'parameters-scale': 'The price changed twice, for two different reasons. What does the shop keep between customers, and what does it do with it?',
   'backprop-intuition': 'How did the difference at the end tell us which way to move both earlier settings, and what happened before the settings changed?',
+  attention: 'The word “bank” has one description on its own, and a different one in each sentence. What made the difference, and where did it come from?',
+  transformer: 'One block did two things to the last word, one after the other. What were they, and what did the second block start from?',
+  'context-window': 'The door code stayed on screen the whole time, but one reply could not use it. What decides whether the model can use something you typed earlier?',
 };

@@ -30,7 +30,7 @@ describe('the experiment registry', () => {
   it('recognises only those ids', () => {
     expect(isExperimentId('prediction-from-examples')).toBe(true);
     expect(isExperimentId('neuron')).toBe(true);
-    expect(isExperimentId('attention')).toBe(false);
+    expect(isExperimentId('hallucination')).toBe(false);
     expect(isExperimentId(null)).toBe(false);
     expect(isExperimentId(undefined)).toBe(false);
   });

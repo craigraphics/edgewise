@@ -2336,6 +2336,7 @@ fieldset:disabled .neuron-choice { cursor: default; }
     .parameters-brought > strong { font-size: 1.125rem; }
 }
 
+
 /*
  * The working-backwards experiment — `backprop-intuition`.
  *
@@ -2471,3 +2472,500 @@ fieldset:disabled .neuron-choice { cursor: default; }
         transform: rotate(90deg);
     }
 }
+
+/*
+ * The words-around-it experiment — `attention`.
+ *
+ * The subject is one word's description before and after the words near it are
+ * used, so the layout is a sentence, a before/after pair, and a list of shares.
+ * Nothing here prints a value in `--band-language`. Measured, that band is
+ * 4.02:1 against these cards in light mode, under AA — `BANDS_USED_AS_TEXT` in
+ * `globals.test.ts` records which bands are legible as text, and `language` is
+ * not one of them. It stays on borders and the share bars, which are graphics
+ * held to 3:1 by the band-accent block; every number is printed as text beside
+ * its bar.
+ */
+.attention-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.attention-stage {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-language);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+/*
+ * Inline words with real spaces between them, not flex children with a gap:
+ * the gap version reads as one run-together word to anything taking the text.
+ */
+.attention-sentence {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: clamp(1.125rem, 3.2vw, 1.5rem);
+    line-height: 1.5;
+}
+.attention-word { border-radius: .25rem; }
+/*
+ * The word being updated is marked three ways — a band underline, a tint, and
+ * the caption naming it underneath — so nothing about it depends on colour.
+ */
+.attention-word-target {
+    padding: .05em .3em;
+    box-shadow: inset 0 -3px 0 var(--band-language);
+    background: color-mix(in oklch, var(--band-language) 10%, var(--surface-0));
+}
+.attention-caption { margin-top: .625rem; font-size: .875rem; color: var(--muted-foreground); }
+.attention-readout {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.attention-before-after {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1rem;
+}
+.attention-state {
+    flex: 1 1 11rem;
+    min-width: 0;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-1);
+}
+.attention-state-label { display: block; font-size: .75rem; color: var(--muted-foreground); }
+.attention-state-arrow { flex: 0 0 auto; width: 1rem; height: 1rem; color: var(--muted-foreground); }
+.attention-columns { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: .375rem; }
+.attention-column { display: flex; align-items: baseline; gap: .375rem; }
+.attention-column-name { font-size: .75rem; color: var(--muted-foreground); }
+.attention-column strong { font-size: 1.125rem; line-height: 1.2; }
+.attention-columns-after .attention-column strong { font-size: 1.375rem; }
+
+.attention-shares { display: flex; flex-direction: column; gap: .5rem; margin-top: .75rem; }
+.attention-share {
+    display: grid;
+    grid-template-columns: minmax(5rem, auto) minmax(3rem, 1fr);
+    align-items: center;
+    gap: .25rem .75rem;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+}
+.attention-share-word { min-width: 0; overflow-wrap: anywhere; }
+.attention-share-self { color: var(--muted-foreground); font-size: .75rem; }
+.attention-bar {
+    display: block;
+    height: .5rem;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--border) 70%, transparent);
+    overflow: hidden;
+}
+.attention-bar-fill { display: block; height: 100%; background: var(--band-language); }
+/*
+ * Match, share and what it added on one wrapping line. Two separate lines made
+ * every row three lines tall, and the five words that contribute nothing said
+ * "adds outdoors 0.00 · money 0.00" five times over — which is true, and reads
+ * as noise. Those say "adds nothing" now, which is the same fact and is also
+ * the point: a share of the blend, and nothing to put into it.
+ */
+.attention-share-figures {
+    grid-column: 1 / -1;
+    font-size: .75rem;
+    color: var(--muted-foreground);
+}
+.attention-total { margin-top: .625rem; font-size: .8125rem; }
+.attention-withheld { display: flex; flex-wrap: wrap; gap: .375rem; }
+.attention-withheld-word {
+    padding: .125rem .5rem;
+    border: 1px dashed var(--border);
+    border-radius: .375rem;
+    font-size: .875rem;
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+}
+.attention-vocab { display: grid; gap: .25rem; }
+.attention-vocab li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+    padding: .25rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .8125rem;
+}
+.attention-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.attention-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.attention-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+@media (max-width: 420px) {
+    .attention-before-after { flex-direction: column; align-items: stretch; }
+    /*
+     * `flex-basis` is the MAIN axis, so the 11rem that sets a sensible column
+     * width side by side became an 11rem minimum HEIGHT once the pair stacked,
+     * and each card stood 176px tall with 90px of nothing under its two
+     * numbers. Measured at 320px, not noticed in the code.
+     */
+    .attention-state { flex: 0 0 auto; }
+    .attention-state-arrow { transform: rotate(90deg); align-self: center; }
+}
+
+/*
+ * The one-block experiment — `transformer`.
+ *
+ * The subject is an arrangement of steps, so the layout is a sentence, a
+ * numbered strip of two stages with the action beside it, and one word's
+ * numbers at three moments. There is no architecture diagram and there are no
+ * arrows between words: the node's recorded misconceptions are that a
+ * transformer is new maths rather than an arrangement, and a poster of boxes
+ * teaches neither.
+ *
+ * Nothing here prints a value in `--band-language`. Measured, that band is
+ * 4.02:1 against these cards in light mode, under AA — `BANDS_USED_AS_TEXT` in
+ * `globals.test.ts` records which bands are legible as text, and `language` is
+ * not one of them. It stays on borders and on the step numbers' outline, which
+ * are graphics held to 3:1 by the band-accent block.
+ */
+.transformer-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.transformer-note {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-language);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+/*
+ * Inline words with real spaces between them, not flex children with a gap:
+ * the gap version reads as one run-together word to anything taking the text.
+ */
+.transformer-sentence {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: clamp(1.125rem, 3.2vw, 1.5rem);
+    line-height: 1.5;
+}
+.transformer-word { border-radius: .25rem; }
+/*
+ * The word being followed is marked three ways — a band underline, a tint, and
+ * the caption naming it underneath — so nothing about it depends on colour.
+ */
+.transformer-word-target {
+    padding: .05em .3em;
+    box-shadow: inset 0 -3px 0 var(--band-language);
+    background: color-mix(in oklch, var(--band-language) 10%, var(--surface-0));
+}
+.transformer-caption { margin-top: .625rem; font-size: .875rem; color: var(--muted-foreground); }
+
+/* The two stages and the action, side by side while there is room for both. */
+.transformer-run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1rem;
+}
+.transformer-steps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: .5rem;
+    flex: 1 1 20rem;
+    min-width: 0;
+}
+.transformer-step {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex: 1 1 9rem;
+    min-width: 0;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+    font-size: .8125rem;
+}
+.transformer-step-number {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--band-language);
+    border-radius: 999px;
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+}
+.transformer-step-done { display: block; font-size: .6875rem; color: var(--muted-foreground); }
+
+.transformer-readout {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.transformer-moments { display: flex; flex-wrap: wrap; gap: .625rem; }
+.transformer-moment {
+    flex: 1 1 10rem;
+    min-width: 0;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-1);
+}
+.transformer-moment-label { display: block; font-size: .75rem; color: var(--muted-foreground); }
+.transformer-moment strong { display: block; margin-top: .25rem; font-size: 1.0625rem; line-height: 1.3; }
+
+.transformer-compare { display: grid; gap: .5rem; margin-top: .75rem; }
+.transformer-compare-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .25rem .75rem;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-1);
+    font-size: .8125rem;
+}
+.transformer-compare-row-current { border-color: var(--band-language); }
+
+.transformer-table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+.transformer-table caption { text-align: left; padding-bottom: .375rem; color: var(--muted-foreground); }
+.transformer-table th,
+.transformer-table td { padding: .3125rem .5rem .3125rem 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.transformer-table th { font-weight: 500; color: var(--muted-foreground); }
+.transformer-scroller { overflow-x: auto; }
+
+.transformer-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.transformer-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.transformer-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+@media (max-width: 460px) {
+    /*
+     * `flex-basis` is the MAIN axis, so a basis that sets a sensible column
+     * width side by side becomes a minimum HEIGHT the moment the row stacks —
+     * the defect the attention panel's cards shipped with, measured at 320px
+     * and not visible in the code.
+     */
+    .transformer-step,
+    .transformer-moment { flex: 0 0 auto; }
+    .transformer-steps { flex-direction: column; }
+    .transformer-moments { flex-direction: column; }
+}
+
+/*
+ * The what-gets-sent experiment — `context-window`.
+ *
+ * The subject is the difference between two lists: the conversation, which
+ * never loses a message, and the request, which has a fixed amount of room. So
+ * the layout puts them beside each other where there is width for it, and the
+ * status of every message is also printed as words inside the chat — "Sent this
+ * time" / "Not sent this time" — so the comparison survives a single column, a
+ * greyscale screenshot, and a screen reader.
+ *
+ * Nothing here prints a value in `--band-behaviour`. Measured, that band is
+ * 4.36:1 against these cards in light mode, under AA; `BANDS_USED_AS_TEXT` in
+ * `globals.test.ts` records which bands are legible as text, and `behaviour` is
+ * not one of them. It stays on borders and on the meter, which are graphics
+ * held to 3:1 by the band-accent block.
+ *
+ * The stage is a CONTAINER query, not a media query. This panel is drawn inside
+ * the focused-map pane, which is about 664px wide at a 1230px viewport and
+ * 768px at 1440 — so the viewport width does not say whether there is room for
+ * two columns here, and every max-width rule in this file that tried would be
+ * guessing.
+ */
+.context-lab {
+    container-type: inline-size;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+/*
+ * One column: the action, then the chat and the request it changed. Two
+ * columns: the chat on the left, the action at the top of the right column with
+ * the request directly under it. Either way the control comes before the two
+ * surfaces it moves, and its own result sentence sits immediately beneath it.
+ *
+ * The chat first in one column measured 734px from the panel title to the
+ * button at 320 and 609 at 390, against 286-521 across the thirteen panels
+ * before this one, with the button off the bottom of the window at 1100x700.
+ * No amount of copy trimming closed that: three message cards are 260px of it.
+ */
+.context-stage {
+    display: grid;
+    gap: .75rem;
+    grid-template-areas: "action" "chat" "request";
+}
+.context-chat-area { grid-area: chat; min-width: 0; }
+.context-action-area { grid-area: action; min-width: 0; }
+.context-request-area { grid-area: request; min-width: 0; }
+
+/*
+ * The action sits at the TOP of the second column, with the request it changes
+ * directly under it. Below the request it measured 568px under the panel title
+ * at 1440 and 609 at 1230, against 286-521 across the thirteen panels that came
+ * before — the recurring defect in this project, found the same way again.
+ */
+@container (min-width: 34rem) {
+    .context-stage {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
+        grid-template-areas:
+            "chat action"
+            "chat request";
+        align-items: start;
+    }
+}
+
+.context-chat { display: flex; flex-direction: column; gap: .5rem; }
+.context-message {
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.context-message-sent { border-left: 3px solid var(--band-behaviour); }
+/* Dashed, so "held back" is a shape and not only a word or a colour. */
+.context-message-held { border-style: dashed; background: transparent; }
+.context-message-who { color: var(--muted-foreground); }
+.context-message-text { font-size: .9375rem; overflow-wrap: anywhere; }
+.context-message-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .375rem .625rem;
+    margin-top: .375rem;
+    font-size: .75rem;
+}
+.context-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: .0625rem .375rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+.context-chip-sent { border-color: var(--band-behaviour); }
+.context-chip-held { border-style: dashed; color: var(--muted-foreground); }
+
+.context-change { min-height: 2.75rem; }
+
+.context-request {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-behaviour);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.context-lines { display: grid; gap: .25rem; }
+.context-lines li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    padding-bottom: .25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .8125rem;
+}
+.context-lines li:last-child { border-bottom: 0; padding-bottom: 0; }
+.context-line-reserve { color: var(--muted-foreground); }
+
+/* Thin gaps between the segments, so they separate without relying on hue. */
+.context-meter {
+    display: flex;
+    gap: 2px;
+    height: .5rem;
+    margin-top: .75rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--surface-2);
+}
+.context-meter span { display: block; height: 100%; }
+.context-meter-instruction { background: var(--muted-foreground); }
+.context-meter-messages { background: var(--band-behaviour); }
+/* 45% measured 1.77:1 against the track in one theme — near-invisible. */
+.context-meter-reserve { background: color-mix(in oklch, var(--band-behaviour) 75%, var(--muted-foreground)); }
+
+.context-reply, .context-name, .context-error {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.context-reply { border-left: 3px solid var(--band-behaviour); }
+.context-points { display: grid; gap: .625rem; font-size: .875rem; }
+.context-points li { padding-left: .875rem; border-left: 2px solid var(--border); }
+
+.context-transcript {
+    margin-top: .25rem;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-0);
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: .75rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.context-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.context-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.context-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+.playable-invitation-behaviour {
+    border-color: var(--band-behaviour);
+    background: color-mix(in oklch, var(--band-behaviour) 7%, var(--surface-0));
+}
+.playable-invitation-behaviour:hover { background: color-mix(in oklch, var(--band-behaviour) 12%, var(--surface-0)); }

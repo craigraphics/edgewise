@@ -18,6 +18,160 @@
 > 100. The graph, learner marks, assessor, schema and model list are untouched;
 > no calibration run is required.
 
+> **The mark, and being findable, 2026-09-14:** On `favicon-and-seo`, branched
+> from `main` after the transformer experiment. A favicon drawn from the
+> wordmark's own letter — `edgewise.` cropped to its `e`, Newsreader SemiBold on
+> a near-black card with the teal full stop — plus the metadata this site was
+> serving none of. It was `noindex, nofollow` on a live domain with no
+> `robots.txt`, no sitemap, no canonical, no sharing card and no icon at all.
+> **`index: true` is the one behavioural change and it is the owner's to veto**;
+> it is one line in `layout.tsx`, and `robots.ts` allows crawling on its own, so
+> going back to a private draft means changing both. `/lab` is disallowed,
+> `/intro` is crawlable but deliberately out of the sitemap, because whether it
+> is somewhere to send a stranger is still an open question below.
+>
+> `scripts/make-icons.py` draws every size and is committed, so nobody has to
+> redraw an `e` by hand. Three deliberate things: the small frames come from a
+> different `opsz` cut, because at 16px the 16pt cut closes its own counter into
+> a smudge; the 16px frame drops the full stop, which at that size is a stray
+> teal pixel; and it is rendered at 16px rather than reduced from 8x, because
+> reducing loses the hinting. All compared on screen at 5x, not reasoned about.
+> One trap worth keeping: Pillow's ICO writer **silently drops any size larger
+> than the base image and writes a one-frame file** — caught by reading the
+> sizes back out of the file rather than trusting the call.
+>
+> This overlaps PR #2 (`seo-and-icons`, open since 2026-08-21), which does the
+> same job with the craigraphics circle-in-ring instead of the letter. Its
+> reasoning is kept; it should be closed rather than merged alongside. Read
+> `docs/icons-and-seo.md` for the before/after table, what was verified in the
+> served `<head>`, and what was not — no crawler, no card debugger, no phone.
+
+> **If it is still in the chat, why can’t the model use it? 2026-09-13:** On
+> `experiment/14-context-window`, branched from `main` after the one-block
+> experiment. An experiment on `context-window`: a birthday-party chat whose
+> first message is "The door code is 47A.", beside a card headed **Included in
+> this request**. The chat never loses a message; the request has 80 tokens of
+> room. One press of "Add more party notes" takes it over, the oldest message is
+> dropped, and it is the door code — still on screen, visibly outside the
+> request, with the scripted reply changing to "I cannot see a door code in the
+> messages I was given." The fourth press drops two whole messages at once.
+> "Include the code again" puts it back and the same rule finds it, with nothing
+> trained. The counts are real `cl100k_base` in a worker (zero fetches, zero
+> XHRs while driving the whole panel); the 80-token allowance is invented and
+> labelled as such; and when the worker cannot start the panel says so and shows
+> **no numbers at all**, because a made-up count is what this node exists to
+> correct. Read `docs/what-gets-sent.md` for what was verified and what was not
+> — including one real assessed explanation submitted end to end, which moved
+> only this node, `shaky` → `known`. Its PR targets `main`.
+>
+> The scripted reply earns its place through its signature: `answerFrom` takes
+> the included messages and nothing else, and a test hands it a visible history
+> full of door codes and an included list with none. A message of 110 tokens
+> against a capacity of 40 is a real boundary — nothing older than it can be
+> sent either, which is a consequence of this app’s one rule and not a second
+> decision, and the card says why free tokens are left over. The node’s second
+> misconception is on screen after the fact: being sent is not the same as being
+> used.
+>
+> Three things worth keeping. The first action sat 568px below the panel title
+> at 1440 and 734 at 320, against 286–521 across the thirteen siblings, and copy
+> trimming did not close it — the fix was grid placement, **157–293 now**. The
+> stage is the codebase’s first container query, because this panel is drawn
+> inside a pane whose width the viewport does not describe. And a contrast probe
+> that parsed `getComputedStyle` reported **1.25 for everything in both themes**,
+> because computed colours here are `lab(...)` and canvas `fillStyle` does not
+> convert them — the third wrong probe this project has recorded, and identical
+> figures across themes was the tell again. Painted into a canvas instead: worst
+> text 5.55 light and 7.89 dark, and it then caught the meter’s reserve segment
+> at 1.77:1 against its track.
+
+> **What happens inside one repeated block? 2026-09-13:** On
+> `experiment/13-transformer`, branched from `main` after the attention
+> experiment. An experiment on `transformer`: a five-word note about pets, the
+> last word marked, two named stages and one button. Run one block and the last
+> word's numbers are shown before, after sharing clues from the earlier words,
+> and after the calculation that follows — with how far the description moved at
+> each stage, so the two can be compared. It is a complete single-head causal
+> decoder block in the modern arrangement, run twice; post-norm was built first
+> and rejected by measurement, because after normalising every row the second
+> block's gathering step moved the last word by 0.007 and the panel would have
+> been claiming a change it could not show. Read `docs/one-block.md` for what was
+> verified and what was not — including one real assessed explanation submitted
+> end to end, which moved only this node, `unexplored` → `known`. Its PR targets
+> `main`.
+>
+> It is the first experiment whose subject is an authored simplification's own
+> confession rather than a disagreement with one. The node's `simplificationCost`
+> says position handling is left out and that attention alone treats a sentence
+> as an unordered bag; this puts it back and **proves** it — the test removes the
+> place rows, shuffles the earlier words and requires the last word's result to
+> come out byte-identical, then puts them back and requires it to differ. The
+> dimensions are deliberately unnamed, which is the opposite call from the
+> attention panel next door and creates no new disagreement. Nothing in the
+> branch changes the graph, the assessor prompt, the schema or the model list.
+>
+> A first build was mechanically clear and thin — three rows of unnamed numbers
+> and a sentence saying they changed. Two fixes, neither inventing a meaning: a
+> real distance so the stages can be compared, and the strongest fact in the
+> panel promoted out of the third section — the note uses *the* twice, both
+> copies start from the same numbers, and after the block they are
+> `0.20 · 0.35 · -0.51` and `-0.46 · -0.98 · 0.75`, with both reasons named.
+>
+> Three defects found the way this project keeps finding them: the result
+> sentence said "changed its numbers" twice in a row; Reset was offered on a
+> screen with nothing to reset and at 390px wrapped above the panel's actual
+> first action (474px below the title at 390 and 341 at 1230x842, now 418 and
+> **285**); and "done" had no space in front of it. Plus one about the probe: a
+> contrast check that read a computed `oklch()` string as if it were `r, g, b`
+> reported everything at 1.1–1.5 in both themes, and the identical figures across
+> themes were the tell. And one pre-existing condition, measured against the
+> attention and embeddings panels as a control rather than blamed on this branch:
+> at 720x450 the focused-map pane is 20px tall for all three.
+
+> **How can the words around "bank" change what it means here? 2026-09-13:** On
+> `experiment/12-attention`, branched from `main` after the saved-numbers
+> experiment. An experiment on `attention`: one sentence, one word being
+> updated, and one button that swaps the sentence. *We walked beside the river
+> to the bank* leaves `bank` at outdoors 1.60 / money 0.21; *We took cash to the
+> bank* leaves it at 0.24 / 1.78; on its own it is an even 1.00 / 1.00, which is
+> asserted rather than described. It is real single-head causal self-attention
+> with the query, key and value settings left as the identity — a simplification
+> the panel states, and the reason every number on screen can be checked against
+> a nine-word table. There are no arrows anywhere, because an arrow looks like
+> choosing and a thick arrow looks like a reason, which are this node's two
+> recorded misconceptions. Causality is the shape of `updateAt`, not a comment:
+> a test swaps every word after the target for nonsense and requires the result
+> to be byte-identical. Read `docs/words-around-it.md` for what was verified and
+> what was not — including one real assessed explanation submitted end to end,
+> which moved only this node, `blocked` → `known`. Its PR targets `main`.
+>
+> It also records three defects found the way this project keeps finding them:
+> the first action sat 502px below the panel title at 390px until the connection
+> sentence moved below the readout (**306 at 1230x842** now, second shortest of
+> the twelve panels); each before/after card stood 176px tall at 320px with 90px
+> of nothing in it, because `flex-basis` is the main axis and an 11rem column
+> width became a minimum height once the pair stacked; and five of the eight
+> share rows said "adds outdoors 0.00 · money 0.00", which is true and is noise —
+> they say "adds nothing" now. And one about the probe rather than the panel: a
+> contrast check that composited over black reported the share bar at 1.52:1 in
+> light mode when the real figure is 3.36.
+>
+> A later legibility pass fixed the thing most likely to stop this working: the
+> readout printed `outdoors 1.00 money 1.00` before anything had said that words
+> carry numbers, and used *description* and *share* before either was defined.
+> One sentence now sits inside the readout card — at the moment the numbers
+> appear, not in front of the button — and the result sentence grounds *share*
+> by using it, with "balanced" and the direction it leans both read off
+> `leadingColumn` rather than written down. *See the shares* now says what the
+> match number actually is, derived: "river overlaps bank by 3.00, so it reads
+> 2.12 below." The first action did not move, because the readout is below it.
+>
+> A disagreement with an authored simplification is recorded and **not acted
+> on**: the panel names its two columns, where the `embeddings` node's authored
+> text says nobody decides what a dimension means. The graph, the assessor
+> prompt, the schema and the model list are untouched. `pnpm calibrate --explain
+> --runs 3` was not run, for the reasons in the doc.
+
 > **When a model learns, what does it actually keep? 2026-09-13:** On
 > `experiment/11-parameters-scale`, branched from `main` after the
 > train-test-split experiment. An experiment on `parameters-scale`: a bike
