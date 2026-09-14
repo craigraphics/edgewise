@@ -13,6 +13,7 @@ import { GeneralizationExperiment, type useGeneralizationExperiment } from '@/co
 import { EmbeddingsExperiment, type useEmbeddingsExperiment } from '@/components/experiments/embeddings-experiment';
 import { HoldoutExperiment, type useHoldoutExperiment } from '@/components/experiments/holdout-experiment';
 import { ParametersExperiment, type useParametersExperiment } from '@/components/experiments/parameters-experiment';
+import { BackpropExperiment, type useBackpropExperiment } from '@/components/experiments/backprop-experiment';
 import { AttentionExperiment, type useAttentionExperiment } from '@/components/experiments/attention-experiment';
 import { TransformerExperiment, type useTransformerExperiment } from '@/components/experiments/transformer-experiment';
 import { ContextExperiment, type useContextExperiment } from '@/components/experiments/context-experiment';
@@ -35,6 +36,7 @@ type Props = {
   embeddingsExperiment: ReturnType<typeof useEmbeddingsExperiment>;
   holdoutExperiment: ReturnType<typeof useHoldoutExperiment>;
   parametersExperiment: ReturnType<typeof useParametersExperiment>;
+  backpropExperiment: ReturnType<typeof useBackpropExperiment>;
   attentionExperiment: ReturnType<typeof useAttentionExperiment>;
   transformerExperiment: ReturnType<typeof useTransformerExperiment>;
   contextExperiment: ReturnType<typeof useContextExperiment>;
@@ -63,13 +65,14 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   embeddings: { tint: 'playable-invitation-language', title: 'Which words might belong together?', blurb: 'Pick a word and see which words sit nearest to it, worked out from nothing but lists of numbers.', action: 'Pick a word' },
   'train-test-split': { tint: 'playable-invitation-learning', title: 'Can we trust a result we helped choose?', blurb: 'Teach a junk-mail filter from six messages, make one real trade-off, then check it on four answers you did not use.', action: 'Try the experiment' },
   'parameters-scale': { tint: '', title: 'When a model learns, what does it actually keep?', blurb: 'A bike rental shop keeps two numbers. Change one and the price moves. Change the customer and it moves for a different reason.', action: 'Change a saved number' },
+  'backprop-intuition': { tint: '', title: 'If the final amount is wrong, how do we work back to the earlier settings?', blurb: 'A plant received more water than the model expected. Work backward to see which way its two saved estimates should move.', action: 'Work back from the difference' },
   attention: { tint: 'playable-invitation-language', title: 'How can the words around “bank” change what it means here?', blurb: 'One sentence walks to a riverbank, the other takes cash to a bank. Watch the same word’s description move.', action: 'Try the experiment' },
   transformer: { tint: 'playable-invitation-language', title: 'How do a few simple steps work together on a sentence?', blurb: 'A short note about pets. Run one block and watch the last word’s numbers change twice — once from the words before it, once from the calculation after.', action: 'Run one block' },
   'context-window': { tint: 'playable-invitation-behaviour', title: 'If it is still in the chat, why can’t the model use it?', blurb: 'A party chat with a door code in it. Add a few more notes and watch the code drop out of what actually gets sent.', action: 'Add more party notes' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, attentionExperiment, transformerExperiment, contextExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -157,6 +160,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'embeddings' && <div className="mt-4"><EmbeddingsExperiment onExplain={() => onExplain('embeddings')} experiment={embeddingsExperiment} /></div>}
       {playing && node.id === 'train-test-split' && <div className="mt-4"><HoldoutExperiment onExplain={() => onExplain('train-test-split')} experiment={holdoutExperiment} /></div>}
       {playing && node.id === 'parameters-scale' && <div className="mt-4"><ParametersExperiment onExplain={() => onExplain('parameters-scale')} experiment={parametersExperiment} /></div>}
+      {playing && node.id === 'backprop-intuition' && <div className="mt-4"><BackpropExperiment onExplain={() => onExplain('backprop-intuition')} experiment={backpropExperiment} /></div>}
       {playing && node.id === 'attention' && <div className="mt-4"><AttentionExperiment onExplain={() => onExplain('attention')} experiment={attentionExperiment} /></div>}
       {playing && node.id === 'transformer' && <div className="mt-4"><TransformerExperiment onExplain={() => onExplain('transformer')} experiment={transformerExperiment} /></div>}
       {playing && node.id === 'context-window' && <div className="mt-4"><ContextExperiment onExplain={() => onExplain('context-window')} experiment={contextExperiment} /></div>}

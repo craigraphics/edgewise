@@ -10,10 +10,10 @@ import { cn } from '@/lib/utils';
  *
  * `h-10` is load-bearing. The shared `Input` primitive is 32px, below the 40px
  * finger target this project records, and that was measured at 320px rather than
- * reasoned about. Shared by the predictor and the two-phase experiment so the
- * measurement lives in one place.
+ * reasoned about. Shared by the predictor, two-phase and working-backwards
+ * experiments so the measurement lives in one place.
  */
-export function NumberField({ id, label, name, unit, value, max, step = 0.5, className, onChange }: {
+export function NumberField({ id, label, name, unit, value, max, step = 0.5, clamp = true, className, onChange }: {
   id: string;
   label: string;
   /** The accessible name, which says which row this is. The visible label cannot. */
@@ -22,6 +22,8 @@ export function NumberField({ id, label, name, unit, value, max, step = 0.5, cla
   value: number | null;
   max: number;
   step?: number;
+  /** Some experiments need to reject an out-of-range observation, not reinterpret it at the nearest bound. */
+  clamp?: boolean;
   className?: string;
   onChange: (value: number | null) => void;
 }) {
@@ -41,7 +43,7 @@ export function NumberField({ id, label, name, unit, value, max, step = 0.5, cla
           const raw = event.target.value;
           if (raw === '') return onChange(null);
           const parsed = Number(raw);
-          onChange(Number.isFinite(parsed) ? Math.min(max, Math.max(0, parsed)) : null);
+          onChange(Number.isFinite(parsed) ? (clamp ? Math.min(max, Math.max(0, parsed)) : parsed) : null);
         }}
         className="h-10 font-mono tabular-nums"
       />

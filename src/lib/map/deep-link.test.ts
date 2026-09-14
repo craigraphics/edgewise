@@ -62,7 +62,7 @@ describe('the links a URL can name', () => {
   });
 
   /** Every experiment in the registry is reachable by its own link. */
-  it('can name all seven experiments', () => {
+  it('can name every experiment', () => {
     expect(EXPERIMENT_IDS.map(id => parse(`#play/${id}`))).toEqual(
       EXPERIMENT_IDS.map(id => ({ kind: 'play', id })),
     );

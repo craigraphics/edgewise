@@ -2500,6 +2500,55 @@ this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical` — and that remains the current state of the shared assessor.
 Recorded in `docs/saved-numbers.md` under "What was not verified".
 
+### If the final amount is wrong, how do we work back? — 2026-09-13
+
+An experiment on `backprop-intuition`, built to keep three moments separate:
+the original prediction, advice calculated backward from its final difference,
+and the learning step that changes both earlier settings. See
+`docs/working-backwards.md` for the arithmetic, verification and explicit
+limits.
+
+**One frozen run, then two simultaneous changes.** Ten minutes × 0.5 litres per
+minute × 60% predicts 3 litres, while the plant was measured at 4. With
+half-squared error, the tap sensitivity is −6 and the share sensitivity is −5.
+Both are calculated from a copied pre-update settings object. The visibly
+labelled 0.01 learning step then changes the tap estimate to 0.56 and the share
+to 65% at the same time, so the next prediction is 3.64 litres. Updating the
+first setting before calculating the second would be a different algorithm and
+is pinned out by the tests.
+
+**Advice is not an update.** The first action reveals splitter advice and then
+tap advice while the saved settings stay visible and unchanged. Only the next
+action applies them. A reducer at page level makes that action idempotent under
+repeated activation and preserves the experiment across navigation; the
+existing global Start over path resets it with all siblings. Exact agreement
+produces zero advice and no Apply control. Empty, out-of-range, non-finite and
+physically impossible cases never produce an invented or clamped result.
+
+**The metaphor has a written boundary.** "Blame, spread backwards" names the
+direction of the job, not the calculation. Backpropagation computes chain-rule
+sensitivities. Gradients are not percentages or conserved portions of a finite
+substance, need not add to 100, and leave no leftover blame to pass farther
+back. This is a two-setting teaching model, not real plumbing or a full neural
+network.
+
+**The first action was 910px below the title at 320px in the first draft.** The
+run, settings and connecting copy all preceded it. Moving the run and action
+ahead of the detailed settings card brought it to **503px**; changing the shared
+nowrap button to a wrapping, auto-height 208×47px control kept it inside its
+narrow card. Resize-after-load checks from 320×568 through 1920×900 found no
+page scroll, right clipping or off-right experiment control. A resumed short
+pass also checked visible keyboard focus, both themes, global reset, a
+200%-equivalent reflow and an isolated zero-request trace. BrowserOS's targeted
+wheel call hung twice, and it cannot drive browser-chrome zoom itself; those
+limits are recorded rather than implied away in `docs/working-backwards.md`.
+
+**Nothing here changes the map.** The experiment has no learner-model or
+network access. A populated ten-mark model stayed byte-identical through the
+completed play, navigation and explanation-draft checks. The graph, assessor
+prompt, schema and model list are untouched, so no calibration run was needed
+or run. No explanation was submitted and this is not a learner study.
+
 ### How can the words around "bank" change what it means here? — 2026-09-13
 
 On `experiment/12-attention`, branched from `main` after the saved-numbers

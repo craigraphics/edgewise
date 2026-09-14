@@ -1,3 +1,23 @@
+> **If the final amount is wrong, how do we work back? 2026-09-13:** A local
+> experiment on `backprop-intuition` separates the forward prediction, a
+> backward advice pass that changes nothing, and one simultaneous learning
+> step. The supplied 0.5 L/min and 60% settings predict 3 litres in ten minutes;
+> against 4 litres the two sensitivities are −6 and −5, and the labelled 0.01
+> step moves both settings to 0.56 and 65% before producing 3.64 litres. Advice
+> is calculated from a copied pre-update snapshot, invalid physical or
+> non-finite steps are refused, duplicate Apply actions cannot apply twice, and
+> exact agreement offers no meaningless update. Alternative measurements are
+> local, bounded 0–10 litres and restart from the same supplied settings. Read
+> `docs/working-backwards.md` for the completed checks, the resumed short
+> browser pass, and the two tool-limited checks left open. Its PR targets
+> `main`.
+>
+> Keep the documented limit of the graph's blame metaphor: backpropagation
+> computes chain-rule sensitivities. No finite substance or leftover blame is
+> divided among settings, and the gradients are not percentages that add to
+> 100. The graph, learner marks, assessor, schema and model list are untouched;
+> no calibration run is required.
+
 > **The mark, and being findable, 2026-09-14:** On `favicon-and-seo`, branched
 > from `main` after the transformer experiment. A favicon drawn from the
 > wordmark's own letter — `edgewise.` cropped to its `e`, Newsreader SemiBold on

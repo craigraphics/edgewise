@@ -13,6 +13,7 @@ import { useGeneralizationExperiment } from '@/components/experiments/generaliza
 import { useEmbeddingsExperiment } from '@/components/experiments/embeddings-experiment';
 import { useHoldoutExperiment } from '@/components/experiments/holdout-experiment';
 import { useParametersExperiment } from '@/components/experiments/parameters-experiment';
+import { useBackpropExperiment } from '@/components/experiments/backprop-experiment';
 import { useAttentionExperiment } from '@/components/experiments/attention-experiment';
 import { useTransformerExperiment } from '@/components/experiments/transformer-experiment';
 import { useContextExperiment } from '@/components/experiments/context-experiment';
@@ -68,6 +69,7 @@ export default function Page() {
   const embeddingsExperiment = useEmbeddingsExperiment();
   const holdoutExperiment = useHoldoutExperiment();
   const parametersExperiment = useParametersExperiment();
+  const backpropExperiment = useBackpropExperiment();
   const attentionExperiment = useAttentionExperiment();
   const transformerExperiment = useTransformerExperiment();
   const contextExperiment = useContextExperiment();
@@ -211,6 +213,7 @@ export default function Page() {
     embeddingsExperiment.reset();
     holdoutExperiment.reset();
     parametersExperiment.reset();
+    backpropExperiment.reset();
     attentionExperiment.reset();
     transformerExperiment.reset();
     contextExperiment.reset();
@@ -301,7 +304,7 @@ export default function Page() {
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
             {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
           </>}
-          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} phasesExperiment={phasesExperiment} lossExperiment={lossExperiment} stepsExperiment={stepsExperiment} generalizationExperiment={generalizationExperiment} embeddingsExperiment={embeddingsExperiment} holdoutExperiment={holdoutExperiment} parametersExperiment={parametersExperiment} attentionExperiment={attentionExperiment} transformerExperiment={transformerExperiment} contextExperiment={contextExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} phasesExperiment={phasesExperiment} lossExperiment={lossExperiment} stepsExperiment={stepsExperiment} generalizationExperiment={generalizationExperiment} embeddingsExperiment={embeddingsExperiment} holdoutExperiment={holdoutExperiment} parametersExperiment={parametersExperiment} backpropExperiment={backpropExperiment} attentionExperiment={attentionExperiment} transformerExperiment={transformerExperiment} contextExperiment={contextExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
           {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
         </section>
       </main>

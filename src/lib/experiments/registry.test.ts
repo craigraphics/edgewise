@@ -30,7 +30,7 @@ describe('the experiment registry', () => {
   it('recognises only those ids', () => {
     expect(isExperimentId('prediction-from-examples')).toBe(true);
     expect(isExperimentId('neuron')).toBe(true);
-    expect(isExperimentId('backprop-intuition')).toBe(false);
+    expect(isExperimentId('hallucination')).toBe(false);
     expect(isExperimentId(null)).toBe(false);
     expect(isExperimentId(undefined)).toBe(false);
   });
@@ -66,5 +66,34 @@ describe('the experiment registry', () => {
   it('still rejects a verdict that happens to sit inside quotation marks', () => {
     expect(unquoted('that was “correct”, well done')).toContain('well done');
     expect(unquoted('was your answer “wrong”?')).toContain('your answer');
+  });
+
+  it('has complete copy and reset entries for every playable idea', () => {
+    const graphIds = new Set(GRAPH.nodes.map(node => node.id));
+    const tables = [
+      EMPTY_EXPLAIN_REQUESTS,
+      EXPERIMENT_TITLE_ID,
+      EXPERIMENT_ACTION,
+      EXPERIMENT_HEADLINE,
+      EXPERIMENT_PROMPT,
+    ];
+
+    for (const id of EXPERIMENT_IDS) {
+      expect(graphIds.has(id), id).toBe(true);
+      for (const table of tables) expect(Object.hasOwn(table, id), id).toBe(true);
+      expect(EXPERIMENT_TITLE_ID[id], id).not.toBe('');
+      expect(EXPERIMENT_ACTION[id], id).not.toBe('');
+      expect(EXPERIMENT_HEADLINE[id], id).not.toBe('');
+      expect(EXPERIMENT_PROMPT[id], id).not.toBe('');
+    }
+    expect(new Set(Object.values(EXPERIMENT_TITLE_ID)).size).toBe(EXPERIMENT_IDS.length);
+  });
+
+  it('registers the working-backwards experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('backprop-intuition');
+    expect(EXPERIMENT_TITLE_ID['backprop-intuition']).toBe('backprop-lab-title');
+    expect(EXPERIMENT_ACTION['backprop-intuition']).toBe('Try the working-backwards experiment');
+    expect(EXPERIMENT_HEADLINE['backprop-intuition']).toBe('One difference, worked back through two settings.');
+    expect(EXPERIMENT_PROMPT['backprop-intuition']).toBe('How did the difference at the end tell us which way to move both earlier settings, and what happened before the settings changed?');
   });
 });
