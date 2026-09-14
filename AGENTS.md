@@ -2618,6 +2618,104 @@ which this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical`. One end-to-end assessed explanation was submitted through the
 live path instead, and is reported in `docs/words-around-it.md`.
 
+### If it is still in the chat, why can’t the model use it? — 2026-09-13
+
+On `experiment/14-context-window`, branched from `main` after the one-block
+experiment merged. An experiment on `context-window`, built to the same rule as
+the thirteen before it: change something, inspect the consequence, optionally
+explain it. See `docs/what-gets-sent.md` for the verification tables and the
+limits.
+
+**Two lists, side by side, allowed to disagree.** A birthday-party chat whose
+first message is *"The door code is 47A."*, and a card headed **Included in this
+request**. The chat never loses a message; the request has 80 tokens of room.
+One press of **Add more party notes** takes it over, the oldest message is
+dropped, and that message is the door code — still on screen, visibly outside the
+request, with the scripted reply changing to *"I cannot see a door code in the
+messages I was given."* The fourth press drops **two** whole messages at once,
+which is the rule acted out rather than illustrated: it removes as many as it
+takes. Measured through the walk: 66 → 75 → 77 → 78 → 65, then 77 with the code
+put back.
+
+**The counts are real; the allowance is invented and labelled; the reply is
+scripted and labelled everywhere it appears.** `cl100k_base` from the same pinned
+`js-tiktoken` the tokenizer playground uses, in a worker — zero fetches and zero
+XHRs while driving the whole panel. The 80-token allowance was chosen *after*
+measuring the messages so one press visibly pushes the oldest out, and "How the
+counting works" says it is not any real model’s limit. **There is no fallback
+count:** with `window.Worker` replaced by a constructor that throws, the panel
+reports it, offers a retry and shows no numbers at all, because a made-up count
+is exactly what this node exists to correct.
+
+**The scripted reply earns its place through its signature.** `answerFrom` takes
+the included messages and nothing else, so "the reply can only use what was sent"
+is the shape of the function rather than a promise in a comment — the same move
+as `answerWith` in `phases.ts` and `learnFilter` in `junk-filter.ts`. A test
+hands it a visible history full of door codes and an included list with none and
+requires it to come back empty-handed. It reads the text, not a flag, and the
+question *"What was the door code again?"* deliberately does not set it off.
+
+**The four honest points, on screen and after the thing has happened.** Nothing
+was forgotten — the message was not sent, and the chat belongs to the app. Other
+apps do other things: refuse an oversized request, summarise the older part, keep
+their own notes. Being sent is not the same as being used, so a bigger window
+does not mean everything in it counts equally — the node’s second recorded
+misconception, stated rather than left to the optional question. And what
+training left in the model’s numbers is still there and is not part of this
+request at all.
+
+**A message too long to fit is a real boundary, and it leaves free tokens
+behind.** 110 tokens against a capacity of 40. No amount of dropping older
+messages helps, and everything older is held back with it — which is a
+consequence of this app’s one rule, not a second decision. Free tokens beside a
+list of things left out reads as a contradiction, so the card now says why.
+Reaching past the blockage for something smaller would be *choosing other
+material to send*, which some services really do and this one does not.
+
+**The first action sat 568px below the panel title at 1440 and 734 at 320**,
+against 286–521 across the thirteen sibling panels, with the button off the
+bottom of the window at 1100x700. Sixteenth time a defect here was found by
+measuring rather than reading. Copy trimming did not close it — three message
+cards are 260px of it at 320 — so the fix was structural: the action moved to the
+**top of the second column** with the request it changes directly beneath it, and
+in one column the grid order became **action, chat, request**. **157–293 now, at
+every width tested.**
+
+**The stage is a container query, the first in this codebase, and that is the
+point.** This panel is drawn inside the focused-map pane, which is about 664px
+wide at a 1230px viewport and 768px at 1440. The viewport does not say whether
+there is room for two columns here, so every `max-width` rule in `globals.css`
+that tried would have been guessing.
+
+**A wrong probe, for the third time.** The first contrast check resolved colours
+by parsing `getComputedStyle`. Computed colours here come back as `lab(...)`,
+which canvas `fillStyle` does **not** convert, so the parser read the three `lab`
+numbers as `r, g, b` and reported **1.25 for everything in both themes** —
+identical figures across themes being the tell, the same one the transformer
+session recorded for an `oklch()` parser. Resolved by painting into a 1x1 canvas
+and reading the pixel back, the worst text is **5.55** light and **7.89** dark,
+and the worst graphic **4.16** and **6.89**. It then caught a real defect: the
+meter’s reserve segment measured 1.77:1 against its track in one theme.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+four notes, the resend, the long message in and out, every disclosure, forty
+rapid alternating presses and Reset left a **populated** ten-mark model — both
+prerequisites and both dependants included — byte-identical. Then one real
+explanation through the live assessor moved `context-window` **`shaky` →
+`known`** and left every other mark unchanged. `document.getAnimations()` is
+empty with the panel open and driven.
+
+**No disagreement with an authored simplification.** The node’s intuition says
+the whole history is re-sent every turn, which is exactly what the panel shows,
+and its `simplificationCost` is `null`. The one place the panel is more careful
+than a casual reading is *"Nothing outside it exists as far as the model is
+concerned"*, which is true of this conversation’s text and not of what training
+left in the model’s numbers — so the panel says which, rather than proposing a
+change. The graph, the assessor prompt, the schema and the model list are
+untouched. `pnpm calibrate --explain --runs 3` was not run; `EXPERIMENT_PROMPT`
+is display copy that `ExplainBack` renders and never sends, and one end-to-end
+assessed explanation was submitted through the live path instead.
+
 ### What happens inside one repeated block? — 2026-09-13
 
 On `experiment/13-transformer`, branched from `main` after the attention

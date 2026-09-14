@@ -15,6 +15,7 @@ import { HoldoutExperiment, type useHoldoutExperiment } from '@/components/exper
 import { ParametersExperiment, type useParametersExperiment } from '@/components/experiments/parameters-experiment';
 import { AttentionExperiment, type useAttentionExperiment } from '@/components/experiments/attention-experiment';
 import { TransformerExperiment, type useTransformerExperiment } from '@/components/experiments/transformer-experiment';
+import { ContextExperiment, type useContextExperiment } from '@/components/experiments/context-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -36,6 +37,7 @@ type Props = {
   parametersExperiment: ReturnType<typeof useParametersExperiment>;
   attentionExperiment: ReturnType<typeof useAttentionExperiment>;
   transformerExperiment: ReturnType<typeof useTransformerExperiment>;
+  contextExperiment: ReturnType<typeof useContextExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -63,10 +65,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'parameters-scale': { tint: '', title: 'When a model learns, what does it actually keep?', blurb: 'A bike rental shop keeps two numbers. Change one and the price moves. Change the customer and it moves for a different reason.', action: 'Change a saved number' },
   attention: { tint: 'playable-invitation-language', title: 'How can the words around “bank” change what it means here?', blurb: 'One sentence walks to a riverbank, the other takes cash to a bank. Watch the same word’s description move.', action: 'Try the experiment' },
   transformer: { tint: 'playable-invitation-language', title: 'How do a few simple steps work together on a sentence?', blurb: 'A short note about pets. Run one block and watch the last word’s numbers change twice — once from the words before it, once from the calculation after.', action: 'Run one block' },
+  'context-window': { tint: 'playable-invitation-behaviour', title: 'If it is still in the chat, why can’t the model use it?', blurb: 'A party chat with a door code in it. Add a few more notes and watch the code drop out of what actually gets sent.', action: 'Add more party notes' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, attentionExperiment, transformerExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, attentionExperiment, transformerExperiment, contextExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -156,6 +159,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'parameters-scale' && <div className="mt-4"><ParametersExperiment onExplain={() => onExplain('parameters-scale')} experiment={parametersExperiment} /></div>}
       {playing && node.id === 'attention' && <div className="mt-4"><AttentionExperiment onExplain={() => onExplain('attention')} experiment={attentionExperiment} /></div>}
       {playing && node.id === 'transformer' && <div className="mt-4"><TransformerExperiment onExplain={() => onExplain('transformer')} experiment={transformerExperiment} /></div>}
+      {playing && node.id === 'context-window' && <div className="mt-4"><ContextExperiment onExplain={() => onExplain('context-window')} experiment={contextExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
