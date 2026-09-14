@@ -44,3 +44,15 @@ export function decodeTokenization(tokens: TokenPiece[]) {
   }
   return new TextDecoder().decode(bytes);
 }
+
+/**
+ * How many tokens a string costs, and nothing else.
+ *
+ * The same pinned encoder as `tokenizeText`, so the two can never disagree, but
+ * without the byte lookup — the what-gets-sent experiment needs the size of a
+ * message, not its pieces.
+ */
+export function countTokens(text: string): number {
+  if (!text) return 0;
+  return getEncoder().encode(text, [], []).length;
+}
