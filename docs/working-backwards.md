@@ -79,8 +79,8 @@ The typed registry and deep-link test cover `#play/backprop-intuition`; the page
 owns the reducer so leaving the experiment does not discard it, and the page's
 existing global reset now resets it with every sibling experiment.
 
-BrowserOS neo checks completed before browser testing was stopped at the
-owner's request:
+BrowserOS neo checks completed across the initial pass and the shorter resumed
+pass:
 
 - The canonical advice and result were read from the accessibility tree; a
   synchronous double activation produced one update and the atomic live region
@@ -103,10 +103,25 @@ owner's request:
 - At 720×450, two End presses reached the bottom of the experiment's own scroll
   pane with the final arithmetic paragraph visible. `document.getAnimations()`
   returned zero.
+- The keyboard order from the experiment title was Reset, Try another measured
+  amount, Explain what happened, then How it works. All four reported
+  `:focus-visible`, stayed in the viewport, and had visible 1.5–2px outlines.
+- A 200%-equivalent reflow check used half the 1230×842 CSS viewport at device
+  pixel ratio 4. It found no page scroll, clipping, off-right controls, or
+  experiment controls below 40px. BrowserOS cannot drive browser-chrome zoom,
+  so this is equivalent layout evidence rather than a literal browser zoom
+  setting.
+- Light and dark themes were visually inspected at 1230×842. The neutral
+  surfaces, foreground text and network-band borders stayed distinct in both.
+- Clearing resource timings immediately before the local play path and reading
+  them after the canonical result found zero fetch or XHR entries.
+- Global Start over removed the result and experiment Reset, restored the
+  opening Work back action, and cleared the learner model as that global action
+  is designed to do.
 
-The browser pass was stopped before wheel-only reachability, a reliable 200%
-browser-zoom pass, both-theme visual inspection, the global Start over control,
-focus-ring measurements, and an isolated zero-network-request trace could be
-completed. There was no physical-phone or real-screen-reader check. No assessed
+Wheel-only reachability remains unverified: BrowserOS's targeted wheel command
+hung twice, while keyboard End and the scroll-bound measurements succeeded. A
+literal browser-chrome 200% zoom setting also cannot be driven by this browser
+tool. There was no physical-phone or real-screen-reader check. No assessed
 explanation was submitted, no calibration run was needed or run, and this is
 not a learner study.

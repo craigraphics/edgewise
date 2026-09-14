@@ -8,8 +8,9 @@
 > non-finite steps are refused, duplicate Apply actions cannot apply twice, and
 > exact agreement offers no meaningless update. Alternative measurements are
 > local, bounded 0–10 litres and restart from the same supplied settings. Read
-> `docs/working-backwards.md` for the completed checks and the browser checks
-> stopped at the owner's request. Its PR targets `main`.
+> `docs/working-backwards.md` for the completed checks, the resumed short
+> browser pass, and the two tool-limited checks left open. Its PR targets
+> `main`.
 >
 > Keep the documented limit of the graph's blame metaphor: backpropagation
 > computes chain-rule sensitivities. No finite substance or leftover blame is

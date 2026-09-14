@@ -2537,9 +2537,11 @@ run, settings and connecting copy all preceded it. Moving the run and action
 ahead of the detailed settings card brought it to **503px**; changing the shared
 nowrap button to a wrapping, auto-height 208×47px control kept it inside its
 narrow card. Resize-after-load checks from 320×568 through 1920×900 found no
-page scroll, right clipping or off-right experiment control. Browser testing
-was then stopped at the owner's request, so the uncompleted checks are recorded
-rather than implied away in `docs/working-backwards.md`.
+page scroll, right clipping or off-right experiment control. A resumed short
+pass also checked visible keyboard focus, both themes, global reset, a
+200%-equivalent reflow and an isolated zero-request trace. BrowserOS's targeted
+wheel call hung twice, and it cannot drive browser-chrome zoom itself; those
+limits are recorded rather than implied away in `docs/working-backwards.md`.
 
 **Nothing here changes the map.** The experiment has no learner-model or
 network access. A populated ten-mark model stayed byte-identical through the
