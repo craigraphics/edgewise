@@ -2335,3 +2335,139 @@ fieldset:disabled .neuron-choice { cursor: default; }
     .parameters-estimate strong { font-size: 1.5rem; }
     .parameters-brought > strong { font-size: 1.125rem; }
 }
+
+/*
+ * The working-backwards experiment — `backprop-intuition`.
+ *
+ * The network band is an accent on borders and numbered steps, never text.
+ * `--band-networks` measures 4.45:1 on these light surfaces, just below AA;
+ * keeping the words in foreground repeats the contrast rule used by the map
+ * nodes and the saved-numbers panel.
+ */
+.backprop-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+.backprop-connection {
+    padding-left: .75rem;
+    border-left: 3px solid var(--band-networks);
+    line-height: 1.5;
+}
+.backprop-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: .75rem;
+    align-items: stretch;
+}
+.backprop-settings, .backprop-run {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.backprop-settings { border-left: 3px solid var(--band-networks); }
+.backprop-setting-list { display: grid; gap: .5rem; }
+.backprop-setting {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .25rem .75rem;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-1);
+}
+.backprop-setting-label {
+    color: var(--muted-foreground);
+    font-size: .75rem;
+    line-height: 1.3;
+}
+.backprop-setting strong { font-size: .875rem; }
+.backprop-status {
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--surface-2);
+    line-height: 1.6;
+}
+.backprop-advice {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.backprop-advice-row {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    gap: .625rem;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.backprop-advice-number {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    border: 1px solid var(--band-networks);
+    border-radius: 50%;
+    font-size: .75rem;
+    font-weight: 600;
+}
+.backprop-name {
+    padding: .75rem 1rem;
+    border-left: 3px solid var(--band-networks);
+    background: var(--surface-0);
+}
+.backprop-refusal {
+    padding: .75rem;
+    border: 1px solid var(--band-networks);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.backprop-result {
+    padding: 1rem;
+    border: 1px solid var(--band-networks);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+.backprop-estimates {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .625rem;
+}
+.backprop-estimate {
+    display: flex;
+    min-width: 0;
+    min-height: 4.25rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: .125rem;
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.backprop-estimate-now { border-color: var(--band-networks); }
+.backprop-estimate strong { font-size: 1.25rem; }
+.backprop-result-arrow { width: 1.125rem; color: var(--foreground); }
+.backprop-another {
+    padding: .75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-2);
+}
+@media (max-width: 560px) {
+    .backprop-board { grid-template-columns: 1fr; }
+    .backprop-setting { justify-content: flex-start; }
+    .backprop-estimates { grid-template-columns: 1fr; }
+    .backprop-result-arrow {
+        justify-self: center;
+        transform: rotate(90deg);
+    }
+}
