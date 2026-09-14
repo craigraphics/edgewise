@@ -1,3 +1,31 @@
+> **The mark, and being findable, 2026-09-14:** On `favicon-and-seo`, branched
+> from `main` after the transformer experiment. A favicon drawn from the
+> wordmark's own letter — `edgewise.` cropped to its `e`, Newsreader SemiBold on
+> a near-black card with the teal full stop — plus the metadata this site was
+> serving none of. It was `noindex, nofollow` on a live domain with no
+> `robots.txt`, no sitemap, no canonical, no sharing card and no icon at all.
+> **`index: true` is the one behavioural change and it is the owner's to veto**;
+> it is one line in `layout.tsx`, and `robots.ts` allows crawling on its own, so
+> going back to a private draft means changing both. `/lab` is disallowed,
+> `/intro` is crawlable but deliberately out of the sitemap, because whether it
+> is somewhere to send a stranger is still an open question below.
+>
+> `scripts/make-icons.py` draws every size and is committed, so nobody has to
+> redraw an `e` by hand. Three deliberate things: the small frames come from a
+> different `opsz` cut, because at 16px the 16pt cut closes its own counter into
+> a smudge; the 16px frame drops the full stop, which at that size is a stray
+> teal pixel; and it is rendered at 16px rather than reduced from 8x, because
+> reducing loses the hinting. All compared on screen at 5x, not reasoned about.
+> One trap worth keeping: Pillow's ICO writer **silently drops any size larger
+> than the base image and writes a one-frame file** — caught by reading the
+> sizes back out of the file rather than trusting the call.
+>
+> This overlaps PR #2 (`seo-and-icons`, open since 2026-08-21), which does the
+> same job with the craigraphics circle-in-ring instead of the letter. Its
+> reasoning is kept; it should be closed rather than merged alongside. Read
+> `docs/icons-and-seo.md` for the before/after table, what was verified in the
+> served `<head>`, and what was not — no crawler, no card debugger, no phone.
+
 > **If it is still in the chat, why can’t the model use it? 2026-09-13:** On
 > `experiment/14-context-window`, branched from `main` after the one-block
 > experiment. An experiment on `context-window`: a birthday-party chat whose
