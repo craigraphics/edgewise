@@ -1,3 +1,42 @@
+> **If it is still in the chat, why can’t the model use it? 2026-09-13:** On
+> `experiment/14-context-window`, branched from `main` after the one-block
+> experiment. An experiment on `context-window`: a birthday-party chat whose
+> first message is "The door code is 47A.", beside a card headed **Included in
+> this request**. The chat never loses a message; the request has 80 tokens of
+> room. One press of "Add more party notes" takes it over, the oldest message is
+> dropped, and it is the door code — still on screen, visibly outside the
+> request, with the scripted reply changing to "I cannot see a door code in the
+> messages I was given." The fourth press drops two whole messages at once.
+> "Include the code again" puts it back and the same rule finds it, with nothing
+> trained. The counts are real `cl100k_base` in a worker (zero fetches, zero
+> XHRs while driving the whole panel); the 80-token allowance is invented and
+> labelled as such; and when the worker cannot start the panel says so and shows
+> **no numbers at all**, because a made-up count is what this node exists to
+> correct. Read `docs/what-gets-sent.md` for what was verified and what was not
+> — including one real assessed explanation submitted end to end, which moved
+> only this node, `shaky` → `known`. Its PR targets `main`.
+>
+> The scripted reply earns its place through its signature: `answerFrom` takes
+> the included messages and nothing else, and a test hands it a visible history
+> full of door codes and an included list with none. A message of 110 tokens
+> against a capacity of 40 is a real boundary — nothing older than it can be
+> sent either, which is a consequence of this app’s one rule and not a second
+> decision, and the card says why free tokens are left over. The node’s second
+> misconception is on screen after the fact: being sent is not the same as being
+> used.
+>
+> Three things worth keeping. The first action sat 568px below the panel title
+> at 1440 and 734 at 320, against 286–521 across the thirteen siblings, and copy
+> trimming did not close it — the fix was grid placement, **157–293 now**. The
+> stage is the codebase’s first container query, because this panel is drawn
+> inside a pane whose width the viewport does not describe. And a contrast probe
+> that parsed `getComputedStyle` reported **1.25 for everything in both themes**,
+> because computed colours here are `lab(...)` and canvas `fillStyle` does not
+> convert them — the third wrong probe this project has recorded, and identical
+> figures across themes was the tell again. Painted into a canvas instead: worst
+> text 5.55 light and 7.89 dark, and it then caught the meter’s reserve segment
+> at 1.77:1 against its track.
+
 > **What happens inside one repeated block? 2026-09-13:** On
 > `experiment/13-transformer`, branched from `main` after the attention
 > experiment. An experiment on `transformer`: a five-word note about pets, the
