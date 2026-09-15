@@ -1,8 +1,7 @@
 /**
  * Can it answer from the right notice? — for the `rag` node.
  *
- * THE QUESTION. "How can an answer use a notice the model was never trained
- * on?"
+ * THE QUESTION. "How can AI answer from a notice it was never trained on?"
  *
  * The node's two recorded misconceptions are the whole brief. The first is that
  * retrieval adds knowledge to the model; it does not, it adds text to the
@@ -320,6 +319,13 @@ export function answerFrom(notice: Notice, question: string): Answer {
  */
 export function isStale(answeredFrom: string | null, supplied: string | null): boolean {
   return answeredFrom !== null && answeredFrom !== supplied;
+}
+
+/** Whether the learner has actually produced the contrast the closing names. */
+export function answersDiffer(previous: Answer | null, current: Answer | null): boolean {
+  return previous?.kind === 'answer'
+    && current?.kind === 'answer'
+    && previous.time !== current.time;
 }
 
 export type Question = {

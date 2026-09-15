@@ -94,7 +94,7 @@ describe('the experiment registry', () => {
     expect(EXPERIMENT_TITLE_ID.rag).toBe('rag-lab-title');
     expect(EXPERIMENT_ACTION.rag).toBe('Try the notice-search experiment');
     expect(EXPERIMENT_HEADLINE.rag).toBe('A notice found, then an answer from it.');
-    expect(EXPERIMENT_PROMPT.rag).toBe('The same question gave two different closing times, and nothing about the model changed in between. What did change, and where did the words in each answer come from?');
+    expect(EXPERIMENT_PROMPT.rag).toBe('The same question and answering rule gave two different closing times. What changed, and where did each time come from?');
   });
 
   it('registers the working-backwards experiment with its learner-facing copy', () => {

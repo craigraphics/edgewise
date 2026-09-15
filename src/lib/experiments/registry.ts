@@ -118,5 +118,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   transformer: 'One block did two things to the last word, one after the other. What were they, and what did the second block start from?',
   'context-window': 'The door code stayed on screen the whole time, but one reply could not use it. What decides whether the model can use something you typed earlier?',
   'next-token-prediction': 'A whole sentence appeared, one piece at a time. What did the model work out at each step, and what did it read to work out the next one?',
-  rag: 'The same question gave two different closing times, and nothing about the model changed in between. What did change, and where did the words in each answer come from?',
+  rag: 'The same question and answering rule gave two different closing times. What changed, and where did each time come from?',
 };

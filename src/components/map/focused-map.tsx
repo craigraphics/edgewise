@@ -74,7 +74,7 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   transformer: { tint: 'playable-invitation-language', title: 'How do a few simple steps work together on a sentence?', blurb: 'A short note about pets. Run one block and watch the last word’s numbers change twice — once from the words before it, once from the calculation after.', action: 'Run one block' },
   'context-window': { tint: 'playable-invitation-behaviour', title: 'If it is still in the chat, why can’t the model use it?', blurb: 'A party chat with a door code in it. Add a few more notes and watch the code drop out of what actually gets sent.', action: 'Add more party notes' },
   'next-token-prediction': { tint: 'playable-invitation-language', title: 'How can choosing one small piece at a time build a whole sentence?', blurb: 'A bedtime story has started. See what could come next, add the most likely piece, and watch the model ask again from the longer story.', action: 'Add the next piece' },
-  rag: { tint: 'playable-invitation-systems', title: 'How can an answer use a notice the model was never trained on?', blurb: 'A swimming pool with five dated notices. Search them, hand one over, and watch the answer change when the notice does.', action: 'Find a notice' },
+  rag: { tint: 'playable-invitation-systems', title: 'How can AI answer from a notice it was never trained on?', blurb: 'A swimming pool with five dated notices. Search them, hand one over, and watch the answer change when the notice does.', action: 'Search the notices' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */

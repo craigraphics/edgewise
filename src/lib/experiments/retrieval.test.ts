@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  answersDiffer,
   answerFrom,
   CURRENT_NOTICE,
   dayIn,
@@ -274,6 +275,18 @@ describe('a changed source', () => {
     if (first.kind !== 'answer' || second.kind !== 'answer') return;
     expect(first.time).not.toBe(second.time);
     expect(first.line).not.toBe(second.line);
+  });
+
+  it('does not claim two answers differed until two real, different answers exist', () => {
+    const current = answerFrom(notice(CURRENT_NOTICE), QUESTION);
+    const older = answerFrom(notice(OLDER_NOTICE), QUESTION);
+    const missing = answerFrom(notice('lanes'), QUESTION);
+
+    expect(answersDiffer(null, current)).toBe(false);
+    expect(answersDiffer(current, null)).toBe(false);
+    expect(answersDiffer(current, current)).toBe(false);
+    expect(answersDiffer(missing, current)).toBe(false);
+    expect(answersDiffer(current, older)).toBe(true);
   });
 });
 

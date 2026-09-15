@@ -5,6 +5,7 @@ import { ArrowRight, RotateCcw, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
+  answersDiffer,
   answerFrom,
   CURRENT_NOTICE,
   dayIn,
@@ -97,17 +98,14 @@ export function useRagExperiment() {
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
 const spell = (n: number) => WORDS[n] ?? String(n);
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const list = (items: readonly string[]) =>
   items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 
 /** Title, date and version, always visible and never behind a hover. */
 function Provenance({ notice }: { notice: Notice }) {
   return <p className="rag-provenance">
-    <span className="rag-notice-title">{notice.title}</span>
-    <span aria-hidden>·</span>
-    <span>{notice.date}</span>
-    <span aria-hidden>·</span>
+    <span className="rag-notice-title">{notice.title},</span>
+    <span>{notice.date},</span>
     <span>version {notice.version}</span>
   </p>;
 }
@@ -123,7 +121,14 @@ export function RagExperiment({ onExplain, experiment }: Props) {
   const source = noticeById(supplied);
   const stale = isStale(answeredFrom, supplied);
   const shown = answer && !stale ? answer : null;
+  const comparedAnswers = answersDiffer(previous?.answer ?? null, answer);
   const answeredNotice = noticeById(answeredFrom);
+  const comparison = (() => {
+    if (!comparedAnswers || !previous || previous.answer.kind !== 'answer' || answer?.kind !== 'answer' || !answeredNotice) return null;
+    const previousNotice = noticeById(previous.from);
+    if (!previousNotice) return null;
+    return { previousAnswer: previous.answer, previousNotice, currentAnswer: answer, currentNotice: answeredNotice };
+  })();
   const searched = results !== null;
   const nothingMatched = searched && results.length === 0;
   const olderIsSupplied = supplied === OLDER_NOTICE;
@@ -143,12 +148,12 @@ export function RagExperiment({ onExplain, experiment }: Props) {
       }
       const top = results[0];
       const lead = [...top.hits].sort((a, b) => b.contribution - a.contribution)[0];
-      return `The search ranked ${spell(results.length)} ${plural(results.length, 'notice', 'notices')} and picked ${top.notice.title}, ${top.notice.date}. It came top because it uses “${lead.term}” ${spell(lead.occurrences)} ${plural(lead.occurrences, 'time', 'times')}, more than any other notice here. Nothing has been answered yet: that notice is now the only thing the answer can use.`;
+      return `The search picked ${top.notice.title}, ${top.notice.date}. “${lead.term}” gave it the lead with ${spell(lead.occurrences)} matches. It has not answered yet — it has only chosen the text the answer may read.`;
     }
     if (lastAction === 'supply') {
       const held = source ? `${source.title}, ${source.date}` : 'nothing';
-      const next = stale ? ' Press Answer from this notice to run the same rule on it.' : '';
-      return `The passage handed over is now ${held}. The question and the answering rule have not changed.${next}`;
+      const next = stale ? ' Run the answer again to see the effect.' : '';
+      return `Only the supplied notice changed: it is now ${held}. The question and answering rule stayed the same.${next}`;
     }
     if (!answer) return null;
     if (answer.kind === 'no-answer') {
@@ -158,21 +163,21 @@ export function RagExperiment({ onExplain, experiment }: Props) {
     }
     const moved = previous && previous.answer.kind === 'answer' && previous.answer.time !== answer.time;
     if (moved && previous.answer.kind === 'answer') {
-      return `The answer changed because the supplied notice changed. No model was retrained. Same question, same rule, a citation that really does point at the line it used — and ${answer.time} where a moment ago it was ${previous.answer.time}.`;
+      return `Same question, same rule. With a different notice, the answer changed from ${previous.answer.time} to ${answer.time}.`;
     }
-    return `That answer was built from one line of ${answeredNotice?.title}, ${answeredNotice?.date}, and from nothing else — not the other notices, and nothing learned in advance.`;
+    return `The answer copied its time from one line of ${answeredNotice?.title}, ${answeredNotice?.date}. It never read the other four notices.`;
   })();
 
   return <section className="rag-lab" aria-labelledby="rag-lab-title">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A small experiment · runs in your browser</p>
-        <h3 id="rag-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How can an answer use a notice the model was never trained on?</h3>
+        <h3 id="rag-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How can AI answer from a notice it was never trained on?</h3>
       </div>
       {/* Offered only once something has changed: a Reset on an untouched screen is a control with nothing to do. */}
       {(searched || question.id !== FIRST_QUESTION.id) && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
-    <p className="mt-3 max-w-2xl text-base">Marlow Lane Pool has five short notices on its website. Nothing here has ever been trained on them.</p>
+    <p className="mt-3 max-w-2xl text-base">Marlow Lane Pool has five notices. Search will choose one, then the answer will be allowed to read only that notice.</p>
 
     <div className="rag-stage mt-5">
       <div className="rag-question-area">
@@ -187,51 +192,87 @@ export function RagExperiment({ onExplain, experiment }: Props) {
         </div>
       </div>
 
-      <div className="rag-action-area">
-        <div className="flex flex-wrap items-center gap-2">
-          {!searched && <Button size="touch" onClick={find}><Search aria-hidden />Find a notice</Button>}
-          {searched && supplied && (!answer || stale) && <Button size="touch" onClick={answerNow}>Answer from this notice <ArrowRight aria-hidden /></Button>}
-          {canSwap && <Button size="touch" variant={olderIsSupplied ? 'default' : 'outline'} onClick={() => supply(olderIsSupplied ? CURRENT_NOTICE : OLDER_NOTICE)}>
-            {olderIsSupplied ? 'Restore the current notice' : 'Try the older notice'}
-          </Button>}
-          {nothingMatched && <Button size="touch" variant="outline" onClick={reset}><RotateCcw size={14} aria-hidden />Start again</Button>}
-        </div>
-        <div aria-live="polite" className="rag-change mt-3">
-          {changed
-            ? <p className="text-sm">{changed}</p>
-            : <p className="text-muted-foreground text-sm">Two steps, kept apart on purpose. First search the notices. Then answer from the one that was found.</p>}
-        </div>
-      </div>
-
-      <div className="rag-supplied-area">
-        <div className={cn('rag-supplied', !source && 'rag-supplied-empty')}>
-          <p className="eyebrow">What the answer can use</p>
-          {!source ? <p className="text-muted-foreground mt-2 text-sm">Nothing yet. Whatever the search finds goes in here, and the answer may use nothing else.</p> : <>
-            <Provenance notice={source} />
-            <ol className="rag-passage mt-2">
-              {source.lines.map((line, index) => <li key={index} className={cn(shown?.kind === 'answer' && shown.lineIndex === index && 'rag-cited')}>{line}</li>)}
-            </ol>
-          </>}
+      <div className="rag-flow-area">
+        <div className="rag-action-area">
+          <p className="eyebrow mb-2">
+            {!searched ? 'Step 1 · choose a notice' : (!answer || stale) ? 'Step 2 · answer from it' : 'Now change just the notice'}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {!searched && <Button size="touch" onClick={find}><Search aria-hidden />Search the notices</Button>}
+            {searched && supplied && (!answer || stale) && <Button size="touch" onClick={answerNow}>Answer from this notice <ArrowRight aria-hidden /></Button>}
+            {canSwap && <Button size="touch" variant={olderIsSupplied ? 'default' : 'outline'} onClick={() => supply(olderIsSupplied ? CURRENT_NOTICE : OLDER_NOTICE)}>
+              {olderIsSupplied ? 'Restore the current notice' : 'Try the older notice'}
+            </Button>}
+            {nothingMatched && <Button size="touch" variant="outline" onClick={reset}><RotateCcw size={14} aria-hidden />Start again</Button>}
+          </div>
+          <div aria-live="polite" className="rag-change mt-3">
+            {changed
+              ? <p className="text-sm">{changed}</p>
+              : <p className="text-muted-foreground text-sm">Search chooses one notice. Then the answering rule can read that notice — and no other.</p>}
+          </div>
         </div>
 
-        {stale && answer && answeredNotice && <p className="rag-stale mt-2 text-sm">The answer below still came from the {answeredNotice.date} notice. It has not been rebuilt.</p>}
+        <div className="rag-supplied-area">
+          <div className={cn('rag-supplied', !source && 'rag-supplied-empty')}>
+            <p className="eyebrow">Notice sent with the question</p>
+            {!source ? <p className="text-muted-foreground mt-2 text-sm">Nothing yet. Search will put one notice here. The answer cannot read the other four.</p> : <>
+              <Provenance notice={source} />
+              <ol className="rag-passage mt-2">
+                {source.lines.map((line, index) => <li key={index} className={cn(shown?.kind === 'answer' && shown.lineIndex === index && 'rag-cited')}>{line}</li>)}
+              </ol>
+            </>}
+          </div>
 
-        {answer && answeredNotice && <div className={cn('rag-answer mt-2', stale && 'rag-answer-stale')} aria-live="polite">
-          <p className="eyebrow">The answer · a template, not a live AI reply</p>
-          {answer.kind === 'answer' ? <>
-            <p className="font-display mt-2 text-xl sm:text-2xl">{answer.text}</p>
-            <div className="rag-citation mt-3">
-              <p className="text-muted-foreground text-2xs">From line {answer.lineIndex + 1} of:</p>
-              <Provenance notice={answeredNotice} />
-              <p className="rag-quote mt-1">“{answer.line}”</p>
+          {stale && answer && answeredNotice && <p className="rag-stale mt-2 text-sm">The answer below still came from the {answeredNotice.date} notice. It has not been rebuilt.</p>}
+
+          {answer && answeredNotice && <div className={cn('rag-answer mt-2', stale && 'rag-answer-stale')} aria-live="polite">
+            <p className="eyebrow">The answer · scripted, not a live AI reply</p>
+            {answer.kind === 'answer' ? <>
+              <p className="font-display mt-2 text-xl sm:text-2xl">{answer.text}</p>
+              <div className="rag-citation mt-3">
+                <p className="text-muted-foreground text-2xs">From line {answer.lineIndex + 1} of:</p>
+                <Provenance notice={answeredNotice} />
+                <p className="rag-quote mt-1">“{answer.line}”</p>
+              </div>
+            </> : <>
+              <p className="font-display mt-2 text-xl sm:text-2xl">This notice does not give the answer.</p>
+              <p className="mt-2 text-sm">{answer.reason === 'no-day-in-question'
+                ? 'The question names no day, so there is nothing to look for.'
+                : `No line in this notice gives a closing time for ${day}.`}</p>
+            </>}
+          </div>}
+
+          {comparison && <div className="rag-contrast mt-2">
+            <p className="eyebrow">Only one thing changed</p>
+            <div className="rag-contrast-pair mt-3">
+              <div className="rag-contrast-answer">
+                <p className="text-muted-foreground text-xs">Before · {comparison.previousNotice.date}</p>
+                <p className="font-display mt-1 text-2xl">{comparison.previousAnswer.time}</p>
+              </div>
+              <ArrowRight className="text-muted-foreground" size={18} aria-hidden />
+              <div className="rag-contrast-answer">
+                <p className="text-muted-foreground text-xs">Now · {comparison.currentNotice.date}</p>
+                <p className="font-display mt-1 text-2xl">{comparison.currentAnswer.time}</p>
+              </div>
             </div>
-          </> : <>
-            <p className="font-display mt-2 text-xl sm:text-2xl">This notice does not give the answer.</p>
-            <p className="mt-2 text-sm">{answer.reason === 'no-day-in-question'
-              ? 'The question names no day, so there is nothing to look for.'
-              : `No line in this notice gives a closing time for ${day}.`}</p>
-          </>}
-          <p className="text-muted-foreground mt-3 text-xs">This is a short template. It reads one line of the notice above and fills in the subject and the time. It cannot see the other notices, and it writes nothing of its own.</p>
+            <p className="mt-3 text-sm"><strong>Same question. Same answering rule.</strong> Only the notice handed to it changed.</p>
+          </div>}
+        </div>
+
+        {answers > 0 && <div className="rag-name">
+          <p className="eyebrow">What just happened has a name</p>
+          <p className="font-display mt-2 text-xl">Search finds a passage. The passage goes into the request. The answer reads it. That is retrieval, or RAG.</p>
+          <ul className="rag-points mt-3">
+            <li><strong>The notice is not learned.</strong> In a real RAG system, a copy goes into the current request. Training stays untouched.</li>
+            <li><strong>Search chose what the answer could read.</strong> Everything downstream depended on that source being the right one.</li>
+            {comparedAnswers && <li><strong>A citation is not a truth check.</strong> The 6pm answer cites the old notice perfectly. A real model can also misread a good source or add a detail that is not there.</li>}
+          </ul>
+        </div>}
+
+        {comparedAnswers && <div className="border-border border-t pt-4">
+          <p className="font-display text-xl">The same question and answering rule gave two different closing times. What changed, and where did each time come from?</p>
+          <p className="text-muted-foreground mt-2 text-sm">Explain the mechanism in your own words if you want to. Trying this experiment leaves every mark on your map unchanged.</p>
+          <Button className="mt-3" size="touch" onClick={onExplain}>Explain what happened <ArrowRight aria-hidden /></Button>
         </div>}
       </div>
 
@@ -246,7 +287,6 @@ export function RagExperiment({ onExplain, experiment }: Props) {
           ? <ol className="rag-notices mt-2">
             {NOTICES.map(notice => <li key={notice.id} className="rag-notice">
               <Provenance notice={notice} />
-              <ol className="rag-passage mt-1">{notice.lines.map((line, index) => <li key={index}>{line}</li>)}</ol>
             </li>)}
           </ol>
           : nothingMatched
@@ -277,12 +317,11 @@ export function RagExperiment({ onExplain, experiment }: Props) {
                         ? <span className="rag-chip">Handed over</span>
                         : <Button size="touch" variant="outline" onClick={() => supply(match.notice.id)} aria-label={`Hand over ${match.notice.title}, ${match.notice.date}`}>Use this one</Button>}
                     </div>
-                    <ol className="rag-passage mt-2">{match.notice.lines.map((line, index) => <li key={index}>{line}</li>)}</ol>
                   </li>;
                 })}
               </ol>
               <p className="text-muted-foreground mt-3 text-xs">
-                Each score adds up one number per shared word: how often the notice uses it, divided by how many notices contain it at all. A word in few notices counts for more.
+                Choose any result to hand it to the answer and read its full text. Scores come from the shared words shown on each row.
               </p>
               <p className="rag-dates mt-2 text-sm">
                 The top notice came first because of how it is worded, not because it is newer. <strong>This search never looks at the dates or the versions</strong> — only at the words. That is why an out-of-date notice can be handed over without anything noticing.
@@ -290,24 +329,6 @@ export function RagExperiment({ onExplain, experiment }: Props) {
             </>}
       </div>
     </div>
-
-    {answers > 0 && <div className="rag-name mt-5">
-      <p className="eyebrow">What just happened has a name</p>
-      <p className="font-display mt-2 text-xl">Searching for a passage and answering from it is called retrieval, or RAG.</p>
-      <p className="mt-2 text-sm">It is how an assistant answers about a document it was never trained on: something searches, and the passage it finds is put into the request as text, next to the question.</p>
-      <ul className="rag-points mt-3">
-        <li><strong>Nothing was added to the model.</strong> The notice went into the request. Whatever a model learned in training is untouched by this, and nothing here was retrained. Take the passage away and the answer goes with it.</li>
-        <li><strong>The search chose the source.</strong> It ranked by shared words and it never read a date. Everything downstream depends on that choice being right, because the answer works with whatever it is handed.</li>
-        <li><strong>A citation says where the text came from.</strong> It does not say the source is current, or that the answer is right. An answer built from the January notice cites a real line perfectly and gives last winter&rsquo;s closing time.</li>
-        <li><strong>Retrieval narrows what a model works from. It is not a cure for invented answers.</strong> The template here can only repeat a line it was handed. A real language model given the same good passage can still misread it, or add a detail that is not in it.</li>
-      </ul>
-    </div>}
-
-    {answers > 0 && <div className="border-border mt-5 border-t pt-5">
-      <p className="font-display text-xl">The same question gave two different closing times, and nothing about the model changed in between. What did change, and where did the words in each answer come from?</p>
-      <p className="text-muted-foreground mt-2 text-sm">Explain the mechanism in your own words if you want to. Trying this experiment leaves every mark on your map unchanged.</p>
-      <Button className="mt-3" size="touch" onClick={onExplain}>Explain what happened <ArrowRight aria-hidden /></Button>
-    </div>}
 
     <details className="rag-details mt-5">
       <summary className="rag-summary">Try another example</summary>

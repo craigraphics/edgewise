@@ -3155,30 +3155,30 @@ fieldset:disabled .neuron-choice { cursor: default; }
  * The question spans the top in both layouts, because it is the fixed thing
  * everything else is read against and it must not move.
  *
- * Two columns: the collection on the left, the action at the top of the right
- * column with the passage it hands over — and the answer built from that
- * passage — directly beneath it. One column: the action comes second, above
- * both surfaces it moves, and the five notices go last. Notices first in one
- * column is 400px of reading before anything can be pressed, which is the
- * defect this project has now found sixteen times.
+ * Two columns: the collection on the left, with the complete action → supplied
+ * passage → answer sequence held together on the right. These belong in one
+ * wrapper: separate grid rows let the tall notice list push the passage far
+ * below its action at intermediate widths. One column: that sequence comes
+ * second and the five notices go last. Notices first in one column is 400px of
+ * reading before anything can be pressed, which is the defect this project has
+ * now found sixteen times.
  */
 .rag-stage {
     display: grid;
     gap: .75rem;
-    grid-template-areas: "question" "action" "supplied" "notices";
+    grid-template-areas: "question" "flow" "notices";
 }
 .rag-question-area { grid-area: question; min-width: 0; }
-.rag-action-area { grid-area: action; min-width: 0; }
-.rag-supplied-area { grid-area: supplied; min-width: 0; }
+.rag-flow-area { grid-area: flow; display: grid; gap: .75rem; min-width: 0; align-self: start; }
+.rag-action-area, .rag-supplied-area { min-width: 0; }
 .rag-notices-area { grid-area: notices; min-width: 0; }
 
-@container (min-width: 34rem) {
+@container (min-width: 44rem) {
     .rag-stage {
         grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
         grid-template-areas:
             "question question"
-            "notices  action"
-            "notices  supplied";
+            "notices  flow";
         align-items: start;
     }
 }
@@ -3241,6 +3241,26 @@ fieldset:disabled .neuron-choice { cursor: default; }
     background: var(--surface-2);
 }
 .rag-quote { font-size: .8125rem; line-height: 1.5; overflow-wrap: anywhere; }
+
+.rag-contrast {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-systems);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.rag-contrast-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .625rem;
+}
+.rag-contrast-answer {
+    min-width: 0;
+    padding: .625rem .75rem;
+    border-radius: .5rem;
+    background: var(--surface-2);
+}
 
 .rag-notices { display: grid; gap: .5rem; }
 .rag-notice {

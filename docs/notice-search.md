@@ -6,16 +6,14 @@ mechanism. Reached from the concept's inspector ("Try the notice-search
 experiment"), from its own invitation on the focused map, from a neighbour's
 `Try it`, and at `#play/rag`.
 
-## The question, the first action, and the result sentence
-
-Written before any code, and unchanged by it.
+## The learning spine
 
 | | |
 |---|---|
-| **Opening question** | *How can an answer use a notice the model was never trained on?* |
-| **First action** | **Find a notice** |
-| **Result sentence** | *"The search ranked five notices and picked Saturday opening hours, 14 March 2026. It came top because it uses “saturday” three times, more than any other notice here. Nothing has been answered yet: that notice is now the only thing the answer can use."* |
-| **The payoff sentence** | *"The answer changed because the supplied notice changed. No model was retrained."* |
+| **Opening question** | *How can AI answer from a notice it was never trained on?* |
+| **First action** | **Search the notices** |
+| **Result sentence** | *"The search picked Saturday opening hours, 14 March 2026. “Saturday” gave it the lead with three matches. It has not answered yet — it has only chosen the text the answer may read."* |
+| **The payoff** | **4pm → 6pm**, beside *"Same question. Same answering rule. Only the notice handed to it changed."* |
 | **The connecting sentence** | *"A request can include extra text. Search helps choose which text to include."* |
 
 ## The shape of it
@@ -23,10 +21,10 @@ Written before any code, and unchanged by it.
 Marlow Lane Pool has five short notices on its website. The question is fixed at
 the top of the panel and never moves: *When does the pool close on Saturday?*
 
-**Find a notice** ranks all five and puts the top one into a card headed **What
-the answer can use**. **Answer from this notice** builds a short answer from that
-passage and quotes the exact line it came from, with the notice's title, date and
-version beside it — no hover needed anywhere.
+**Search the notices** ranks all five and puts the top one into a card headed
+**Notice sent with the question**. **Answer from this notice** builds a short
+answer from that passage and quotes the exact line it came from, with the
+notice's title, date and version beside it — no hover needed anywhere.
 
 Then **Try the older notice**. The question does not change and neither does the
 answering rule. Only the passage does. The answer already on screen is marked
@@ -35,11 +33,18 @@ the January notice: *"The pool closes at 6pm on Saturday."* Fluent, correctly
 cited into a real line, and last winter's closing time. **Restore the current
 notice** puts it back.
 
+The two results no longer have to be remembered. Once both exist, the main flow
+shows them together as **Before · 14 March · 4pm** and **Now · 6 January · 6pm**,
+then names the invariant: same question, same answering rule, only the notice
+changed. The RAG definition and Explain-back prompt follow that comparison
+before the ranked collection; search details support the idea rather than
+delaying it.
+
 The whole walk, driven in the browser:
 
 | Press | Handed over | Answer | Citation |
 |---|---|---|---|
-| Find a notice | Saturday opening hours · 14 March 2026 · v2 | — | — |
+| Search the notices | Saturday opening hours · 14 March 2026 · v2 | — | — |
 | Answer from this notice | (unchanged) | The pool closes at **4pm** on Saturday. | line 1 of the 14 March notice |
 | Try the older notice | Saturday opening hours · 6 January 2026 · v1 | marked stale, not rebuilt | — |
 | Answer from this notice | (unchanged) | The pool closes at **6pm** on Saturday. | line 1 of the 6 January notice |
@@ -51,6 +56,11 @@ The whole walk, driven in the browser:
 Every score is counted from the text of the five notices. For each word of the
 question that survives the common-word list, the score adds **how often this
 notice uses it, divided by how many notices contain it at all**.
+
+The default list is compact: title, date, version, score and matching words.
+Handing over any result reveals its complete text in **Notice sent with the
+question**, so every score remains inspectable without making five full passages
+part of the main reading path.
 
 | | score | shared words |
 |---|---|---|
@@ -128,20 +138,23 @@ where positions in space are real.
   *"The rule was handed Lane swimming times, 12 February 2026, and it can use
   nothing else."*
 
-The name card — *"Searching for a passage and answering from it is called
-retrieval, or RAG"* — is earned only once a real answer has been produced. A
+The name card — *"Search finds a passage. The passage goes into the request. The
+answer reads it. That is retrieval, or RAG"* — is earned only once a real answer has been produced. A
 notice that gave no answer is a real and useful outcome, and it is not that.
+Its first two points name the mechanism at that moment. The citation warning,
+the hallucination warning and **Explain what happened** wait until the learner
+has actually produced two different answers; they no longer describe a contrast
+that has not happened yet.
 
 ## The node's two misconceptions, on screen after the fact
 
-1. *Believing retrieval adds knowledge to the model.* — **"Nothing was added to
-   the model. The notice went into the request. Whatever a model learned in
-   training is untouched by this, and nothing here was retrained. Take the
-   passage away and the answer goes with it."**
-2. *Assuming retrieval fixes hallucination.* — **"Retrieval narrows what a model
-   works from. It is not a cure for invented answers."** And, immediately above
-   it, the thing the learner has just done: an answer built from the January
-   notice cites a real line perfectly and gives last winter's closing time.
+1. *Believing retrieval adds knowledge to the model.* — **"The notice is not
+   learned. In a real RAG system, a copy goes into the current request. Training
+   stays untouched."**
+2. *Assuming retrieval fixes hallucination.* — **"A citation is not a truth
+   check."** And, immediately above it, the thing the learner has just done: an
+   answer built from the January notice cites a real line perfectly and gives
+   last winter's closing time.
 
 The `simplificationCost` — a wrong retrieval yields a fluent, well-cited, wrong
 answer — is the whole second half of the experiment rather than a sentence.
@@ -152,8 +165,10 @@ Chrome via BrowserOS neo, against `pnpm dev`.
 
 | Check | Result |
 |---|---|
-| Panel title → first action, 1230×842 | **297px** (siblings: 190 / 198 / 286–525) |
-| Panel title → first action, 390 / 320 | **386 / 484px** |
+| Panel title → first action, current 660×619 workspace | **323px** |
+| Action → supplied passage, 660×619 workspace | **12px** (was **1,109px**) |
+| First completed answer, same workspace | source and the complete **4pm** answer fit together in the viewport |
+| Completed contrast, same workspace | **4pm** and **6pm** visible together in one card |
 | Page scroll, seven widths 320–1920 | **0** vertical, **0** horizontal |
 | Clipped right / controls off right | **0 / none**, at every width |
 | Same, **after resizing a loaded page** through all seven | **0 / none** |
@@ -170,6 +185,10 @@ Chrome via BrowserOS neo, against `pnpm dev`.
 | 20 rapid alternating press rounds | ends consistent; answer and sentence agree |
 | Leave to another idea and come back | search, supplied notice and answer all survive |
 | Close the explanation and reopen it | the typed draft survives |
+
+The seven-width and resize rows in this table were measured before the final
+copy/ordering pass. The structural layout did not change after the 44rem
+breakpoint fix, but that full matrix has not been repeated.
 
 The ten-mark model used for the invariance check included `rag` itself and both
 its prerequisites (`context-window`, `embeddings`), not an empty one.
@@ -201,8 +220,29 @@ its prerequisites (`context-window`, `embeddings`), not an empty one.
    comes out of the question and is title-cased for the sentence it sits in.
 6. **Three facts ran together for anything reading the text** rather than the
    picture: *"Lane swimming times12 February 2026version 1"*. The flex gap
-   separated them visually and nothing separated them otherwise. Aria-hidden
-   middots now, so a screen reader still hears the three as one natural phrase.
+   separated them visually and nothing separated them otherwise. Plain commas
+   now separate title, date and version in both the picture and the accessibility
+   tree.
+7. **The action and its consequence separated by 1,109px at a real workspace
+   width.** At 660×619, the container crossed the old two-column breakpoint, and the
+   tall notice list made the shared grid row 1,296px high. **What the answer can
+   use** began at 1,721px while the action ended at 612px. The action, supplied
+   passage and answer are one flow now; the passage begins 12px after the action
+   at the same width. The side-by-side layout now waits for 44rem of room, so a
+   compact pane does not squeeze the notices into a 225px column.
+8. **The closing claimed a contrast before the learner had made one.** After
+   the first answer, the panel already said *"The same question gave two
+   different closing times"*, exposed the January citation lesson and offered
+   Explain back. Those now wait for two real answers whose times differ, with a
+   pure helper and unit test holding the gate.
+9. **The finished app could scroll down into an empty page.** The first fix for
+   defect 6 used absolutely positioned `sr-only` commas. Their static positions
+   came from deep inside `.focus-map`, escaped the scrolling pane's clip, and
+   made the document 1,475px tall around a 619px app shell. This is the same
+   trap already recorded in `generalization-experiment.tsx`. Visible commas need
+   no duplicate accessible text: the document is 619px tall again, a forced
+   window scroll stays at zero, and both inner panes still reach their own ends.
+   `/intro` remains intentionally scrollable (3,961px in the same viewport).
 
 ## A wrong probe, recorded rather than hidden
 

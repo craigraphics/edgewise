@@ -1,8 +1,8 @@
 > **Can it answer from the right notice? 2026-09-14:** On `experiment/16-rag`,
 > branched from `main` after the one-piece-at-a-time experiment. An experiment on
 > `rag`: a swimming pool, five short dated notices, and one fixed question —
-> *When does the pool close on Saturday?* **Find a notice** ranks them and puts
-> the top one into **What the answer can use**; **Answer from this notice** gives
+> *When does the pool close on Saturday?* **Search the notices** ranks them and puts
+> the top one into **Notice sent with the question**; **Answer from this notice** gives
 > "The pool closes at 4pm on Saturday" and quotes the exact line it came from,
 > with the notice's title, date and version beside it. Then **Try the older
 > notice**: the question does not move and neither does the answering rule, only
@@ -27,7 +27,7 @@
 > experiment. Both honest cases are reachable — a question that matches nothing,
 > and a notice that matched but gives no answer — and neither is stated as a law.
 >
-> Six defects found the way this project keeps finding them. The first action sat
+> Nine defects found the way this project keeps finding them. The first action sat
 > **657px** below the panel title at 320px against 286–525 across the siblings
 > measured as a control in the same run (**484 now, 297 at 1230**); a question
 > button hung off the right at 320px, the shared `Button` being
@@ -35,12 +35,31 @@
 > records; the change sentence repeated the stale banner word for word; the name
 > card was unlocked by a *no-answer*; the day was hard-coded and then lowercase;
 > and title, date and version ran together for anything taking the text rather
-> than the picture. Plus a fourth wrong probe, with the same tell as the other
+> than the picture. The first accessibility fix for those separators used
+> absolutely positioned `sr-only` commas, which escaped the scrolling pane and
+> made the 619px app shell sit above 856px of empty document scroll; plain
+> visible commas fix both readings without duplicate nodes. A later review found
+> that at a 660px split-pane width the
+> tall notice list pushed **What the answer can use** 1,109px below its action,
+> so the action, supplied passage and answer are one grid item now. It also
+> found the closing question claiming that two answers had differed after only
+> one had been made; the contrast, its two caution points and Explain back now
+> wait for two real answers with different times. Plus a fourth wrong probe,
+> with the same tell as the other
 > three — **identical contrast figures in both themes**, because the theme here
 > is a class on `<html>` and the probe set `data-theme`. Corrected: worst text
 > 5.55 light and 7.89 dark. And a trap reproduced while checking: a hash-only
 > navigation carries React state across it, so every case was re-run through
 > `about:blank` first.
+>
+> A final clarity pass removed the test-harness feeling from the main path. The
+> five full passages no longer compete for attention: the ranked list is compact
+> and a notice's text appears where it is handed to the answer. Each action names
+> its step, the prose is shorter, and the vanished 4pm answer is now kept beside
+> the 6pm answer in a **Before / Now** card. The RAG definition and Explain back
+> sit in that answer flow before the ranking details. At the measured 660×619
+> workspace the first action is 323px below the panel title, the supplied notice
+> stays 12px below its action, and the completed 4pm answer fits in the same view.
 >
 > Nothing here touches the map — a populated ten-mark model, `rag` and both
 > prerequisites included, stayed byte-identical through the whole panel. **No
