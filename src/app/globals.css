@@ -3122,3 +3122,212 @@ fieldset:disabled .neuron-choice { cursor: default; }
     text-underline-offset: 4px;
 }
 .next-token-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+.playable-invitation-systems {
+    border-color: var(--band-systems);
+    background: color-mix(in oklch, var(--band-systems) 7%, var(--surface-0));
+}
+.playable-invitation-systems:hover { background: color-mix(in oklch, var(--band-systems) 12%, var(--surface-0)); }
+
+/*
+ * Can it answer from the right notice? — the `rag` experiment.
+ *
+ * The first `systems`-band panel, and nothing here prints a value in
+ * `--band-systems`. `BANDS_USED_AS_TEXT` in `globals.test.ts` records that only
+ * `foundations` clears AA as text on these cards, and `systems` has not been
+ * measured for it. It carries the score bars and the leading edges, which are
+ * graphics held to 3:1 by the band-accent block, and every score is printed as
+ * text beside its bar.
+ *
+ * The stage is a CONTAINER query, for the reason recorded above the context
+ * experiment: this panel is drawn inside the focused-map pane, whose width the
+ * viewport does not describe.
+ */
+.rag-lab {
+    container-type: inline-size;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+/*
+ * The question spans the top in both layouts, because it is the fixed thing
+ * everything else is read against and it must not move.
+ *
+ * Two columns: the collection on the left, the action at the top of the right
+ * column with the passage it hands over — and the answer built from that
+ * passage — directly beneath it. One column: the action comes second, above
+ * both surfaces it moves, and the five notices go last. Notices first in one
+ * column is 400px of reading before anything can be pressed, which is the
+ * defect this project has now found sixteen times.
+ */
+.rag-stage {
+    display: grid;
+    gap: .75rem;
+    grid-template-areas: "question" "action" "supplied" "notices";
+}
+.rag-question-area { grid-area: question; min-width: 0; }
+.rag-action-area { grid-area: action; min-width: 0; }
+.rag-supplied-area { grid-area: supplied; min-width: 0; }
+.rag-notices-area { grid-area: notices; min-width: 0; }
+
+@container (min-width: 34rem) {
+    .rag-stage {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+        grid-template-areas:
+            "question question"
+            "notices  action"
+            "notices  supplied";
+        align-items: start;
+    }
+}
+
+.rag-question,
+.rag-supplied,
+.rag-answer,
+.rag-empty,
+.rag-name {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.rag-question, .rag-supplied { border-left: 3px solid var(--band-systems); }
+.rag-question p { overflow-wrap: anywhere; }
+
+/* Nothing handed over yet is a shape, not only a sentence. */
+.rag-supplied-empty { border-style: dashed; border-left-style: dashed; background: transparent; }
+
+/* Room for the sentence, so a press does not shuffle the button under the cursor. */
+.rag-change { min-height: 4.5rem; }
+
+.rag-provenance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .125rem .625rem;
+    margin-top: .5rem;
+    color: var(--muted-foreground);
+    font-size: .75rem;
+}
+.rag-notice-title { color: var(--foreground); font-weight: 500; }
+
+.rag-passage {
+    display: grid;
+    gap: .25rem;
+    font-size: .8125rem;
+    line-height: 1.55;
+}
+.rag-passage li { overflow-wrap: anywhere; }
+/* The cited line, marked by a rule down its edge as well as by weight. */
+.rag-cited {
+    padding-left: .5rem;
+    border-left: 3px solid var(--band-systems);
+    font-weight: 600;
+}
+
+.rag-stale {
+    padding: .625rem .75rem;
+    border: 1px dashed var(--border);
+    border-radius: .625rem;
+}
+/* A stale answer is set back, never hidden: it is the thing being compared. */
+.rag-answer-stale { border-style: dashed; background: transparent; }
+
+.rag-citation {
+    padding: .625rem .75rem;
+    border-radius: .5rem;
+    background: var(--surface-2);
+}
+.rag-quote { font-size: .8125rem; line-height: 1.5; overflow-wrap: anywhere; }
+
+.rag-notices { display: grid; gap: .5rem; }
+.rag-notice {
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+}
+.rag-notice > .rag-provenance:first-child { margin-top: 0; }
+.rag-notice-supplied { border-left: 3px solid var(--band-systems); }
+
+.rag-rank-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .5rem .75rem;
+}
+.rag-rank {
+    min-width: 1.25rem;
+    color: var(--muted-foreground);
+    font-size: .8125rem;
+    line-height: 1.6;
+}
+
+.rag-score {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .25rem;
+    color: var(--muted-foreground);
+}
+.rag-bar {
+    display: block;
+    flex: 1 1 auto;
+    max-width: 7rem;
+    height: .4375rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+}
+.rag-bar span { display: block; height: 100%; background: var(--band-systems); }
+
+.rag-hits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .375rem;
+    margin-top: .375rem;
+}
+.rag-hit {
+    padding: .0625rem .375rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: .6875rem;
+}
+.rag-chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: .125rem .5rem;
+    border: 1px solid var(--band-systems);
+    border-radius: 999px;
+    font-size: .75rem;
+}
+
+.rag-dates {
+    padding: .625rem .75rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-systems);
+    border-radius: .625rem;
+}
+
+.rag-points { display: grid; gap: .625rem; font-size: .875rem; }
+.rag-points li { padding-left: .875rem; border-left: 2px solid var(--border); }
+
+.rag-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.rag-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.rag-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
