@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   answerFrom,
   CURRENT_NOTICE,
+  dayIn,
   FIRST_QUESTION,
   isStale,
   NOTICES,
@@ -75,7 +76,7 @@ export function useRagExperiment() {
     setAnswer(next);
     setAnsweredFrom(source.id);
     setLastAction('answer');
-    setAnswers(count => count + 1);
+    if (next.kind === 'answer') setAnswers(count => count + 1);
   }, [answer, answeredFrom, question, supplied]);
 
   const choose = useCallback((next: Question) => {
@@ -104,7 +105,9 @@ const list = (items: readonly string[]) =>
 function Provenance({ notice }: { notice: Notice }) {
   return <p className="rag-provenance">
     <span className="rag-notice-title">{notice.title}</span>
+    <span aria-hidden>·</span>
     <span>{notice.date}</span>
+    <span aria-hidden>·</span>
     <span>version {notice.version}</span>
   </p>;
 }
@@ -114,6 +117,9 @@ export function RagExperiment({ onExplain, experiment }: Props) {
   const { question, results, supplied, answer, answeredFrom, previous, lastAction, answers, find, supply, answerNow, choose, reset } = experiment;
 
   const terms = queryTerms(question.text);
+  /* `dayIn` returns the stem, and this is the middle of a sentence on screen. */
+  const asked = dayIn(question.text);
+  const day = asked ? asked.charAt(0).toUpperCase() + asked.slice(1) : null;
   const source = noticeById(supplied);
   const stale = isStale(answeredFrom, supplied);
   const shown = answer && !stale ? answer : null;
@@ -137,26 +143,24 @@ export function RagExperiment({ onExplain, experiment }: Props) {
       }
       const top = results[0];
       const lead = [...top.hits].sort((a, b) => b.contribution - a.contribution)[0];
-      return `The search ranked ${spell(results.length)} ${plural(results.length, 'notice', 'notices')} and picked ${top.notice.title}, ${top.notice.date}. It came top because it uses “${lead.term}” ${lead.occurrences} ${plural(lead.occurrences, 'time', 'times')}, more than any other notice here. Nothing has been answered yet: that notice is now the only thing the answer can use.`;
+      return `The search ranked ${spell(results.length)} ${plural(results.length, 'notice', 'notices')} and picked ${top.notice.title}, ${top.notice.date}. It came top because it uses “${lead.term}” ${spell(lead.occurrences)} ${plural(lead.occurrences, 'time', 'times')}, more than any other notice here. Nothing has been answered yet: that notice is now the only thing the answer can use.`;
     }
     if (lastAction === 'supply') {
       const held = source ? `${source.title}, ${source.date}` : 'nothing';
-      const before = answer && answeredNotice && stale
-        ? ` The answer below still came from the ${answeredNotice.date} notice.`
-        : '';
-      return `The passage handed over is now ${held}. The question and the answering rule have not changed.${before}`;
+      const next = stale ? ' Press Answer from this notice to run the same rule on it.' : '';
+      return `The passage handed over is now ${held}. The question and the answering rule have not changed.${next}`;
     }
     if (!answer) return null;
     if (answer.kind === 'no-answer') {
       return answer.reason === 'no-day-in-question'
         ? 'This question names no day, so the rule has nothing to look for. It stops rather than supplying a time from somewhere else.'
-        : `This notice does not give the answer. No line in it gives a closing time for Saturday, so the rule stops rather than taking one from another notice.`;
+        : `The rule was handed ${answeredNotice?.title}, ${answeredNotice?.date}, and it can use nothing else. No line in it gives a closing time for ${day}, so it stops rather than taking one from another notice.`;
     }
     const moved = previous && previous.answer.kind === 'answer' && previous.answer.time !== answer.time;
     if (moved && previous.answer.kind === 'answer') {
-      return `${answer.text} The answer changed because the supplied notice changed. No model was retrained. Same question, same rule, a citation that really does point at the line it used — and ${answer.time} where a moment ago it was ${previous.answer.time}.`;
+      return `The answer changed because the supplied notice changed. No model was retrained. Same question, same rule, a citation that really does point at the line it used — and ${answer.time} where a moment ago it was ${previous.answer.time}.`;
     }
-    return `${answer.text} That was built from one line of ${answeredNotice?.title}, ${answeredNotice?.date}, and from nothing else — not the other notices, and nothing learned in advance.`;
+    return `That answer was built from one line of ${answeredNotice?.title}, ${answeredNotice?.date}, and from nothing else — not the other notices, and nothing learned in advance.`;
   })();
 
   return <section className="rag-lab" aria-labelledby="rag-lab-title">
@@ -168,18 +172,17 @@ export function RagExperiment({ onExplain, experiment }: Props) {
       {/* Offered only once something has changed: a Reset on an untouched screen is a control with nothing to do. */}
       {(searched || question.id !== FIRST_QUESTION.id) && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
-    <p className="mt-3 max-w-2xl text-base">Marlow Lane Pool put five short notices on its website. Nothing here has ever been trained on them. You choose which one gets handed over, and an answer is built from that one alone.</p>
-    <p className="text-muted-foreground mt-2 max-w-2xl text-sm">The pool, its notices and every date and time in them are invented for this example.</p>
+    <p className="mt-3 max-w-2xl text-base">Marlow Lane Pool has five short notices on its website. Nothing here has ever been trained on them.</p>
 
     <div className="rag-stage mt-5">
       <div className="rag-question-area">
         <div className="rag-question">
           <p className="eyebrow">The question · it does not change</p>
-          <p className="font-display mt-2 text-2xl">{question.text}</p>
+          <p className="font-display mt-2 text-xl sm:text-2xl">{question.text}</p>
           <p className="text-muted-foreground mt-2 text-xs">
             {terms.length > 0
-              ? <>The search looks for {list(terms.map(term => `“${term}”`))}. Common words are dropped first.</>
-              : <>Every word in this question is a common word, so the search has nothing to look for.</>}
+              ? <>Common words dropped, the search looks for {list(terms.map(term => `“${term}”`))}.</>
+              : <>Every word here is a common word, so the search has nothing to look for.</>}
           </p>
         </div>
       </div>
@@ -211,22 +214,22 @@ export function RagExperiment({ onExplain, experiment }: Props) {
           </>}
         </div>
 
-        {stale && answer && answeredNotice && <p className="rag-stale mt-2 text-sm">The passage handed over has changed. The answer below still came from the {answeredNotice.date} notice. Press <strong>Answer from this notice</strong> to run the same rule on the new one.</p>}
+        {stale && answer && answeredNotice && <p className="rag-stale mt-2 text-sm">The answer below still came from the {answeredNotice.date} notice. It has not been rebuilt.</p>}
 
-        {answer && answeredNotice && <div className={cn('rag-answer mt-2', stale && 'rag-answer-stale')}>
+        {answer && answeredNotice && <div className={cn('rag-answer mt-2', stale && 'rag-answer-stale')} aria-live="polite">
           <p className="eyebrow">The answer · a template, not a live AI reply</p>
           {answer.kind === 'answer' ? <>
-            <p className="font-display mt-2 text-2xl">{answer.text}</p>
+            <p className="font-display mt-2 text-xl sm:text-2xl">{answer.text}</p>
             <div className="rag-citation mt-3">
               <p className="text-muted-foreground text-2xs">From line {answer.lineIndex + 1} of:</p>
               <Provenance notice={answeredNotice} />
               <p className="rag-quote mt-1">“{answer.line}”</p>
             </div>
           </> : <>
-            <p className="font-display mt-2 text-2xl">This notice does not give the answer.</p>
+            <p className="font-display mt-2 text-xl sm:text-2xl">This notice does not give the answer.</p>
             <p className="mt-2 text-sm">{answer.reason === 'no-day-in-question'
               ? 'The question names no day, so there is nothing to look for.'
-              : `Nothing in ${answeredNotice.title}, ${answeredNotice.date} gives a closing time for Saturday. The rule says so rather than taking one from another notice.`}</p>
+              : `No line in this notice gives a closing time for ${day}.`}</p>
           </>}
           <p className="text-muted-foreground mt-3 text-xs">This is a short template. It reads one line of the notice above and fills in the subject and the time. It cannot see the other notices, and it writes nothing of its own.</p>
         </div>}
@@ -235,8 +238,9 @@ export function RagExperiment({ onExplain, experiment }: Props) {
       <div className="rag-notices-area">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h4 className="font-display text-xl">The pool&rsquo;s notices</h4>
-          <p className="text-muted-foreground text-xs">{searched ? `ranked by shared words` : `${spell(NOTICES.length)} notices · not yet searched`}</p>
+          <p className="text-muted-foreground text-xs">{searched ? 'ranked by shared words' : `${spell(NOTICES.length)} notices · not yet searched`}</p>
         </div>
+        <p className="text-muted-foreground mt-1 text-xs">The pool, its notices and every date and time in them are invented for this example.</p>
 
         {!searched
           ? <ol className="rag-notices mt-2">
@@ -310,8 +314,15 @@ export function RagExperiment({ onExplain, experiment }: Props) {
       <div className="text-muted-foreground space-y-3 pb-2 text-sm">
         <p>Each question searches the same five notices. The notices do not change.</p>
         <div className="flex flex-wrap gap-2">
+          {/*
+            * The shared Button is `whitespace-nowrap` at a fixed height, so a
+            * whole question in one hung 30px off the right of a 276px column.
+            * Measured at 320px, not reasoned about — the same defect the
+            * saved-messages panel already records.
+            */}
           {QUESTIONS.map(each => <Button
             key={each.id} size="touch" variant={each.id === question.id ? 'default' : 'outline'}
+            className="h-auto max-w-full py-2 text-left whitespace-normal"
             onClick={() => choose(each)}
           >{each.text}</Button>)}
         </div>
