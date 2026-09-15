@@ -2667,6 +2667,113 @@ which this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical`. One end-to-end assessed explanation was submitted through the
 live path instead, and is reported in `docs/words-around-it.md`.
 
+### Can it answer from the right notice? — 2026-09-14
+
+On `experiment/16-rag`, branched from `main` after the one-piece-at-a-time
+experiment merged. An experiment on `rag`, built to the same rule as the sixteen
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/notice-search.md` for the verification tables and the limits.
+
+**The second misconception is reachable in three presses.** A swimming pool with
+five short dated notices, and one fixed question: *When does the pool close on
+Saturday?* **Find a notice** ranks them and puts the top one into **What the
+answer can use**. **Answer from this notice** gives *"The pool closes at 4pm on
+Saturday"*, quoting the exact line it came from. Then **Try the older notice** —
+the question does not move and neither does the answering rule, only the passage
+does — and the same rule gives **6pm**, fluently, with a citation that really
+does point at the line it used. That is the node's `simplificationCost` acted out
+rather than asserted: *"a wrong retrieval yields a fluent, well-cited, wrong
+answer, and that is harder to catch than an obvious invention."*
+
+**The search is real, and the panel's sharpest sentence is a fact about the
+function.** Each score adds up, per shared word, how often the notice uses it
+divided by how many notices contain it at all. The 14 March notice comes top at
+1.58 against 1.25 because it says "Saturday" three times to the January notice's
+two — **because of how it is worded, not because it is newer**. `rank` never
+reads `date` or `version`, and `retrieval.test.ts` replaces every one of them
+with nonsense and requires the ranking and the scores to come back identical. The
+collection is stored in a deliberately non-date order too, because ties go to
+position in it and a newest-first list would make that tie rule a date preference
+by the back door.
+
+**`answerFrom(notice, question)` takes one notice**, so the collection is not in
+scope where the answer is built — the same structural move as `answerWith` in
+`phases.ts` and `answerFrom(request.included)` in `context.ts`. A test hands it
+the one notice with no Saturday hours while every other notice in the collection
+has them. It also takes the **subject from the matched line** rather than
+assuming one, which is why handing it the café notice answers about the café; a
+template that printed "the pool" regardless would be inventing the very thing
+this node exists to correct.
+
+**Nothing is called a meaning search.** No embedding distance is invented
+anywhere. The panel says it is a keyword count, says real systems usually search
+by meaning instead, and points at the word-neighbours experiment where positions
+in space are real. The answer is labelled a template beside every answer it
+produces, and *What this example leaves out* says a real language model in its
+place can misread a good passage, blend two sources, or add a detail that is in
+neither.
+
+**Both honest cases are reachable, and neither is stated as a law.** *Is there a
+sauna?* returns nothing at all rather than a closest guess — and the panel then
+says a real system may hand over its best match anyway, and a model given a
+passage that does not answer the question can still sound confident. Handing over
+the lane swimming or maintenance notice gives **"This notice does not give the
+answer"** rather than a time from somewhere else. The name card is earned only by
+a real answer; a notice that gave none is a real outcome and is not that.
+
+**Six defects found by measuring or driving, not by reading.** The first action
+sat **657px** below the panel title at 320px against 286–525 across the siblings
+measured as a control in the same run — **484 now, and 297 at 1230** — fixed by
+moving the invented-content label beside the invented content and dropping the
+phone-sized question to `text-xl`. A question button hung off the right at 320px,
+the shared `Button` being `whitespace-nowrap` at a fixed height, which
+`docs/saved-messages.md` already records. The change sentence repeated the stale
+banner word for word, adjacent on one screen. The name card was unlocked by a
+*no-answer*. The day was hard-coded as "Saturday", then lowercase once derived.
+And the title, date and version ran together for anything taking the text rather
+than the picture — *"Lane swimming times12 February 2026version 1"*. Seventeenth
+time.
+
+**A wrong probe, for the fourth time — and the tell was the same one.** The first
+contrast run reported **identical figures in both themes**. The theme here is a
+class on `<html>`, and the probe set `data-theme`, so both runs measured light
+mode. Corrected by confirming `--surface-0` had actually moved before believing a
+number: worst text **5.55** light and **7.89** dark, worst graphic **5.25** and
+**6.12**. `--band-systems` is never printed as text — this is the first
+`systems`-band panel, that band has not been measured against these cards, and
+`BANDS_USED_AS_TEXT` in `globals.test.ts` still lists only `foundations`.
+
+**And a trap reproduced while checking.** An early run showed the name card
+appearing after a no-answer with the fix already in place. The cause was the
+check: **a hash-only navigation is a same-document navigation, so React state
+carries across it**, and the run inherited the previous one's state. Every case
+was re-run through `about:blank` first, which is what
+`docs/experiment-links.md` already records.
+
+**Nothing here touches the map.** No learner-model access: searching, answering,
+swapping notices, both honest cases, every disclosure, twenty rapid alternating
+press rounds and Reset left a **populated** ten-mark model — `rag` itself and
+both prerequisites included — byte-identical. Zero fetches, zero XHRs and zero
+new resource loads while driving the whole panel, and `document.getAnimations()`
+is empty with it open.
+
+**No disagreement with an authored simplification.** The node's intuition is
+exactly what the panel shows. Its `example` says the usual search step uses
+embeddings; this one deliberately does not, names what it is instead, and points
+at the experiment where they are real — narrower than the authored text rather
+than in conflict with it. The graph, the assessor prompt, the schema and the
+model list are untouched.
+
+**`pnpm calibrate --explain --runs 3` was not run, and no assessed explanation
+was submitted.** `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders
+and never sends, and this branch changes no prompt, schema or model-list file.
+The claim that nothing here moves a mark rests on the absence of learner-model
+access and on the before/after storage reads, which is the same position
+`docs/how-far-off.md` records. The last four sessions recorded that canary
+failing on exactly two fixtures — 2/72 false passes for `hallucination/parroted`,
+deliberately left failing, and 3/24 false blocks for `neuron/technical` — and
+that remains the current state of the shared assessor.
+
 ### If it is still in the chat, why can’t the model use it? — 2026-09-13
 
 On `experiment/14-context-window`, branched from `main` after the one-block

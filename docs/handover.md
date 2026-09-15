@@ -1,3 +1,74 @@
+> **Can it answer from the right notice? 2026-09-14:** On `experiment/16-rag`,
+> branched from `main` after the one-piece-at-a-time experiment. An experiment on
+> `rag`: a swimming pool, five short dated notices, and one fixed question —
+> *When does the pool close on Saturday?* **Search the notices** ranks them and puts
+> the top one into **Notice sent with the question**; **Answer from this notice** gives
+> "The pool closes at 4pm on Saturday" and quotes the exact line it came from,
+> with the notice's title, date and version beside it. Then **Try the older
+> notice**: the question does not move and neither does the answering rule, only
+> the passage does, and the same rule gives **6pm** — fluently, with a citation
+> that really does point at the line it used. That is the node's own
+> `simplificationCost` acted out rather than asserted. Read
+> `docs/notice-search.md` for what was verified and what was not. Its PR targets
+> `main`.
+>
+> The search is real: each score adds up, per shared word, how often the notice
+> uses it divided by how many notices contain it. The 14 March notice comes top
+> at 1.58 against 1.25 **because it says "Saturday" three times to the January
+> notice's two, not because it is newer** — and that is a fact about the
+> function, not a claim: `rank` never reads `date` or `version`, and the test
+> replaces every one of them with nonsense and requires an identical ranking. The
+> collection is stored out of date order too, because ties go to position in it.
+> `answerFrom(notice, question)` takes one notice, so the collection is not in
+> scope where the answer is built, and it takes the subject from the matched line
+> rather than assuming one — which is why handing it the café notice answers
+> about the café. Nothing is called a meaning search and no embedding distance is
+> invented; the panel names what it is and points at the word-neighbours
+> experiment. Both honest cases are reachable — a question that matches nothing,
+> and a notice that matched but gives no answer — and neither is stated as a law.
+>
+> Nine defects found the way this project keeps finding them. The first action sat
+> **657px** below the panel title at 320px against 286–525 across the siblings
+> measured as a control in the same run (**484 now, 297 at 1230**); a question
+> button hung off the right at 320px, the shared `Button` being
+> `whitespace-nowrap` at a fixed height, which `docs/saved-messages.md` already
+> records; the change sentence repeated the stale banner word for word; the name
+> card was unlocked by a *no-answer*; the day was hard-coded and then lowercase;
+> and title, date and version ran together for anything taking the text rather
+> than the picture. The first accessibility fix for those separators used
+> absolutely positioned `sr-only` commas, which escaped the scrolling pane and
+> made the 619px app shell sit above 856px of empty document scroll; plain
+> visible commas fix both readings without duplicate nodes. A later review found
+> that at a 660px split-pane width the
+> tall notice list pushed **What the answer can use** 1,109px below its action,
+> so the action, supplied passage and answer are one grid item now. It also
+> found the closing question claiming that two answers had differed after only
+> one had been made; the contrast, its two caution points and Explain back now
+> wait for two real answers with different times. Plus a fourth wrong probe,
+> with the same tell as the other
+> three — **identical contrast figures in both themes**, because the theme here
+> is a class on `<html>` and the probe set `data-theme`. Corrected: worst text
+> 5.55 light and 7.89 dark. And a trap reproduced while checking: a hash-only
+> navigation carries React state across it, so every case was re-run through
+> `about:blank` first.
+>
+> A final clarity pass removed the test-harness feeling from the main path. The
+> five full passages no longer compete for attention: the ranked list is compact
+> and a notice's text appears where it is handed to the answer. Each action names
+> its step, the prose is shorter, and the vanished 4pm answer is now kept beside
+> the 6pm answer in a **Before / Now** card. The RAG definition and Explain back
+> sit in that answer flow before the ranking details. At the measured 660×619
+> workspace the first action is 323px below the panel title, the supplied notice
+> stays 12px below its action, and the completed 4pm answer fits in the same view.
+>
+> Nothing here touches the map — a populated ten-mark model, `rag` and both
+> prerequisites included, stayed byte-identical through the whole panel. **No
+> assessed explanation was submitted and the explain canary was not run**;
+> `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders and never sends,
+> and this branch changes no prompt, schema or model-list file. No phone, no
+> screen reader, and 200% browser zoom was checked as an equivalent 320px reflow
+> because BrowserOS cannot drive browser-chrome zoom.
+
 > **If the final amount is wrong, how do we work back? 2026-09-13:** A local
 > experiment on `backprop-intuition` separates the forward prediction, a
 > backward advice pass that changes nothing, and one simultaneous learning

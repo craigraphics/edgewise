@@ -89,6 +89,14 @@ describe('the experiment registry', () => {
     expect(new Set(Object.values(EXPERIMENT_TITLE_ID)).size).toBe(EXPERIMENT_IDS.length);
   });
 
+  it('registers the notice-search experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('rag');
+    expect(EXPERIMENT_TITLE_ID.rag).toBe('rag-lab-title');
+    expect(EXPERIMENT_ACTION.rag).toBe('Try the notice-search experiment');
+    expect(EXPERIMENT_HEADLINE.rag).toBe('A notice found, then an answer from it.');
+    expect(EXPERIMENT_PROMPT.rag).toBe('The same question and answering rule gave two different closing times. What changed, and where did each time come from?');
+  });
+
   it('registers the working-backwards experiment with its learner-facing copy', () => {
     expect(EXPERIMENT_IDS).toContain('backprop-intuition');
     expect(EXPERIMENT_TITLE_ID['backprop-intuition']).toBe('backprop-lab-title');
