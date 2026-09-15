@@ -97,6 +97,14 @@ describe('the experiment registry', () => {
     expect(EXPERIMENT_PROMPT.rag).toBe('The same question and answering rule gave two different closing times. What changed, and where did each time come from?');
   });
 
+  it('registers the picking-a-word experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('sampling-temperature');
+    expect(EXPERIMENT_TITLE_ID['sampling-temperature']).toBe('sampling-lab-title');
+    expect(EXPERIMENT_ACTION['sampling-temperature']).toBe('Try the picking-a-word experiment');
+    expect(EXPERIMENT_HEADLINE['sampling-temperature']).toBe('Same chances, not the same word.');
+    expect(EXPERIMENT_PROMPT['sampling-temperature']).toBe('Nothing about the model\u2019s three chances changed while you were pressing. So what decided which ending came out each time, and what did changing the setting do to that?');
+  });
+
   it('registers the working-backwards experiment with its learner-facing copy', () => {
     expect(EXPERIMENT_IDS).toContain('backprop-intuition');
     expect(EXPERIMENT_TITLE_ID['backprop-intuition']).toBe('backprop-lab-title');

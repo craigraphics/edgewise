@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition', 'attention', 'transformer', 'context-window', 'next-token-prediction', 'rag'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition', 'attention', 'transformer', 'context-window', 'next-token-prediction', 'rag', 'sampling-temperature'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -32,6 +32,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'context-window': 0,
   'next-token-prediction': 0,
   rag: 0,
+  'sampling-temperature': 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -53,6 +54,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'context-window': 'context-lab-title',
   'next-token-prediction': 'next-token-lab-title',
   rag: 'rag-lab-title',
+  'sampling-temperature': 'sampling-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -74,6 +76,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'context-window': 'Try the what-gets-sent experiment',
   'next-token-prediction': 'Try the one-piece-at-a-time experiment',
   rag: 'Try the notice-search experiment',
+  'sampling-temperature': 'Try the picking-a-word experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -95,6 +98,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'context-window': 'Still in the chat, not in the request.',
   'next-token-prediction': 'One piece, then the same question again.',
   rag: 'A notice found, then an answer from it.',
+  'sampling-temperature': 'Same chances, not the same word.',
 };
 
 /**
@@ -119,4 +123,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'context-window': 'The door code stayed on screen the whole time, but one reply could not use it. What decides whether the model can use something you typed earlier?',
   'next-token-prediction': 'A whole sentence appeared, one piece at a time. What did the model work out at each step, and what did it read to work out the next one?',
   rag: 'The same question and answering rule gave two different closing times. What changed, and where did each time come from?',
+  'sampling-temperature': 'Nothing about the model’s three chances changed while you were pressing. So what decided which ending came out each time, and what did changing the setting do to that?',
 };

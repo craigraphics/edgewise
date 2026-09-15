@@ -19,6 +19,7 @@ import { TransformerExperiment, type useTransformerExperiment } from '@/componen
 import { ContextExperiment, type useContextExperiment } from '@/components/experiments/context-experiment';
 import { NextTokenExperiment, type useNextTokenExperiment } from '@/components/experiments/next-token-experiment';
 import { RagExperiment, type useRagExperiment } from '@/components/experiments/rag-experiment';
+import { SamplingExperiment, type useSamplingExperiment } from '@/components/experiments/sampling-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -44,6 +45,7 @@ type Props = {
   contextExperiment: ReturnType<typeof useContextExperiment>;
   nextTokenExperiment: ReturnType<typeof useNextTokenExperiment>;
   ragExperiment: ReturnType<typeof useRagExperiment>;
+  samplingExperiment: ReturnType<typeof useSamplingExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -75,10 +77,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'context-window': { tint: 'playable-invitation-behaviour', title: 'If it is still in the chat, why can’t the model use it?', blurb: 'A party chat with a door code in it. Add a few more notes and watch the code drop out of what actually gets sent.', action: 'Add more party notes' },
   'next-token-prediction': { tint: 'playable-invitation-language', title: 'How can choosing one small piece at a time build a whole sentence?', blurb: 'A bedtime story has started. See what could come next, add the most likely piece, and watch the model ask again from the longer story.', action: 'Add the next piece' },
   rag: { tint: 'playable-invitation-systems', title: 'How can AI answer from a notice it was never trained on?', blurb: 'A swimming pool with five dated notices. Search them, hand one over, and watch the answer change when the notice does.', action: 'Search the notices' },
+  'sampling-temperature': { tint: 'playable-invitation-language', title: 'Why can the same beginning get a different next word?', blurb: 'One sentence, three possible endings, a chance each. Pick a few times, then change how much the usual ending is favoured.', action: 'Pick an ending' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment, samplingExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -172,6 +175,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'context-window' && <div className="mt-4"><ContextExperiment onExplain={() => onExplain('context-window')} experiment={contextExperiment} /></div>}
       {playing && node.id === 'next-token-prediction' && <div className="mt-4"><NextTokenExperiment onExplain={() => onExplain('next-token-prediction')} experiment={nextTokenExperiment} /></div>}
       {playing && node.id === 'rag' && <div className="mt-4"><RagExperiment onExplain={() => onExplain('rag')} experiment={ragExperiment} /></div>}
+      {playing && node.id === 'sampling-temperature' && <div className="mt-4"><SamplingExperiment onExplain={() => onExplain('sampling-temperature')} experiment={samplingExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 

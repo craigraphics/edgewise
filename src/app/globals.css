@@ -3351,3 +3351,161 @@ fieldset:disabled .neuron-choice { cursor: default; }
     text-underline-offset: 4px;
 }
 .rag-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+/*
+ * Picking a word — the `sampling-temperature` experiment.
+ *
+ * Nothing here prints a value in `--band-language`. Measured, that band is
+ * 4.02:1 against these cards in light mode, under AA; `BANDS_USED_AS_TEXT` in
+ * `globals.test.ts` records which bands are legible as text, and `language` is
+ * not one of them. It carries the chance bars and the cards' leading edges,
+ * which are graphics held to 3:1 by the band-accent block, and every chance is
+ * printed as text beside its bar.
+ *
+ * The stage is a CONTAINER query, for the reason recorded above the context
+ * experiment: this panel is drawn inside the focused-map pane, whose width the
+ * viewport does not describe.
+ */
+.sampling-lab {
+    container-type: inline-size;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+/*
+ * The sentence being continued sits immediately above the button that
+ * continues it, in both layouts, and the result sentence sits directly under
+ * that button. Two columns put the chances beside the pair rather than under
+ * it, so what the draw is choosing from is on screen while it is pressed.
+ */
+.sampling-stage {
+    display: grid;
+    gap: .75rem;
+    grid-template-areas: "sentence" "action" "chances";
+}
+.sampling-sentence-area { grid-area: sentence; min-width: 0; }
+.sampling-action-area { grid-area: action; min-width: 0; }
+.sampling-chances-area { grid-area: chances; min-width: 0; }
+
+@container (min-width: 34rem) {
+    .sampling-stage {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
+        grid-template-areas:
+            "sentence chances"
+            "action   chances";
+        align-items: start;
+    }
+}
+
+.sampling-sentence,
+.sampling-chances,
+.sampling-picks,
+.sampling-settings,
+.sampling-name {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.sampling-sentence, .sampling-chances { border-left: 3px solid var(--band-language); }
+.sampling-sentence p { overflow-wrap: anywhere; }
+
+/* The ending that has not been drawn yet, marked as a gap rather than a word. */
+.sampling-blank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    padding: 0 .375rem;
+    border: 2px dashed var(--border);
+    border-radius: .375rem;
+    background: var(--surface-2);
+}
+
+/* Room for the sentence, so a draw does not shuffle the button under the cursor. */
+.sampling-change { min-height: 3.25rem; }
+.sampling-spread { min-height: 3.25rem; }
+
+.sampling-rows { display: grid; gap: .375rem; }
+.sampling-row {
+    display: grid;
+    grid-template-columns: minmax(4rem, auto) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .25rem .625rem;
+    font-size: .8125rem;
+}
+.sampling-word { font-weight: 500; overflow-wrap: anywhere; }
+/* The leading row is marked by weight as well as by position, never by hue alone. */
+.sampling-row-lead .sampling-word { font-weight: 700; }
+.sampling-was { grid-column: 1 / -1; font-size: .6875rem; color: var(--muted-foreground); }
+
+.sampling-bar {
+    display: block;
+    height: .4375rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+}
+.sampling-bar span {
+    display: block;
+    height: 100%;
+    background: var(--band-language);
+}
+.sampling-row-lead .sampling-bar span { background: var(--foreground); }
+.sampling-chance { font-size: .8125rem; }
+
+.sampling-pick-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .375rem;
+}
+.sampling-pick {
+    padding: .1875rem .5rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: .8125rem;
+}
+
+.sampling-top {
+    padding-top: .75rem;
+    border-top: 1px solid var(--border);
+}
+
+.sampling-points { display: grid; gap: .625rem; font-size: .875rem; }
+.sampling-points li { padding-left: .875rem; border-left: 2px solid var(--border); }
+
+.sampling-list { display: grid; gap: .375rem; }
+.sampling-list li { padding-left: .875rem; border-left: 2px solid var(--border); }
+
+.sampling-tally { display: grid; gap: .25rem; }
+.sampling-tally-row {
+    display: grid;
+    grid-template-columns: minmax(4rem, auto) auto auto;
+    align-items: baseline;
+    gap: .125rem .625rem;
+    padding-bottom: .25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .8125rem;
+}
+.sampling-tally-row :last-child { grid-column: 1 / -1; font-size: .6875rem; }
+.sampling-tally-row:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.sampling-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.sampling-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.sampling-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
