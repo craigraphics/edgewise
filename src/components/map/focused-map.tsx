@@ -17,6 +17,7 @@ import { BackpropExperiment, type useBackpropExperiment } from '@/components/exp
 import { AttentionExperiment, type useAttentionExperiment } from '@/components/experiments/attention-experiment';
 import { TransformerExperiment, type useTransformerExperiment } from '@/components/experiments/transformer-experiment';
 import { ContextExperiment, type useContextExperiment } from '@/components/experiments/context-experiment';
+import { NextTokenExperiment, type useNextTokenExperiment } from '@/components/experiments/next-token-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -40,6 +41,7 @@ type Props = {
   attentionExperiment: ReturnType<typeof useAttentionExperiment>;
   transformerExperiment: ReturnType<typeof useTransformerExperiment>;
   contextExperiment: ReturnType<typeof useContextExperiment>;
+  nextTokenExperiment: ReturnType<typeof useNextTokenExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -69,10 +71,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   attention: { tint: 'playable-invitation-language', title: 'How can the words around “bank” change what it means here?', blurb: 'One sentence walks to a riverbank, the other takes cash to a bank. Watch the same word’s description move.', action: 'Try the experiment' },
   transformer: { tint: 'playable-invitation-language', title: 'How do a few simple steps work together on a sentence?', blurb: 'A short note about pets. Run one block and watch the last word’s numbers change twice — once from the words before it, once from the calculation after.', action: 'Run one block' },
   'context-window': { tint: 'playable-invitation-behaviour', title: 'If it is still in the chat, why can’t the model use it?', blurb: 'A party chat with a door code in it. Add a few more notes and watch the code drop out of what actually gets sent.', action: 'Add more party notes' },
+  'next-token-prediction': { tint: 'playable-invitation-language', title: 'How can choosing one small piece at a time build a whole sentence?', blurb: 'A bedtime story has started. See what could come next, add the most likely piece, and watch the model ask again from the longer story.', action: 'Add the next piece' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -164,6 +167,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'attention' && <div className="mt-4"><AttentionExperiment onExplain={() => onExplain('attention')} experiment={attentionExperiment} /></div>}
       {playing && node.id === 'transformer' && <div className="mt-4"><TransformerExperiment onExplain={() => onExplain('transformer')} experiment={transformerExperiment} /></div>}
       {playing && node.id === 'context-window' && <div className="mt-4"><ContextExperiment onExplain={() => onExplain('context-window')} experiment={contextExperiment} /></div>}
+      {playing && node.id === 'next-token-prediction' && <div className="mt-4"><NextTokenExperiment onExplain={() => onExplain('next-token-prediction')} experiment={nextTokenExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
