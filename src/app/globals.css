@@ -3392,11 +3392,19 @@ fieldset:disabled .neuron-choice { cursor: default; }
 @container (min-width: 34rem) {
     .sampling-stage {
         grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
+        /*
+         * The chances span both rows, so without this the slack from a tall
+         * chances card is shared out and row one grows — which pushed the
+         * button about 90px below the sentence it continues. All the slack
+         * goes to row two, and the action stays at the top of it.
+         */
+        grid-template-rows: min-content 1fr;
         grid-template-areas:
             "sentence chances"
             "action   chances";
         align-items: start;
     }
+    .sampling-action-area { align-self: start; }
 }
 
 .sampling-sentence,
@@ -3428,12 +3436,17 @@ fieldset:disabled .neuron-choice { cursor: default; }
 .sampling-change { min-height: 3.25rem; }
 .sampling-spread { min-height: 3.25rem; }
 
-.sampling-rows { display: grid; gap: .375rem; }
+/*
+ * The "started at" line belongs to the row above it, so the gap inside a row
+ * has to be clearly smaller than the gap between rows. At .25 against .375 it
+ * was two pixels, and the sub-line read as a caption for the NEXT ending.
+ */
+.sampling-rows { display: grid; gap: .625rem; }
 .sampling-row {
     display: grid;
     grid-template-columns: minmax(4rem, auto) minmax(0, 1fr) auto;
     align-items: center;
-    gap: .25rem .625rem;
+    gap: .125rem .625rem;
     font-size: .8125rem;
 }
 .sampling-word { font-weight: 500; overflow-wrap: anywhere; }

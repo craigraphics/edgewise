@@ -67,12 +67,16 @@ export function useSamplingExperiment() {
   }, [settingId]);
 
   /*
-   * The counts belong to one setting. Carrying them across a change would put
-   * a column of counts beside chances they were never drawn from, which is the
-   * one thing a tally must never do.
+   * The picks and the counts both belong to one setting, so a change clears
+   * both. Keeping them would leave a word on screen beside a chance it was
+   * never drawn from: pressing "Favour the usual endings" after drawing
+   * "flower" at 60% left the sentence reporting 60% while the row beside it
+   * said 78.3%. Found by driving the panel, not by reading it. The panel says
+   * the rule in words rather than letting the list quietly empty.
    */
   const choose = useCallback((next: SettingId) => {
     setSettingId(next);
+    setPicks([]);
     setTally(null);
   }, []);
 
@@ -99,12 +103,11 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
   const touched = picks.length > 0 || tally !== null || settingId !== FIRST_SETTING.id;
 
   /*
-   * Two different endings out of ONE set of chances. Picks made under different
-   * settings were not drawn from the same chances, so they cannot carry the
-   * claim the panel makes from this, and the sentence below would be false.
+   * Two different endings out of ONE set of chances. Every pick in the list was
+   * drawn from the chances currently on screen, because changing the setting
+   * clears the list, so this claim is always about what the learner can see.
    */
-  const variedOnOneSetting = SETTINGS.some(each =>
-    new Set(picks.filter(each_pick => each_pick.settingId === each.id).map(each_pick => each_pick.index)).size > 1);
+  const varied = new Set(picks.map(each => each.index)).size > 1;
 
   /*
    * What the last press did. Every word of it is read off the draw that just
@@ -115,7 +118,7 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
    */
   const changed = last
     ? `This pick gave “${ENDINGS[last.index].word}”, which had ${percent(last.chance)} of the chance.`
-      + (variedOnOneSetting
+      + (varied
         ? ' The same chances have now given more than one ending.'
         : ' The chances have not moved.')
     : null;
@@ -132,13 +135,12 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A small experiment · runs in your browser</p>
-        <h3 id="sampling-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Why can the same beginning get a different next word?</h3>
+        <h3 id="sampling-lab-title" tabIndex={-1} className="font-display mt-2 text-xl outline-none sm:text-3xl">Why can the same beginning get a different next word?</h3>
       </div>
       {/* Offered only once something has changed: a Reset on an untouched screen is a control with nothing to do. */}
       {touched && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
     <p className="mt-3 max-w-2xl text-base">A model has been given the start of a sentence. It has not chosen a word. It has produced three possible endings, each with a share of the chance.</p>
-    <p className="text-muted-foreground mt-2 max-w-2xl text-sm">These three chances were chosen for this example. They were not measured from a language model.</p>
 
     <div className="sampling-stage mt-5">
       <div className="sampling-sentence-area">
@@ -153,7 +155,9 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
         <div aria-live="polite" className="sampling-change mt-3">
           {changed
             ? <p className="text-sm">{changed}</p>
-            : <p className="text-muted-foreground text-sm">Press the button. The same three chances are used every time.</p>}
+            : <p className="text-muted-foreground text-sm">{change === null
+                ? 'Press the button. The same three chances are used every time.'
+                : 'The chances have been reshaped. Press the button to draw from them.'}</p>}
         </div>
       </div>
 
@@ -171,6 +175,8 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
           <p className="text-muted-foreground mt-3 text-xs">{change === null
             ? 'These add up to all of the chance. Nothing else can come out.'
             : 'Each row shows what it has now and what it started with. The model produced the starting numbers; the setting below reshaped them.'}</p>
+          {/* The label sits beside the thing it qualifies, not in front of the first action. */}
+          <p className="text-muted-foreground mt-2 text-xs">These three chances were chosen for this example. They were not measured from a language model.</p>
         </div>
       </div>
     </div>
@@ -182,7 +188,7 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
       </ol>
       <p className="text-muted-foreground mt-2 text-xs">
         {picks.length} {picks.length === 1 ? 'pick' : 'picks'}{picks.length > RECENT ? `, showing the last ${RECENT}` : ''}.
-        {variedOnOneSetting
+        {varied
           ? ' Same opening, the same chances, and not the same ending.'
           : ' The chances above have not changed while you have been pressing.'}
       </p>
@@ -199,6 +205,7 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
         >{each.label}</Button>)}
       </div>
       <div aria-live="polite" className="sampling-spread mt-3"><p className="text-sm">{spread}</p></div>
+      <p className="text-muted-foreground mt-2 text-xs">Changing the setting starts the picks and the counts again, because a draw only means something beside the chances it came from.</p>
       <div className="sampling-top mt-3">
         <Button
           size="touch" variant={settingId === 'top' ? 'default' : 'outline'}
@@ -243,7 +250,6 @@ export function SamplingExperiment({ onExplain, experiment }: Props) {
             <p className="text-muted-foreground mt-2 text-xs">Those counts describe these {tally.draws} draws and nothing else. A long run usually sits close to the chances; a short one can sit some way off, and that is ordinary drawing rather than a fault in it.</p>
           </> : <p className="text-muted-foreground">No draws counted yet.</p>}
         </div>
-        <p className="text-muted-foreground text-xs">Changing the setting starts the counts again, because a count only means something beside the chances it was drawn from.</p>
       </div>
     </details>
 
