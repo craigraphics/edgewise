@@ -2667,6 +2667,112 @@ which this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical`. One end-to-end assessed explanation was submitted through the
 live path instead, and is reported in `docs/words-around-it.md`.
 
+### Why does it answer, instead of adding more questions? — 2026-09-15
+
+On `experiment/18-post-training`, branched from `main` after the notice-search
+experiment merged, and rebased onto it after the picking-a-word one did. An
+experiment on `pretraining-vs-posttraining`, built to the same rule as the
+nineteen before it: change something, inspect the consequence,
+optionally explain it. See `docs/preferred-reply.md` for the verification table
+and the limits.
+
+**The reply that answers nothing starts with the most chance.** Somebody asks
+*"My bike has a flat tyre. What should I do first?"*, and three replies written
+by hand sit under it: more questions, a short first step, a longer answer. The
+opening chances are **55% / 25% / 20%**, with more questions on top, because on
+its own a question is often followed by more questions. Choose a reply — the
+whole card is the control — press **Learn from this choice**, and it becomes
+**31% / 52% / 16%**. Nothing is rewritten. That is the node's first recorded
+misconception acted out rather than asserted.
+
+**It is a real softmax choice model trained by one gradient step on
+cross-entropy.** `chances` is the softmax, `howFarOff` is the loss, `learnFrom`
+is its gradient. Nothing moves a bar by a hard-coded amount and nothing swaps a
+reply for a different one after a press. The opening round is checkable on
+paper, and `howFarOff` falls from 1.397 to 0.652. The step cannot overshoot at
+any size — the chosen score rises by `step x (1 - its chance)` and the others
+fall by `step x their chance`, so the gap always widens — which is why the panel
+offers no step-size control and says so.
+
+**Two things are the shape of a function.** `applyAction` carries the `scores`
+array through **by reference** on a `select`, so "pointing at a reply trains
+nothing" is asserted by identity rather than by reading the handler. And the
+state holds one score per entry of `REPLIES`, so there is nowhere for reply text
+— or anything about bicycles — to be learned; a test runs twenty rounds and
+requires the question and all three replies to be deep-equal to a clone taken
+beforehand. That is what makes *"nothing here transfers to a question these
+three replies do not already answer"* a fact about the data rather than a
+disclaimer.
+
+**A reducer, so twenty presses are twenty steps.** Measured in the browser two
+ways: twenty clicks inside one synchronous task, and twenty clicks with a render
+between each, both give exactly twenty rounds and byte-identical chances. An
+action that would do nothing returns the state itself.
+
+**The expectations are held to a central difference.** `learnFrom`'s implied
+gradient is checked against `(loss(s+h) - loss(s-h)) / 2h`, over a loss written
+out again from its definition in the test file — no shared arithmetic with the
+closed form — plus the opening round worked out on paper. That is the "do not
+assert a measure against itself" trap closed by a ninth route.
+
+**A container query set on the wrong number, found by measuring the content
+box.** `Learn from this choice` and the sentence saying what it did sat **1063px
+below the panel title at 1230x842** — entirely off the bottom of the window —
+and 1147 at 1100x700. The threshold was 44rem, copied from the notice-search
+panel. A container query reads the **content box**, and this panel gets 535px of
+it at 1100, 614 at 720, 664 at 1230 and 696 at 768, so it fired at none of them.
+A first pass at 37rem still missed 1100, because the panel's padding is `2.5vw`
+and the pane is not the viewport. 33rem is under all four. **311-345 now, on
+screen, at every width from 640 up.** Eighteenth time a defect here was found by
+measuring rather than reading.
+
+**The first action was 527px down**, the worst of the nineteen panels, because
+it was a button 178px inside the first card. The whole card is the control now,
+with the chance outside it — a number that moves every round has no business
+inside a button's accessible name. **449 at 320, 359 at 1230x842**, inside the
+range the siblings measure.
+
+**A chance that is really there never prints as nothing.** Measured, a losing
+reply drops under half a percent on round 72 and the chosen one passes 99.5% on
+round 134, and neither ever arrives. `0%` and `100%` would say a reply had been
+ruled out, which is the opposite of what these chances do. `under 1%` and
+`over 99%`, with both boundaries pinned in the test. Same rule as the attention
+panel's `under 1%`.
+
+**A wrong probe, caught before it was believed.** The first twenty-presses check
+fired every click inside one synchronous loop and reported that no round had
+applied. React never re-renders inside a synchronous task, so `Learn` stayed
+`disabled` from the first iteration to the last and all twenty clicks were
+no-ops on a disabled button. The measurement was aimed at the wrong quantity,
+which is this project's oldest failure in a new place.
+
+**A disagreement with the authored text, recorded and not acted on.** The node's
+`explanations.intuition` says the assistant persona, the tone, the refusals and
+*"the willingness to answer at all — all of that is added afterwards"*. A model
+trained only to continue text is not silent: it answers questions, especially
+where the text in front of it makes an answer the likely continuation, and
+showing one a few worked examples first was the standard way to get useful
+answers out of it before instruction tuning. Further training also changes what
+a model knows and can do, not only how it sounds. The node's own
+`simplificationCost` already concedes the other half. **Nothing was changed** —
+the graph, the assessor prompt, the schema and the model list are untouched —
+and the panel's wording is chosen to be *true beside* the authored text, which is
+visible in the inspector at the same time on a wide screen. Softening that
+sentence is the owner's call.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+choosing, learning, twenty rapid rounds, every disclosure and Reset left a
+**populated** ten-mark model — this node and both prerequisites included —
+byte-identical. Then one real explanation through the live assessor moved
+`pretraining-vs-posttraining` **`blocked` → `known`** and left every other mark
+unchanged. Zero network requests while driving the whole panel, and
+`document.getAnimations()` is empty with it open.
+
+**`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
+display copy that `ExplainBack` renders and never sends, and this work changes
+no prompt, schema or model-list file. One end-to-end assessed explanation was
+submitted through the live path instead.
+
 ### Can it answer from the right notice? — 2026-09-14
 
 On `experiment/16-rag`, branched from `main` after the one-piece-at-a-time
