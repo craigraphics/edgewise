@@ -73,51 +73,50 @@ export function PreferenceExperiment({ onExplain, experiment }: Props) {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="eyebrow">A small experiment · runs in your browser</p>
-        <h3 id="preference-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">Why does it answer your question, instead of adding more questions?</h3>
+        <h3 id="preference-lab-title" tabIndex={-1} className="font-display mt-2 text-xl outline-none sm:text-3xl">Why does it answer, instead of adding more questions?</h3>
       </div>
       {/* Offered only once something has changed: a Reset on an untouched screen is a control with nothing to do. */}
       {touched && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
-    <p className="mt-3 max-w-2xl text-base">Somebody has asked a question. Three replies to it were written in advance. Choose the one you would rather have, and a tiny model here learns to choose it more often.</p>
-    <p className="text-muted-foreground mt-2 max-w-2xl text-sm">The three replies were written by hand for this example. The model learns only how often to choose each one. It is not writing bicycle advice and it learns nothing about bikes.</p>
+    <p className="mt-3 max-w-2xl text-base">Choose the reply you would rather have, and a tiny model here learns to choose it more often.</p>
 
     <div className="preference-stage mt-5">
       <div className="preference-ask-area">
         <div className="preference-ask">
           <p className="eyebrow">Somebody asks</p>
-          <p className="font-display mt-2 text-xl sm:text-2xl">{QUESTION}</p>
+          <p className="font-display mt-2 text-lg sm:text-2xl">{QUESTION}</p>
         </div>
       </div>
 
       <div className="preference-replies-area">
-        <p className="eyebrow mb-2">{started ? 'Choose again to keep going' : 'Step 1 · show it which reply you prefer'}</p>
+        <p className="eyebrow">{started ? 'Choose again to keep going' : 'Step 1 · choose a reply'}</p>
+        <p className="text-muted-foreground mt-1 mb-2 text-xs">All three were written by hand for this example. The model learns which one to choose, never what to say: it is not writing bicycle advice.</p>
         <ul className="preference-replies">
           {REPLIES.map((reply, index) => {
             const picked = state.chosen === reply.id;
             const before = state.before ? state.before[index] : null;
             return <li key={reply.id} className={cn('preference-reply', picked && 'preference-reply-picked')}>
-              <p className="preference-reply-label">{reply.label}</p>
-              <p className="mt-1 text-sm">{reply.text}</p>
-              <p className="text-muted-foreground mt-1 text-xs">{reply.note}</p>
+              {/*
+                * The whole card is the control, so choosing is the first thing
+                * there is to do rather than something 178px into the first card.
+                * The chance sits OUTSIDE it: a number that moves every round has
+                * no business inside a button's accessible name.
+                */}
+              <button type="button" aria-pressed={picked} onClick={() => select(reply.id)} className="preference-choose">
+                <span className="preference-reply-label">{reply.label}</span>
+                <span className="mt-1 block text-sm">{reply.text}</span>
+                <span className="text-muted-foreground mt-1 block text-xs">{reply.note}</span>
+                <span className="preference-pick">{picked ? <><Check size={15} aria-hidden />You prefer this reply</> : 'Prefer this reply'}</span>
+              </button>
 
-              <p className="preference-chance mt-3">
+              <p className="preference-chance">
                 <span className="preference-bar" aria-hidden><span style={{ width: `${now[index] * 100}%` }} /></span>
                 <span className="font-mono tabular-nums text-sm font-medium">{percent(now[index])}</span>
+                {/* Just what it was. The percentage it is now is printed right beside this, and saying it twice is noise. */}
                 <span className="text-muted-foreground text-xs">
-                  {before === null ? 'chance of being chosen' : `was ${percent(before)}, now ${percent(now[index])}`}
+                  {before === null ? 'chance of being chosen' : `was ${percent(before)} before the last round`}
                 </span>
               </p>
-
-              <Button
-                size="touch"
-                variant={picked ? 'default' : 'outline'}
-                aria-pressed={picked}
-                onClick={() => select(reply.id)}
-                /* The shared Button is `whitespace-nowrap` at a fixed height, and these sit in a column that gets to 240px. */
-                className="mt-3 h-auto max-w-full py-2 text-left whitespace-normal"
-              >
-                {picked ? <><Check aria-hidden />You prefer this reply</> : 'Prefer this reply'}
-              </Button>
             </li>;
           })}
         </ul>
@@ -125,8 +124,8 @@ export function PreferenceExperiment({ onExplain, experiment }: Props) {
 
       <div className="preference-action-area">
         <div className="preference-action">
-          <p className="eyebrow">{state.chosen === null ? 'Then' : 'Step 2 · teach it'}</p>
-          <Button size="touch" className="mt-2" disabled={state.chosen === null} onClick={learn}>Learn from this choice <ArrowRight aria-hidden /></Button>
+          <p className="eyebrow">Step 2 · teach it</p>
+          <Button size="touch" className="mt-2 h-auto max-w-full py-2 text-left whitespace-normal" disabled={state.chosen === null} onClick={learn}>Learn from this choice <ArrowRight aria-hidden /></Button>
           <div aria-live="polite" className="preference-change mt-3">
             {changed
               ? <p className="text-sm">{changed}</p>
@@ -170,7 +169,7 @@ export function PreferenceExperiment({ onExplain, experiment }: Props) {
     <details className="preference-details mt-2">
       <summary className="preference-summary">How it works</summary>
       <div className="text-muted-foreground space-y-2 pb-2 text-sm">
-        <p>Each reply has one score. The scores are turned into chances by raising each one to a power and dividing by the total, so the three always add up to 100% and one can only go up if the others come down.</p>
+        <p>Each reply has one score. The scores are turned into chances by raising each one to a power and dividing by the total, so the three always add up to 100% and one can only go up if the others come down. None of them ever reaches 100%, and none is ever ruled out: keep pressing and the chosen reply creeps towards certainty without arriving.</p>
         <p>Learning needs a number saying how far off the choice was. Here that is how much chance the reply you chose was missing, written as a number that is 0 when it already had all of it and grows the less it had.</p>
         {chosenIndex >= 0 && <p>
           Right now, for “{REPLIES[chosenIndex].label}”, that number is <strong className="text-foreground font-mono tabular-nums">{howFarOff(state.scores, chosenIndex).toFixed(2)}</strong>

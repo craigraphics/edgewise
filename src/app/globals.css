@@ -3563,9 +3563,26 @@ fieldset:disabled .neuron-choice { cursor: default; }
 .preference-replies-area { grid-area: replies; min-width: 0; }
 .preference-action-area { grid-area: action; min-width: 0; align-self: start; }
 
-@container (min-width: 44rem) {
+/*
+ * 33rem, not the 44 the notice-search panel uses.
+ *
+ * Measured rather than chosen, and measured on the CONTENT box, which is what a
+ * container query reads. This panel gets 535px of it at a 1100px viewport, 614
+ * at 720, 664 at 1230 — the common laptop this project already records — and
+ * 696 at 768. At 44rem the query fired at none of them, so "Learn from this
+ * choice" and the sentence saying what it did sat 1063px below the panel title
+ * at 1230x842, entirely off the bottom of the window, and 1147 at 1100x700. A
+ * first pass at 37rem still missed 1100, because the panel's padding is 2.5vw
+ * and the pane is not the viewport. 33rem is under all four, and it never
+ * leaves the reply column narrower than the 276px one gets on a phone.
+ *
+ * Below it the pane really is phone-sized and one column is right. The action
+ * then follows the three cards, which is the reading order anyway: there is
+ * nothing to learn from until one has been chosen.
+ */
+@container (min-width: 33rem) {
     .preference-stage {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
         grid-template-areas:
             "ask     ask"
             "replies action";
@@ -3577,27 +3594,52 @@ fieldset:disabled .neuron-choice { cursor: default; }
 .preference-reply,
 .preference-action,
 .preference-name {
-    padding: .875rem 1rem;
     border: 1px solid var(--border);
     border-radius: .75rem;
     background: var(--surface-0);
 }
+.preference-ask, .preference-action, .preference-name { padding: .875rem 1rem; }
 .preference-ask { border-left: 3px solid var(--band-behaviour); }
 .preference-ask p, .preference-reply p { overflow-wrap: anywhere; }
 
 .preference-replies { display: grid; gap: .75rem; }
-/* The chosen reply is a border and a pressed button, never colour alone. */
+/* The chosen reply is a border, a tick and a pressed state, never colour alone. */
 .preference-reply-picked {
     border-color: var(--foreground);
     box-shadow: inset 3px 0 0 var(--band-behaviour);
 }
-.preference-reply-label { font-weight: 600; font-size: .875rem; }
+.preference-reply-label { display: block; font-weight: 600; font-size: .875rem; }
+
+/* The card itself. Full width and full height, so the whole thing is the target. */
+.preference-choose {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: .875rem 1rem .75rem;
+    border-radius: .75rem .75rem 0 0;
+    cursor: pointer;
+}
+.preference-choose:focus-visible { outline: 2px solid var(--foreground); outline-offset: -2px; }
+.preference-choose:hover { background: var(--surface-1); }
+.preference-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    min-height: 2.5rem;
+    margin-top: .5rem;
+    font-size: .8125rem;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.preference-reply-picked .preference-pick { text-decoration: none; }
 
 .preference-chance {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: .25rem .625rem;
+    padding: 0 1rem .875rem;
 }
 .preference-chance > :last-child { grid-column: 1 / -1; }
 .preference-bar {

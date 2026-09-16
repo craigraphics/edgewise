@@ -64,19 +64,19 @@ export const REPLIES: readonly Reply[] = [
   {
     id: 'more-questions',
     label: 'More questions',
-    text: 'How long have you had the bike? Is it the front tyre or the back one? Do you have a pump at home?',
-    note: 'Carries on in the same shape as the text it was given. It does not answer.',
+    text: 'How long have you had the bike? Front or back tyre? Do you have a pump?',
+    note: 'Carries on in the same shape. It does not answer.',
   },
   {
     id: 'first-step',
     label: 'A short first step',
     text: 'Stop riding and check which tyre is flat.',
-    note: 'Answers the question that was asked, and stops.',
+    note: 'Answers, and stops.',
   },
   {
     id: 'fuller',
     label: 'A longer answer',
-    text: 'Stop riding and check which tyre is flat. Riding on a flat can bend the wheel, and the repair depends on which one it is. Once you know, look for a nail or a thorn still in the tread.',
+    text: 'Stop riding and check which tyre is flat. Riding on a flat can bend the wheel. Then look for a nail or a thorn in the tread.',
     note: 'Answers, then says why and what to look at next.',
   },
 ];
@@ -194,7 +194,20 @@ export function applyAction(state: Chooser, action: Action): Chooser {
   }
 }
 
-/** A chance as a whole percentage, for the screen. Display only; nothing reads it back. */
+/**
+ * A chance as a whole percentage, for the screen. Display only; nothing reads
+ * it back.
+ *
+ * A chance that is genuinely above zero never prints as `0%`, and one genuinely
+ * below one never prints as `100%`. Both states are real: measured, a losing
+ * reply drops below half a percent on the 72nd round and the chosen one passes
+ * 99.5% on the 134th, and neither ever arrives. Printing the rounded number
+ * would say a reply had been ruled out, which is the opposite of what these
+ * chances do — the same rule as the attention panel's `under 1%` and the
+ * one-step-at-a-time panel's `under 0.01 minutes off`.
+ */
 export function percent(value: number): string {
+  if (value > 0 && value < 0.005) return 'under 1%';
+  if (value < 1 && value >= 0.995) return 'over 99%';
   return `${Math.round(value * 100)}%`;
 }

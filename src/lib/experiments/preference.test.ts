@@ -283,4 +283,38 @@ describe('the percentage on screen', () => {
     expect(percent(0)).toBe('0%');
     expect(percent(1)).toBe('100%');
   });
+
+  /**
+   * Both of these are reachable by pressing again, and both would claim
+   * something the model is not saying: a reply that is really still in it does
+   * not print as ruled out, and a reply that has not taken everything does not
+   * print as having taken everything.
+   */
+  it('never rounds a chance that is really there down to nothing', () => {
+    expect(percent(0.004)).toBe('under 1%');
+    expect(percent(0.0000001)).toBe('under 1%');
+    expect(percent(0.005)).toBe('1%');
+  });
+
+  it('never rounds a chance that is not everything up to everything', () => {
+    expect(percent(0.997)).toBe('over 99%');
+    expect(percent(0.9949)).toBe('99%');
+  });
+
+  /** Measured: a loser drops under half a percent on round 72, the chosen one passes 99.5% on round 134. */
+  it('describes states this model really reaches, and never one it does not', () => {
+    const after = (rounds: number) => {
+      let scores: readonly number[] = OPENING_SCORES;
+      for (let round = 0; round < rounds; round += 1) scores = learnFrom(scores, 1);
+      return chances(scores);
+    };
+    expect(percent(after(72)[0])).toBe('under 1%');
+    expect(percent(after(71)[0])).toBe('1%');
+    expect(percent(after(134)[1])).toBe('over 99%');
+    expect(percent(after(133)[1])).toBe('99%');
+    // And it never actually arrives: every reply keeps some chance for ever.
+    const far = after(500);
+    expect(far[0]).toBeGreaterThan(0);
+    expect(far[1]).toBeLessThan(1);
+  });
 });
