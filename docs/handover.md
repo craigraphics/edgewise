@@ -1,3 +1,56 @@
+> **Why does it answer, instead of adding more questions? 2026-09-15:** On
+> `experiment/18-post-training`, branched from `main` after the notice-search
+> experiment and rebased onto it after the picking-a-word one merged. An experiment on `pretraining-vs-posttraining`: somebody asks *"My
+> bike has a flat tyre. What should I do first?"*, and three replies written by
+> hand sit under it — more questions, a short first step, a longer answer. The
+> opening chances are **55% / 25% / 20%**, with the reply that answers nothing on
+> top, because on its own a question is often followed by more questions. Choose
+> a reply (the whole card is the control), press **Learn from this choice**, and
+> it becomes **31% / 52% / 16%** — with every reply still word for word what it
+> was. Then the name: post-training. Read `docs/preferred-reply.md` for what was
+> verified and what was not, including one real assessed explanation submitted
+> end to end, which moved only this node, `blocked` → `known`. Its PR targets
+> `main`.
+>
+> It is a real softmax choice model trained by one gradient step on
+> cross-entropy, and the opening round is checkable on paper. Two things are the
+> shape of a function rather than a promise in a comment: `applyAction` carries
+> the scores through **by reference** on a `select`, so "pointing at a reply
+> trains nothing" is asserted by identity; and the state holds one score per
+> supplied reply, so there is nowhere for reply text — or anything about bicycles
+> — to be learned, which a test checks by running twenty rounds and requiring the
+> question and all three replies to be byte-identical to a clone. It is a
+> reducer, so twenty clicks in one synchronous task and twenty clicks with a
+> render between each both give exactly twenty rounds and identical chances.
+>
+> Five defects found the way this project keeps finding them. **A container query
+> set on the wrong number**: `Learn from this choice` sat 1063px below the panel
+> title at 1230x842, entirely off the bottom of the window, and 1147 at 1100x700,
+> because the 44rem threshold copied from the notice-search panel never fired —
+> a container query reads the **content box**, and this panel gets 535–696px of
+> it at the widths people use. A first pass at 37rem still missed 1100, because
+> the panel's padding is `2.5vw` and the pane is not the viewport. 33rem, and
+> **311–345 now** at every width from 640 up. The first action was 527px down
+> until the whole card became the control (**449 at 320, 359 at 1230**). The
+> chance row printed the percentage twice. A chance that was really there printed
+> as `0%` — measured, a losing reply drops under half a percent on round 72 and
+> the chosen one passes 99.5% on round 134, and neither ever arrives. And three
+> sentences read badly aloud. Plus **a wrong probe caught before it was
+> believed**: the first twenty-presses check fired every click inside one
+> synchronous loop and reported that no round had applied, because React never
+> re-renders inside a synchronous task and `Learn` stayed disabled for all twenty.
+>
+> A disagreement with the authored text is recorded and **not acted on**: the
+> node's intuition says "the willingness to answer at all" is added afterwards,
+> and a model trained only to continue text is not silent — it answers, and
+> showing one a few worked examples first was the standard way to get useful
+> answers out of it. Further training also changes what a model knows, not only
+> how it sounds. The graph, the assessor prompt, the schema and the model list
+> are untouched, and the panel's wording is chosen to be true beside the authored
+> text, which sits in the inspector at the same time on a wide screen. No phone,
+> no screen reader, and 200% zoom was checked as an equivalent 640px reflow
+> because BrowserOS cannot drive browser-chrome zoom.
+
 > **Why can the same beginning get a different next word? 2026-09-15:** On
 > `experiment/17-sampling`, branched from `main` after the notice-search
 > experiment. An experiment on `sampling-temperature`: *In the garden I found a
