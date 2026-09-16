@@ -13,7 +13,6 @@ import {
   percent,
   QUESTION,
   REPLIES,
-  STEP,
 } from '@/lib/experiments/preference';
 import { cn } from '@/lib/utils';
 
@@ -145,7 +144,7 @@ export function PreferenceExperiment({ onExplain, experiment }: Props) {
       <p className="font-display mt-2 text-xl">Training a model further on which replies people prefer is called post-training.</p>
       <p className="mt-2 text-sm">Predicting the next piece of text gets you something that continues what it is given. On its own, a question is often followed by more questions, which is why that reply started with the most chance here. Answering gets more likely when training rewards it.</p>
       <ul className="preference-points mt-3">
-        <li><strong>Nothing was rewritten.</strong> The three replies are the same three words for word. Only how likely each one is moved, and the words of the question did not move either.</li>
+        <li><strong>Nothing was rewritten.</strong> All three replies are the same, word for word, and so is the question. The only thing that moved is how likely each reply is.</li>
         <li><strong>People chose.</strong> How a model answers, how much it says, and what it declines to say are choices made by people during this stage. They are not fixed properties of the technology, and different people choose differently.</li>
         <li><strong>This is one idea inside a large stage.</strong> Real post-training uses written examples of good answers as well as choices between replies, and it adjusts a great many saved numbers rather than three.</li>
       </ul>
@@ -170,12 +169,12 @@ export function PreferenceExperiment({ onExplain, experiment }: Props) {
       <summary className="preference-summary">How it works</summary>
       <div className="text-muted-foreground space-y-2 pb-2 text-sm">
         <p>Each reply has one score. The scores are turned into chances by raising each one to a power and dividing by the total, so the three always add up to 100% and one can only go up if the others come down. None of them ever reaches 100%, and none is ever ruled out: keep pressing and the chosen reply creeps towards certainty without arriving.</p>
-        <p>Learning needs a number saying how far off the choice was. Here that is how much chance the reply you chose was missing, written as a number that is 0 when it already had all of it and grows the less it had.</p>
+        <p>Learning needs a number saying how far off the choice was. Here that is how much chance the reply you chose was missing: 0 if it already had all of it, and bigger the less it had.</p>
         {chosenIndex >= 0 && <p>
           Right now, for “{REPLIES[chosenIndex].label}”, that number is <strong className="text-foreground font-mono tabular-nums">{howFarOff(state.scores, chosenIndex).toFixed(2)}</strong>
           {state.before && state.lastLearned === state.chosen ? <> — down from <strong className="text-foreground font-mono tabular-nums">{(-Math.log(state.before[chosenIndex])).toFixed(2)}</strong> before the last press.</> : '.'}
         </p>}
-        <p>One press nudges every score a little in the direction that makes that number smaller: the chosen reply&rsquo;s score goes up, the others come down. The step is a fixed size of {STEP}, and the panel does not offer to change it, because here a bigger step only moves faster — the direction is the same whatever size you take.</p>
+        <p>One press nudges every score a little in the direction that makes that number smaller: the chosen reply&rsquo;s score goes up, the others come down. Every press nudges by the same amount, and the panel does not offer to change it, because here a bigger step only moves faster — the direction is the same whatever size you take.</p>
         <p>All the arithmetic happens in your browser. Nothing is sent anywhere and no model is called.</p>
       </div>
     </details>
