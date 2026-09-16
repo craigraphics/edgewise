@@ -7,7 +7,7 @@
  * and the shell looks them up. This is a lookup table, not a framework: adding
  * another still means writing its component and rendering it explicitly.
  */
-export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition', 'attention', 'transformer', 'context-window', 'next-token-prediction', 'rag', 'sampling-temperature', 'pretraining-vs-posttraining', 'hallucination'] as const;
+export const EXPERIMENT_IDS = ['neuron', 'tokens', 'prediction-from-examples', 'features-and-representation', 'training-vs-inference', 'loss', 'gradient-descent', 'generalization-overfitting', 'embeddings', 'train-test-split', 'parameters-scale', 'backprop-intuition', 'attention', 'transformer', 'context-window', 'next-token-prediction', 'rag', 'sampling-temperature', 'pretraining-vs-posttraining', 'hallucination', 'tool-use'] as const;
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];
 
 export function isExperimentId(id: string | null | undefined): id is ExperimentId {
@@ -35,6 +35,7 @@ export const EMPTY_EXPLAIN_REQUESTS: Record<ExperimentId, number> = {
   'sampling-temperature': 0,
   'pretraining-vs-posttraining': 0,
   hallucination: 0,
+  'tool-use': 0,
 };
 
 /** The heading each experiment focuses when it opens. */
@@ -59,6 +60,7 @@ export const EXPERIMENT_TITLE_ID: Record<ExperimentId, string> = {
   'sampling-temperature': 'sampling-lab-title',
   'pretraining-vs-posttraining': 'preference-lab-title',
   hallucination: 'hallucination-lab-title',
+  'tool-use': 'tool-use-lab-title',
 };
 
 /** The inspector's button into the experiment. */
@@ -83,6 +85,7 @@ export const EXPERIMENT_ACTION: Record<ExperimentId, string> = {
   'sampling-temperature': 'Try the picking-a-word experiment',
   'pretraining-vs-posttraining': 'Try the preferred-reply experiment',
   hallucination: 'Try the museum-record experiment',
+  'tool-use': 'Try the calculator-handoff experiment',
 };
 
 /** The workspace heading while an experiment is open. */
@@ -107,6 +110,7 @@ export const EXPERIMENT_HEADLINE: Record<ExperimentId, string> = {
   'sampling-temperature': 'Same chances, not the same word.',
   'pretraining-vs-posttraining': 'Three replies, and which one it learns to choose.',
   hallucination: 'A polished sentence, then a separate check.',
+  'tool-use': 'A request, a calculation, then an answer.',
 };
 
 /**
@@ -134,4 +138,5 @@ export const EXPERIMENT_PROMPT: Record<ExperimentId, string> = {
   'sampling-temperature': 'Nothing about the model’s three chances changed while you were pressing. So what decided which ending came out each time, and what did changing the setting do to that?',
   'pretraining-vs-posttraining': 'Your choice changed how likely each prepared reply is. What did that change, and what did it leave exactly as it was?',
   hallucination: 'The description sounded just as sure whether its year matched or not. What did making the sentence do, and what separate step checked it?',
+  'tool-use': 'The request named a calculation. What actually ran it, and how did the returned number reach the answer?',
 };

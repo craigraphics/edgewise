@@ -3746,3 +3746,97 @@ fieldset:disabled .neuron-choice { cursor: default; }
     text-underline-offset: 4px;
 }
 .hallucination-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+/* =========================================================================
+ * The calculator-handoff experiment — `tool-use`
+ *
+ * The request and calculator sit together once the panel has enough room. The
+ * answer spans beneath them so the reading order stays request → result →
+ * answer in both layouts. This is a container query because the focused pane,
+ * not the viewport, decides the available width.
+ * ========================================================================= */
+.tool-use-lab {
+    container-type: inline-size;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+.tool-use-stage {
+    display: grid;
+    gap: .75rem;
+    grid-template-areas: "request" "calculator" "answer";
+}
+
+@container (min-width: 34rem) {
+    .tool-use-stage {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "request calculator" "answer answer";
+        align-items: stretch;
+    }
+}
+
+.tool-use-request,
+.tool-use-calculator,
+.tool-use-answer,
+.tool-use-try,
+.tool-use-conclusion,
+.tool-use-details {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.tool-use-request,
+.tool-use-calculator,
+.tool-use-answer,
+.tool-use-try,
+.tool-use-conclusion { padding: .875rem 1rem; }
+.tool-use-request { grid-area: request; border-left: 3px solid var(--band-systems); }
+.tool-use-calculator { grid-area: calculator; }
+.tool-use-answer { grid-area: answer; }
+.tool-use-call {
+    overflow-wrap: anywhere;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    padding: .625rem .75rem;
+    font-family: var(--font-mono);
+    font-size: .875rem;
+    font-variant-numeric: tabular-nums;
+}
+.tool-use-call span { color: var(--muted-foreground); font-family: var(--font-sans); font-size: .75rem; }
+
+.tool-use-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.tool-use-compare > div { min-width: 0; border: 1px solid var(--border); border-radius: .5rem; padding: .625rem .75rem; }
+.tool-use-compare dt { color: var(--muted-foreground); font-size: .6875rem; }
+.tool-use-compare dd { margin-top: .125rem; font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.tool-use-try { display: grid; gap: .75rem; }
+@container (min-width: 34rem) {
+    .tool-use-try { grid-template-columns: minmax(0, 1fr) minmax(10rem, 12rem); align-items: end; }
+    .tool-use-try > [role="alert"] { grid-column: 1 / -1; }
+}
+
+.tool-use-details { padding: .25rem 1rem 1rem; }
+.tool-use-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.tool-use-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+.tool-use-json {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    background: var(--surface-1);
+    padding: .75rem;
+    color: var(--foreground);
+    font-size: .75rem;
+    line-height: 1.5;
+}

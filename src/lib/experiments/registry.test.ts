@@ -31,6 +31,7 @@ describe('the experiment registry', () => {
     expect(isExperimentId('prediction-from-examples')).toBe(true);
     expect(isExperimentId('neuron')).toBe(true);
     expect(isExperimentId('hallucination')).toBe(true);
+    expect(isExperimentId('tool-use')).toBe(true);
     expect(isExperimentId(null)).toBe(false);
     expect(isExperimentId(undefined)).toBe(false);
   });
@@ -119,6 +120,14 @@ describe('the experiment registry', () => {
     expect(EXPERIMENT_ACTION.hallucination).toBe('Try the museum-record experiment');
     expect(EXPERIMENT_HEADLINE.hallucination).toBe('A polished sentence, then a separate check.');
     expect(EXPERIMENT_PROMPT.hallucination).toBe('The description sounded just as sure whether its year matched or not. What did making the sentence do, and what separate step checked it?');
+  });
+
+  it('registers the calculator-handoff experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('tool-use');
+    expect(EXPERIMENT_TITLE_ID['tool-use']).toBe('tool-use-lab-title');
+    expect(EXPERIMENT_ACTION['tool-use']).toBe('Try the calculator-handoff experiment');
+    expect(EXPERIMENT_HEADLINE['tool-use']).toBe('A request, a calculation, then an answer.');
+    expect(EXPERIMENT_PROMPT['tool-use']).toBe('The request named a calculation. What actually ran it, and how did the returned number reach the answer?');
   });
 
   it('registers the working-backwards experiment with its learner-facing copy', () => {

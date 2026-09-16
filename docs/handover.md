@@ -1,3 +1,38 @@
+> **If a model makes text, who does the actual calculation? 2026-09-15:** On
+> `experiment/20-tool-use`, branched from merged `main`. An experiment on
+> `tool-use`: a scripted request asks for three 87cm boards, named app code
+> validates and runs a real local multiplication, and only the matching returned
+> 261cm is allowed into the scripted final answer. Change the board count and the
+> old answer disappears behind a new request ID, then returns beside 435cm as a
+> Before / Now comparison only after the new calculation succeeds; simulate an
+> error and there is no new calculated answer until a retry succeeds. Read
+> `docs/who-does-the-calculation.md` for the implementation and browser checks.
+> Its PR targets `main`.
+>
+> The request is typed and allowlists one handler, one operation, finite bounded
+> operands and centimetres. There is no `eval`, free-text execution, live model,
+> network call, account, purchase or external effect. Responses settle only the
+> matching running request, so a late older result cannot replace a newer
+> answer; reset and retry also receive new IDs. The final sentence takes the
+> successful response itself rather than recomputing or copying the expected
+> total.
+>
+> A 320px browser pass found the first action **549px below the experiment
+> title** because a whole request card preceded a separate action card. Moving
+> the action directly under the structured request reduced that to **411px**;
+> it is 353px at 1200, 382px at 720×450 and 334px at the 640px reflow used for
+> 200% zoom. Page scroll, clipping, off-right controls and undersized experiment
+> controls stayed zero after resizing 1200→320. Keyboard opened the long detail
+> and reached the final action at 720×450 while the focused-map pane, not the
+> document, scrolled. Experiment state, a 435cm result and an unfinished
+> explanation survived navigation; learner-model storage stayed byte-identical.
+>
+> The graph and panel agree: the model emits a request, surrounding code runs
+> the action, and the result comes back. The graph, assessor, explanation
+> checker, schema, fixtures and model list are untouched; no calibration run was
+> required or run. No phone, screen reader, learner, or literal browser-chrome
+> 200% zoom was used; 640px reflow was checked as the zoom equivalent.
+
 > **Can a convincing detail still be wrong? 2026-09-15:** On
 > `experiment/19-hallucination`, branched from merged `main`. An experiment on
 > `hallucination`: a fictional museum description says the Harbor Light radio
