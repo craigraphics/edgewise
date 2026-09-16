@@ -30,7 +30,7 @@ describe('the experiment registry', () => {
   it('recognises only those ids', () => {
     expect(isExperimentId('prediction-from-examples')).toBe(true);
     expect(isExperimentId('neuron')).toBe(true);
-    expect(isExperimentId('hallucination')).toBe(false);
+    expect(isExperimentId('hallucination')).toBe(true);
     expect(isExperimentId(null)).toBe(false);
     expect(isExperimentId(undefined)).toBe(false);
   });
@@ -111,6 +111,14 @@ describe('the experiment registry', () => {
     expect(EXPERIMENT_ACTION['pretraining-vs-posttraining']).toBe('Try the preferred-reply experiment');
     expect(EXPERIMENT_HEADLINE['pretraining-vs-posttraining']).toBe('Three replies, and which one it learns to choose.');
     expect(EXPERIMENT_PROMPT['pretraining-vs-posttraining']).toBe('Your choice changed how likely each prepared reply is. What did that change, and what did it leave exactly as it was?');
+  });
+
+  it('registers the museum-record experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('hallucination');
+    expect(EXPERIMENT_TITLE_ID.hallucination).toBe('hallucination-lab-title');
+    expect(EXPERIMENT_ACTION.hallucination).toBe('Try the museum-record experiment');
+    expect(EXPERIMENT_HEADLINE.hallucination).toBe('A polished sentence, then a separate check.');
+    expect(EXPERIMENT_PROMPT.hallucination).toBe('The description sounded just as sure whether its year matched or not. What did making the sentence do, and what separate step checked it?');
   });
 
   it('registers the working-backwards experiment with its learner-facing copy', () => {
