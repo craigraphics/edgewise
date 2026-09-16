@@ -105,6 +105,14 @@ describe('the experiment registry', () => {
     expect(EXPERIMENT_PROMPT['sampling-temperature']).toBe('Nothing about the model\u2019s three chances changed while you were pressing. So what decided which ending came out each time, and what did changing the setting do to that?');
   });
 
+  it('registers the preferred-reply experiment with its learner-facing copy', () => {
+    expect(EXPERIMENT_IDS).toContain('pretraining-vs-posttraining');
+    expect(EXPERIMENT_TITLE_ID['pretraining-vs-posttraining']).toBe('preference-lab-title');
+    expect(EXPERIMENT_ACTION['pretraining-vs-posttraining']).toBe('Try the preferred-reply experiment');
+    expect(EXPERIMENT_HEADLINE['pretraining-vs-posttraining']).toBe('Three replies, and which one it learns to choose.');
+    expect(EXPERIMENT_PROMPT['pretraining-vs-posttraining']).toBe('Your choice changed how likely each prepared reply is. What did that change, and what did it leave exactly as it was?');
+  });
+
   it('registers the working-backwards experiment with its learner-facing copy', () => {
     expect(EXPERIMENT_IDS).toContain('backprop-intuition');
     expect(EXPERIMENT_TITLE_ID['backprop-intuition']).toBe('backprop-lab-title');

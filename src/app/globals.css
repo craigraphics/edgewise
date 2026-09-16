@@ -3522,3 +3522,116 @@ fieldset:disabled .neuron-choice { cursor: default; }
     text-underline-offset: 4px;
 }
 .sampling-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+/* =========================================================================
+ * The preferred-reply experiment — `pretraining-vs-posttraining`
+ *
+ * `--band-behaviour` measures 4.36:1 against these cards in light mode, under
+ * AA, so it is never printed as text here — `BANDS_USED_AS_TEXT` in
+ * `globals.test.ts` still lists only `foundations`. The band carries the chance
+ * bars and a card's leading edge, both graphics held to 3:1 by the band-accent
+ * block, and every percentage is printed as `foreground` text beside its bar.
+ *
+ * The stage is a CONTAINER query, for the reason recorded above the context
+ * experiment: this panel is drawn inside the focused-map pane, whose width the
+ * viewport does not describe.
+ * ========================================================================= */
+.preference-lab {
+    container-type: inline-size;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+/*
+ * The question spans the top in both layouts: it is the fixed thing all three
+ * replies are read against and it must not move.
+ *
+ * Two columns put "Learn from this choice" and the sentence saying what it did
+ * beside the cards rather than under three of them. One column keeps the reply
+ * cards above that button, because the first thing to do here is choose one and
+ * each card carries its own control — putting the button first would offer an
+ * action that cannot do anything yet.
+ */
+.preference-stage {
+    display: grid;
+    gap: .75rem;
+    grid-template-areas: "ask" "replies" "action";
+}
+.preference-ask-area { grid-area: ask; min-width: 0; }
+.preference-replies-area { grid-area: replies; min-width: 0; }
+.preference-action-area { grid-area: action; min-width: 0; align-self: start; }
+
+@container (min-width: 44rem) {
+    .preference-stage {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+        grid-template-areas:
+            "ask     ask"
+            "replies action";
+        align-items: start;
+    }
+}
+
+.preference-ask,
+.preference-reply,
+.preference-action,
+.preference-name {
+    padding: .875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+}
+.preference-ask { border-left: 3px solid var(--band-behaviour); }
+.preference-ask p, .preference-reply p { overflow-wrap: anywhere; }
+
+.preference-replies { display: grid; gap: .75rem; }
+/* The chosen reply is a border and a pressed button, never colour alone. */
+.preference-reply-picked {
+    border-color: var(--foreground);
+    box-shadow: inset 3px 0 0 var(--band-behaviour);
+}
+.preference-reply-label { font-weight: 600; font-size: .875rem; }
+
+.preference-chance {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .25rem .625rem;
+}
+.preference-chance > :last-child { grid-column: 1 / -1; }
+.preference-bar {
+    display: block;
+    height: .4375rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+}
+.preference-bar span {
+    display: block;
+    height: 100%;
+    background: var(--band-behaviour);
+}
+
+/* Room reserved, so a press does not shuffle the button out from under the cursor. */
+.preference-change { min-height: 5.5rem; }
+
+.preference-points { display: grid; gap: .5rem; font-size: .875rem; line-height: 1.6; }
+.preference-points li { padding-left: .875rem; border-left: 2px solid var(--border); }
+
+.preference-details {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .25rem 1rem 1rem;
+}
+.preference-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.preference-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
