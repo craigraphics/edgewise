@@ -3848,6 +3848,12 @@ fieldset:disabled .neuron-choice { cursor: default; }
  * scrolls on its own axis rather than widening the panel.
  * ========================================================================= */
 .agents-lab {
+    /*
+     * The focused pane, not the viewport, decides the width here — and this
+     * panel's own @container rules are dead without this line. Both of them
+     * were, until the layout was measured rather than read.
+     */
+    container-type: inline-size;
     padding: clamp(1rem, 2.5vw, 1.75rem);
     border: 1px solid var(--border);
     border-radius: 1rem;
@@ -3855,6 +3861,7 @@ fieldset:disabled .neuron-choice { cursor: default; }
 }
 
 .agents-goal {
+    min-width: 0;
     border: 1px solid var(--border);
     border-left: 3px solid var(--band-systems);
     border-radius: .75rem;
@@ -3873,12 +3880,53 @@ fieldset:disabled .neuron-choice { cursor: default; }
 .agents-catalogue tr[data-status="discarded"] { color: var(--muted-foreground); }
 .agents-catalogue tr[data-status="not-a-candidate"] { color: var(--muted-foreground); }
 
+/*
+ * The goal, the next decision and what came back are one group, so the thing
+ * being worked towards, the state, and the action are never out of view of
+ * each other. The table of results sits below them, not between them.
+ */
+.agents-cockpit { display: grid; gap: .625rem; }
+/*
+ * 34rem, not 40: a container query reads the CONTENT box, and this panel gets
+ * about 557px of it inside the focused-map pane at a 1230px viewport. A
+ * threshold above that never fires at the width this is actually read at,
+ * which is the defect `docs/preferred-reply.md` records.
+ */
+@container (min-width: 34rem) {
+    .agents-cockpit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .agents-cockpit > .agents-readout { grid-column: 1 / -1; }
+}
+
 .agents-action {
     min-width: 0;
     border: 1px solid var(--border);
     border-radius: .75rem;
     background: var(--surface-0);
     padding: .875rem 1rem;
+}
+
+.agents-readout {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-systems);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .875rem 1rem;
+}
+
+.agents-outcome {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-systems);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .875rem 1rem;
+}
+
+.agents-named {
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: 1rem;
 }
 
 .agents-outcome-success { color: var(--foreground); }

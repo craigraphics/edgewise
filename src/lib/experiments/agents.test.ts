@@ -8,12 +8,16 @@ import {
   GOAL_COUNT,
   GOAL_MAX_PAGES,
   initialAgentState,
+  describeDecision,
   initialProgress,
+  knownGenre,
   LIBRARY_DATASETS,
+  LIBRARY_SCENARIOS,
   MAX_STEPS,
   meetsGoal,
   searchCatalogue,
   successMessage,
+  untouchedCandidates,
   type AgentState,
   type LibraryProgress,
 } from './agents';
@@ -227,5 +231,193 @@ describe('the reducer', () => {
     state = { ...state, outcome: { kind: 'failure', reason: 'already done' } };
     const again = applyAgentAction(state, { kind: 'settle', decision: { kind: 'success' } });
     expect(again).toBe(state);
+  });
+});
+
+describe('the run ends on the step that met the goal', () => {
+  /** Drives with `resolve` only — no explicit `settle` — the way the panel does. */
+  function pressUntilDone(datasetId: keyof typeof LIBRARY_DATASETS) {
+    let state: AgentState = initialAgentState(datasetId);
+    let presses = 0;
+    while (!state.outcome && presses < MAX_STEPS + 3) {
+      const decision = decide(state.progress);
+      if (decision.kind === 'success' || decision.kind === 'failure') {
+        // The panel should never reach here: the previous resolve settles it.
+        state = applyAgentAction(state, { kind: 'settle', decision });
+        presses += 1;
+        continue;
+      }
+      presses += 1;
+      const requestId = `step-${presses}`;
+      state = applyAgentAction(state, { kind: 'begin', requestId, decision });
+      state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS[datasetId], decision, requestId, false) });
+    }
+    return { state, presses };
+  }
+
+  it('needs no extra press after the step that confirmed the second book', () => {
+    const { state, presses } = pressUntilDone('default');
+    expect(state.outcome).toEqual({ kind: 'success' });
+    // Five tool calls, five presses. A sixth would be a press that runs nothing.
+    expect(presses).toBe(state.log.length);
+    expect(presses).toBe(5);
+  });
+
+  it('ends on the step that exhausted the candidates, not one after it', () => {
+    const { state, presses } = pressUntilDone('no-match');
+    expect(state.outcome?.kind).toBe('failure');
+    expect(presses).toBe(state.log.length);
+  });
+
+  it('stops auto-running as soon as the outcome lands', () => {
+    let state: AgentState = { ...initialAgentState('default'), autoRunning: true };
+    let n = 0;
+    while (!state.outcome && n < MAX_STEPS + 2) {
+      const decision = decide(state.progress);
+      if (decision.kind !== 'search' && decision.kind !== 'check') break;
+      n += 1;
+      state = applyAgentAction(state, { kind: 'begin', requestId: `s-${n}`, decision });
+      expect(state.autoRunning).toBe(true);
+      state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, decision, `s-${n}`, false) });
+    }
+    expect(state.outcome).toEqual({ kind: 'success' });
+    expect(state.autoRunning).toBe(false);
+  });
+});
+
+describe('the readout never promises a step the loop will not take', () => {
+  it('does not offer a next candidate once the goal is met', () => {
+    let state: AgentState = initialAgentState('default');
+    let n = 0;
+    while (!state.outcome && n < MAX_STEPS) {
+      const decision = decide(state.progress);
+      if (decision.kind !== 'search' && decision.kind !== 'check') break;
+      n += 1;
+      state = applyAgentAction(state, { kind: 'begin', requestId: `s-${n}`, decision });
+      state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, decision, `s-${n}`, false) });
+    }
+    const final = state.log.at(-1)!;
+    expect(final.detail).not.toMatch(/next/i);
+    expect(final.detail).toMatch(/the loop stops/i);
+  });
+
+  it('does not offer a next candidate once they have all been checked', () => {
+    let state: AgentState = initialAgentState('no-match');
+    let n = 0;
+    while (!state.outcome && n < MAX_STEPS) {
+      const decision = decide(state.progress);
+      if (decision.kind !== 'search' && decision.kind !== 'check') break;
+      n += 1;
+      state = applyAgentAction(state, { kind: 'begin', requestId: `s-${n}`, decision });
+      state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS['no-match'], decision, `s-${n}`, false) });
+    }
+    expect(state.log.at(-1)!.detail).toMatch(/nothing left to try/i);
+  });
+
+  it('every other step does name the candidate coming next', () => {
+    let state: AgentState = initialAgentState('default');
+    state = applyAgentAction(state, { kind: 'begin', requestId: 's-1', decision: { kind: 'search' } });
+    state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, { kind: 'search' }, 's-1', false) });
+    expect(state.log.at(-1)!.detail).toContain('Next: check The Silver Key.');
+    expect(state.log.at(-1)!.summary).toContain('6 of the 8 books');
+  });
+});
+
+describe('the decision is shown before it is taken', () => {
+  it('names the action rather than calling it a generic step', () => {
+    const first = describeDecision({ kind: 'search' }, initialProgress());
+    expect(first.action).toBe('Search the catalogue');
+
+    const progress: LibraryProgress = { searched: true, candidateOrder: ['silver-key', 'locked-door'], checked: {}, confirmed: [], stepsTaken: 1 };
+    const second = describeDecision({ kind: 'check', bookId: 'silver-key' }, progress);
+    expect(second.action).toBe('Check The Silver Key');
+    expect(second.because).toMatch(/first candidate not checked yet/);
+    // The heading above already names the book; the reason must not repeat it.
+    expect(second.because).not.toContain('The Silver Key');
+  });
+
+  it('never grades the learner or predicts how the run turns out', () => {
+    const verdicts = /\b(correct|wrong|right answer|well done|good job|best|worse|score)\b/i;
+    const progress: LibraryProgress = { searched: true, candidateOrder: ['silver-key'], checked: {}, confirmed: [], stepsTaken: 1 };
+    for (const decision of [{ kind: 'search' } as const, { kind: 'check', bookId: 'silver-key' } as const]) {
+      const preview = describeDecision(decision, progress);
+      expect(preview.action).not.toMatch(verdicts);
+      expect(preview.because).not.toMatch(verdicts);
+    }
+  });
+});
+
+describe('what the loop knows is only ever what a tool returned', () => {
+  it('knows no genre at all before the search', () => {
+    expect(knownGenre(initialProgress(), 'silver-key')).toBeNull();
+    expect(knownGenre(initialProgress(), 'herbs-cookbook')).toBeNull();
+  });
+
+  it('learns both sides of the genre question from one search', () => {
+    const progress: LibraryProgress = { searched: true, candidateOrder: searchCatalogue(LIBRARY_DATASETS.default), checked: {}, confirmed: [], stepsTaken: 1 };
+    expect(knownGenre(progress, 'silver-key')).toBe('mystery');
+    expect(knownGenre(progress, 'herbs-cookbook')).toBe('not a mystery');
+  });
+});
+
+describe('the stopping condition is visible after the fact', () => {
+  it('names the candidates the loop never reached', () => {
+    const state = driveOneRun('default');
+    expect(untouchedCandidates(state.progress)).toEqual(['missing-letter', 'nile-path']);
+  });
+
+  it('leaves nothing untouched when the candidates genuinely ran out', () => {
+    const state = driveOneRun('no-match');
+    expect(untouchedCandidates(state.progress)).toEqual([]);
+  });
+
+  it('says the step limit is a rule somebody wrote, not a judgement', () => {
+    const progress: LibraryProgress = { searched: false, candidateOrder: [], checked: {}, confirmed: [], stepsTaken: MAX_STEPS };
+    const decision = decide(progress);
+    expect(decision.kind).toBe('failure');
+    if (decision.kind === 'failure') {
+      expect(decision.reason).toMatch(/a person set a limit/i);
+      expect(decision.reason).toContain(String(MAX_STEPS));
+    }
+  });
+});
+
+describe('the scenario labels', () => {
+  it('describe the shelf and never the ending', () => {
+    // Words that would hand over the result before the loop has run.
+    const spoilers = /\b(succeeds?|fails?|unfinished|no (second )?match|works?|goes to plan|impossible|cannot)\b/i;
+    for (const scenario of LIBRARY_SCENARIOS) {
+      expect(scenario.label).not.toMatch(spoilers);
+      expect(scenario.blurb).not.toMatch(spoilers);
+    }
+  });
+
+  it('covers every dataset exactly once', () => {
+    expect(LIBRARY_SCENARIOS.map(s => s.id).sort()).toEqual(Object.keys(LIBRARY_DATASETS).sort());
+  });
+});
+
+describe('a tool error says what it cost', () => {
+  it('reports that nothing was learned and names the identical next step', () => {
+    let state: AgentState = initialAgentState('default');
+    state = applyAgentAction(state, { kind: 'begin', requestId: 'step-1', decision: { kind: 'search' } });
+    state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, { kind: 'search' }, 'step-1', true) });
+    const entry = state.log.at(-1)!;
+    expect(entry.status).toBe('error');
+    expect(entry.detail).toMatch(/nothing was learned/i);
+    // The sentence has to agree with the decision the loop will actually take.
+    expect(entry.detail).toContain('Next: search the catalogue.');
+    expect(decide(state.progress)).toEqual({ kind: 'search' });
+  });
+
+  it('names the same candidate again when a check is the thing that failed', () => {
+    let state: AgentState = initialAgentState('default');
+    state = applyAgentAction(state, { kind: 'begin', requestId: 'step-1', decision: { kind: 'search' } });
+    state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, { kind: 'search' }, 'step-1', false) });
+    const decision = decide(state.progress);
+    state = applyAgentAction(state, { kind: 'begin', requestId: 'step-2', decision: decision as never });
+    state = applyAgentAction(state, { kind: 'resolve', outcome: executeStep(LIBRARY_DATASETS.default, decision as never, 'step-2', true) });
+    expect(state.log.at(-1)!.detail).toContain('Next: check The Silver Key.');
+    expect(decide(state.progress)).toEqual({ kind: 'check', bookId: 'silver-key' });
   });
 });
