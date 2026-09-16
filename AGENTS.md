@@ -2982,3 +2982,130 @@ failing on exactly two fixtures — 2/72 false passes for `hallucination/parrote
 which this file records as deliberately left failing, and 3/24 false blocks for
 `neuron/technical`. One end-to-end assessed explanation was submitted through the
 live path instead, and is reported in `docs/one-block.md`.
+
+### Why can the same beginning get a different next word? — 2026-09-15
+
+On `experiment/17-sampling`, branched from `main` after the notice-search
+experiment merged. An experiment on `sampling-temperature`, built to the same
+rule as the seventeen before it: change something, inspect the consequence,
+optionally explain it. See `docs/picking-a-word.md` for the verification tables
+and the limits.
+
+**The panel next door asked for it.** `next-token.ts` has carried this line in
+its header since it was written: *"The highest chance always wins, with a stated
+tie rule. Choosing at random among the likely pieces is a different idea and
+belongs to its own experiment."* This is that experiment, and because
+`sampling-temperature`'s only prerequisite is `next-token-prediction`,
+registering the id was enough for that panel's **Builds into** row to grow a
+`Try it` button for it. Nothing in `deep-link.ts` needed touching either.
+
+**One sentence, three endings, one button.** *In the garden I found a …*, with
+flower 60%, stone 30% and dragon 10% beside it the whole time. Seven presses
+gave flower, flower, flower, stone, flower, dragon, flower — and the chances
+never moved. That is the node's first recorded misconception taken apart by
+pressing rather than by arguing: the model does not *decide* to phrase things
+differently, it hands out chances and something outside it draws one.
+
+**Then two plain-language settings reshape the chances before the draw**, with
+each row showing what it has now and what it started with. Read off screen:
+78.3 / 19.6 / 2.2 for favouring the usual, 47.3 / 33.4 / 19.3 for the unusual,
+100 / 0 / 0 for the top option — all matching the arithmetic by hand, where
+favouring the usual squares each chance (0.36, 0.09, 0.01 over 0.46).
+**"Always pick the top option" sits apart from the other two**, because it is a
+different kind of choice rather than a very small temperature: no amount of
+dividing reaches zero, and rounding towards it would misreport a decision
+somebody actually made.
+
+**The name comes last, and carries the node's second misconception.** Nothing
+says *temperature* until a setting has been used and a real change is on screen.
+The card then says it cannot make an ending more accurate, does not measure
+imagination and has no way of checking whether an answer is true — and that
+always taking the top option is a real choice, not a mistake, which is a softer
+claim than the authored misconception makes. See the disagreement below.
+
+**Written to survive small numbers.** `adjust` scores each chance as
+`log(p) / T`, subtracts the largest score, takes `exp`, and rescales. That
+subtraction is not tidiness: written the obvious way, at `T = 0.0005` the
+largest weight is `exp(-1021)`, every weight underflows to zero, the total is
+zero and every chance comes out `NaN`. The test asserts the naive form really
+does total zero there. A panel printing `NaN` as a chance would be teaching the
+exact thing this node exists to correct.
+
+**The randomness is a parameter, and it is the repo's first.** There was no
+`Math.random` anywhere in `src/` before this branch — the only generator was a
+private, hard-coded-seed LCG inside `embeddings.ts`. `drawFrom(chances, random)`
+takes the source in its signature rather than reaching for it inside, which is
+what lets the tests drive exact boundary values and a seeded sequence;
+`Math.random` is named once, at the call site in the click handler. And `adjust`
+takes the starting chances as a parameter and returns a new array, so
+"changing the setting does not change what the model produced" is the shape of
+the function rather than a promise in a comment — the same structural move as
+`answerWith(learned, distance)` in `phases.ts`.
+
+**The fixtures are held to the power form.** `softmax(log p / T)` is
+algebraically `p^(1/T)` normalised, computed in the test with `Math.pow`,
+sharing no code and no intermediate value with the implementation. That is the
+"do not assert the measure against itself" trap closed by a **tenth** route,
+after `bpe_ranks` decoded independently, the least-squares conditions, brute
+force over 65,536 pictures, hand arithmetic, answers worked out on paper,
+pinning to a published file, literal `Math.exp` calls, a second whole
+transformer block, and a naive scan of raw story text. The four settings are
+held to **what they do rather than to their own copy**, and a test rejects a
+verdict word — *best*, *worse*, *too far* — in any label: a label says how the
+chance is spread, never how a draw will turn out.
+
+**Four defects found by measuring or driving, not by reading.** The result
+sentence went stale on a setting change — drawing "flower" at 60% and then
+favouring the usual endings left the sentence reporting 60% beside a row saying
+78.3%, a chance no longer on screen anywhere; the picks and the counts both
+belong to one setting now, so changing it clears both and the panel says so. The
+first action sat 482px below the panel title at 320px, against 149–525 across
+four siblings measured as controls in the same run, fixed by moving the
+"chosen for this example" label beside the chances it qualifies rather than in
+front of the first action. The button sat about 90px below the sentence it
+continues, because the chances card spans both grid rows and the slack from a
+tall card was being shared out — **12px now, and 274 at 1230x842**. And the
+"started at 60%" line was two pixels closer to its own row than to the next one,
+so it read as a caption for the ending below it. Eighteenth time.
+
+**A wrong probe, for the fifth time — and the tell was a new one.** The first
+contrast run reported three setting buttons at **1.10:1 in dark mode and nothing
+wrong in light**. The probe took the first non-transparent ancestor background
+and painted it over an empty canvas, and dark mode's outline buttons carry a
+*translucent* background, so it was measuring the label against near-black.
+Compositing over black, which `docs/words-around-it.md` already records once.
+Corrected by building the background from the outermost **opaque** ancestor
+down: worst text **5.55** light and **7.89** dark, chance bars 3.83 and 8.62,
+leading edges 4.18 and 9.50. `--band-language` is still never printed as text.
+Every 1px hairline in the panel measures about 1:1 against what is behind it —
+and so does every hairline in the `next-token` and `rag` panels, measured in the
+same run, so that is shell-wide `--border` rather than anything this branch
+introduces.
+
+**Nothing here touches the map.** No learner-model access: forty rapid
+alternating presses, every setting, a hundred batch draws, every disclosure and
+Reset left a **populated** ten-mark model — `sampling-temperature` itself and its
+prerequisite included — byte-identical. Zero fetches, zero XHRs and zero new
+resource loads while driving the whole panel, and `document.getAnimations()` is
+empty with it open at every width.
+
+**A disagreement with the authored node, recorded rather than acted on.** The
+node's misconception says greedy decoding *"in practice produces flat,
+repetitive, looping text"*, and its example says temperature zero makes a model
+*"near-deterministic"*. Both are fair about real language models and neither is
+demonstrable in a closed list of three, where taking the top option is exactly
+deterministic rather than near it. The panel says which is which on screen — that
+the determinism here follows from the example being closed, that it is not a
+promise about a deployed service, and that greedy choice is a real choice rather
+than a mistake. **Nothing was changed**: the graph, the assessor prompt, the
+decision schema and the model list are untouched.
+
+**`pnpm calibrate --explain --runs 3` was not run, and no assessed explanation
+was submitted.** `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders
+and never sends, and this branch changes no prompt, schema or model-list file.
+The claim that nothing here moves a mark rests on the absence of learner-model
+access and on the before/after storage reads, which is the same position
+`docs/how-far-off.md` and `docs/notice-search.md` record. The last five sessions
+recorded that canary failing on exactly two fixtures — 2/72 false passes for
+`hallucination/parroted`, deliberately left failing, and 3/24 false blocks for
+`neuron/technical`.

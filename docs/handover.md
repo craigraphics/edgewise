@@ -1,3 +1,59 @@
+> **Why can the same beginning get a different next word? 2026-09-15:** On
+> `experiment/17-sampling`, branched from `main` after the notice-search
+> experiment. An experiment on `sampling-temperature`: *In the garden I found a
+> …*, three possible endings with flower 60%, stone 30% and dragon 10% beside
+> them the whole time, and one button. Seven presses gave flower, flower,
+> flower, stone, flower, dragon, flower, and the chances never moved — the
+> node's first misconception taken apart by pressing rather than by arguing.
+> Then two plain-language settings reshape the chances **before** the draw, each
+> row showing what it has now and what it started with: 78.3 / 19.6 / 2.2 for
+> favouring the usual, 47.3 / 33.4 / 19.3 for the unusual, all matching the
+> arithmetic by hand. **"Always pick the top option" sits apart from both**,
+> because zero is a different rule rather than a very small temperature. The
+> word *temperature* appears only after a setting has been used and a real
+> change is on screen. Read `docs/picking-a-word.md` for what was verified and
+> what was not. Its PR targets `main`.
+>
+> The panel next door asked for it: `next-token.ts` has said since it was
+> written that choosing at random among the likely pieces "belongs to its own
+> experiment". Because `sampling-temperature`'s only prerequisite is
+> `next-token-prediction`, registering the id was enough for that panel's
+> **Builds into** row to grow a `Try it` button for it, and `deep-link.ts`
+> needed no edit at all.
+>
+> Three things worth keeping. `adjust` subtracts the largest score before
+> `exp`, and that is not tidiness — written the obvious way, at T = 0.0005 every
+> weight underflows to zero and every chance comes out `NaN`; the test asserts
+> the naive form really does total zero there. The randomness is a **parameter**,
+> and it is the repo's first: there was no `Math.random` anywhere in `src/`
+> before this branch, so `drawFrom(chances, random)` puts the one
+> non-deterministic thing here somewhere it can be seen, and the tests drive
+> exact boundary values and a seeded batch of 20,000. And the fixtures are held
+> to the **power form** — `p^(1/T)` normalised via `Math.pow`, sharing no code
+> with the implementation — which is the tenth route this project has used to
+> avoid asserting a measure against itself.
+>
+> Four defects found the way this project keeps finding them: the result
+> sentence went stale on a setting change (60% beside a row saying 78.3%), fixed
+> by making the picks belong to one setting the way the counts already did; the
+> first action sat 482px below the panel title at 320px against 149–525 across
+> four siblings measured as controls, fixed by moving the "chosen for this
+> example" label beside the chances it qualifies (**390 at 320, 274 at 1230**);
+> the button sat ~90px below the sentence it continues because a row-spanning
+> card was sharing out its slack (**12px now**); and a sub-line sat two pixels
+> closer to its own row than to the next one. Plus a fifth wrong probe, with a
+> new tell — **1.10:1 in dark mode and nothing wrong in light**, because the
+> probe painted dark mode's translucent outline buttons over an empty canvas.
+> Corrected: worst text 5.55 light, 7.89 dark.
+>
+> A disagreement with the authored node is recorded and **not acted on**: its
+> misconception says greedy decoding produces "flat, repetitive, looping text"
+> and its example calls temperature zero "near-deterministic", neither of which
+> is demonstrable in a closed list of three. The panel says which is which on
+> screen instead. The graph, assessor prompt, schema and model list are
+> untouched, so no calibration run was required; none was run, and no assessed
+> explanation was submitted. No phone, no screen reader.
+
 > **Can it answer from the right notice? 2026-09-14:** On `experiment/16-rag`,
 > branched from `main` after the one-piece-at-a-time experiment. An experiment on
 > `rag`: a swimming pool, five short dated notices, and one fixed question —
