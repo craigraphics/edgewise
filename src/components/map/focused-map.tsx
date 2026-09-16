@@ -21,6 +21,7 @@ import { NextTokenExperiment, type useNextTokenExperiment } from '@/components/e
 import { RagExperiment, type useRagExperiment } from '@/components/experiments/rag-experiment';
 import { SamplingExperiment, type useSamplingExperiment } from '@/components/experiments/sampling-experiment';
 import { PreferenceExperiment, type usePreferenceExperiment } from '@/components/experiments/preference-experiment';
+import { HallucinationExperiment, type useHallucinationExperiment } from '@/components/experiments/hallucination-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -48,6 +49,7 @@ type Props = {
   ragExperiment: ReturnType<typeof useRagExperiment>;
   samplingExperiment: ReturnType<typeof useSamplingExperiment>;
   preferenceExperiment: ReturnType<typeof usePreferenceExperiment>;
+  hallucinationExperiment: ReturnType<typeof useHallucinationExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -81,10 +83,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   rag: { tint: 'playable-invitation-systems', title: 'How can AI answer from a notice it was never trained on?', blurb: 'A swimming pool with five dated notices. Search them, hand one over, and watch the answer change when the notice does.', action: 'Search the notices' },
   'sampling-temperature': { tint: 'playable-invitation-language', title: 'Why can the same beginning get a different next word?', blurb: 'One sentence, three possible endings, a chance each. Pick a few times, then change how much the usual ending is favoured.', action: 'Pick an ending' },
   'pretraining-vs-posttraining': { tint: 'playable-invitation-behaviour', title: 'Why does it answer, instead of adding more questions?', blurb: 'Three replies to a flat tyre, written in advance. Show a tiny model which one you prefer and watch how likely each one becomes.', action: 'Show it which reply you prefer' },
+  hallucination: { tint: 'playable-invitation-behaviour', title: 'Does sounding right mean the detail was checked?', blurb: 'A polished description gives an exhibit a year. Compare it with the invented museum record beside it.', action: 'Check the description' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment, samplingExperiment, preferenceExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment, samplingExperiment, preferenceExperiment, hallucinationExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -180,6 +183,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'rag' && <div className="mt-4"><RagExperiment onExplain={() => onExplain('rag')} experiment={ragExperiment} /></div>}
       {playing && node.id === 'sampling-temperature' && <div className="mt-4"><SamplingExperiment onExplain={() => onExplain('sampling-temperature')} experiment={samplingExperiment} /></div>}
       {playing && node.id === 'pretraining-vs-posttraining' && <div className="mt-4"><PreferenceExperiment onExplain={() => onExplain('pretraining-vs-posttraining')} experiment={preferenceExperiment} /></div>}
+      {playing && node.id === 'hallucination' && <div className="mt-4"><HallucinationExperiment onExplain={() => onExplain('hallucination')} experiment={hallucinationExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 
