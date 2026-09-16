@@ -1,3 +1,39 @@
+> **What turns one tool call into working towards a goal? 2026-09-15:** On
+> `experiment/21-agents`, branched from `main` after the calculator-handoff
+> experiment merged. An experiment on `agents`: a fictional library, a small
+> catalogue, and one fixed goal — find two mystery books under 200 pages that
+> are available now. **Take the next step** runs one tool (search or check)
+> and puts the result beside the button, with the catalogue table updating
+> live per row: not a candidate, candidate, confirmed, discarded. The loop
+> stops the moment two distinct books are confirmed and names the evidence.
+> Read `docs/one-goal-one-loop.md` for what was verified and what was not.
+> Its PR targets `main`.
+>
+> `decide(progress)` in `src/lib/experiments/agents.ts` takes only what the
+> loop has learned so far and never the catalogue — a test asserts its arity
+> is exactly one — so a search hit alone can never count as confirmed. Three
+> catalogues over the same eight books sit under **Try a problem**:
+> everything goes to plan; a candidate that would have matched turns out to
+> be unavailable, so the next action genuinely changes and the loop still
+> succeeds; or no second match exists, and the loop reports **"The task is
+> unfinished"** rather than declaring success. A **Stop** control is visible
+> any time a step is running or auto-running, and a checkbox can make one
+> step report a tool error — the failed attempt changes nothing, so the same
+> decision can be retried without losing progress. The reducer uses the same
+> request-id discipline as tool-use and RAG: a stale or duplicate `resolve`
+> is silently ignored.
+>
+> A real explanation submitted through the live assessor moved `agents`
+> `unexplored → known` and left ten other existing marks byte-identical.
+> This session's browser tool could not actually resize the tab's viewport
+> or move keyboard focus via `Tab`, so the 320px layout was checked by
+> constraining the experiment's container in the live DOM instead, and
+> keyboard order rests on this panel using only native `button`,
+> `input[type=checkbox]`, and `details`/`summary` elements — the same
+> primitives already audited in the sibling experiments it was built
+> alongside. No phone, no screen reader. The graph, assessor, schema,
+> fixtures, and model list are untouched; no calibration run was required.
+
 > **If a model makes text, who does the actual calculation? 2026-09-15:** On
 > `experiment/20-tool-use`, branched from merged `main`. An experiment on
 > `tool-use`: a scripted request asks for three 87cm boards, named app code

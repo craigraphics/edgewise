@@ -23,6 +23,7 @@ import { SamplingExperiment, type useSamplingExperiment } from '@/components/exp
 import { PreferenceExperiment, type usePreferenceExperiment } from '@/components/experiments/preference-experiment';
 import { HallucinationExperiment, type useHallucinationExperiment } from '@/components/experiments/hallucination-experiment';
 import { ToolUseExperiment, type useToolUseExperiment } from '@/components/experiments/tool-use-experiment';
+import { AgentExperiment, type useAgentExperiment } from '@/components/experiments/agent-experiment';
 import { STATE_COPY } from '@/components/session/inspector';
 import { stateOf } from '@/lib/graph/frontier';
 import { EXPERIMENT_ACTION, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
@@ -52,6 +53,7 @@ type Props = {
   preferenceExperiment: ReturnType<typeof usePreferenceExperiment>;
   hallucinationExperiment: ReturnType<typeof useHallucinationExperiment>;
   toolUseExperiment: ReturnType<typeof useToolUseExperiment>;
+  agentExperiment: ReturnType<typeof useAgentExperiment>;
   playing: boolean;
   /** The panel is already showing this idea, so offering to open it would do nothing. */
   alreadyOpen: boolean;
@@ -87,10 +89,11 @@ const INVITATIONS: Record<ExperimentId, { tint: string; title: string; blurb: st
   'pretraining-vs-posttraining': { tint: 'playable-invitation-behaviour', title: 'Why does it answer, instead of adding more questions?', blurb: 'Three replies to a flat tyre, written in advance. Show a tiny model which one you prefer and watch how likely each one becomes.', action: 'Show it which reply you prefer' },
   hallucination: { tint: 'playable-invitation-behaviour', title: 'Does sounding right mean the detail was checked?', blurb: 'A polished description gives an exhibit a year. Compare it with the invented museum record beside it.', action: 'Check the description' },
   'tool-use': { tint: 'playable-invitation-systems', title: 'If a model makes text, who does the actual calculation?', blurb: 'Follow one shelf-building calculation from a structured request, through app code, and back into an answer.', action: 'Run the calculator' },
+  agents: { tint: 'playable-invitation-systems', title: 'What turns one tool call into working towards a goal?', blurb: 'A library, a goal, and one step at a time. Watch each result decide what happens next, until two matching books are confirmed.', action: 'Take the first step' },
 };
 
 /** Every link shown here is an immediate prerequisite edge, never a suggested curriculum edge. */
-export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment, samplingExperiment, preferenceExperiment, hallucinationExperiment, toolUseExperiment }: Props) {
+export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect, onPlay, onExplain, neuronExperiment, tokenizerExperiment, predictorExperiment, representationExperiment, phasesExperiment, lossExperiment, stepsExperiment, generalizationExperiment, embeddingsExperiment, holdoutExperiment, parametersExperiment, backpropExperiment, attentionExperiment, transformerExperiment, contextExperiment, nextTokenExperiment, ragExperiment, samplingExperiment, preferenceExperiment, hallucinationExperiment, toolUseExperiment, agentExperiment }: Props) {
   const invited: ExperimentId = isExperimentId(node.id) ? node.id : 'neuron';
   const invitation = INVITATIONS[invited];
   const parents = node.prerequisites.map(id => graph.nodes.find(n => n.id === id)!);
@@ -188,6 +191,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
       {playing && node.id === 'pretraining-vs-posttraining' && <div className="mt-4"><PreferenceExperiment onExplain={() => onExplain('pretraining-vs-posttraining')} experiment={preferenceExperiment} /></div>}
       {playing && node.id === 'hallucination' && <div className="mt-4"><HallucinationExperiment onExplain={() => onExplain('hallucination')} experiment={hallucinationExperiment} /></div>}
       {playing && node.id === 'tool-use' && <div className="mt-4"><ToolUseExperiment onExplain={() => onExplain('tool-use')} experiment={toolUseExperiment} /></div>}
+      {playing && node.id === 'agents' && <div className="mt-4"><AgentExperiment onExplain={() => onExplain('agents')} experiment={agentExperiment} /></div>}
 
       {!playing && isExperimentId(node.id) && <div className="mt-4">{offer}</div>}
 

@@ -3840,3 +3840,75 @@ fieldset:disabled .neuron-choice { cursor: default; }
     font-size: .75rem;
     line-height: 1.5;
 }
+
+/* =========================================================================
+ * The library-helper experiment — `agents`
+ *
+ * The catalogue is a real table so its rows can be read as a table, and it
+ * scrolls on its own axis rather than widening the panel.
+ * ========================================================================= */
+.agents-lab {
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface-1);
+}
+
+.agents-goal {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--band-systems);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .875rem 1rem;
+}
+
+.agents-catalogue-wrap { max-width: 100%; overflow-x: auto; }
+.agents-catalogue { width: 100%; min-width: 30rem; border-collapse: collapse; font-size: .8125rem; }
+.agents-catalogue th,
+.agents-catalogue td { padding: .5rem .625rem .5rem 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; white-space: nowrap; }
+.agents-catalogue thead th { font-weight: 500; color: var(--muted-foreground); }
+.agents-catalogue tbody th { font-weight: 500; }
+.agents-catalogue tr[data-status="confirmed"] td:last-child,
+.agents-catalogue tr[data-status="confirmed"] th:last-child { color: var(--foreground); font-weight: 600; }
+.agents-catalogue tr[data-status="discarded"] { color: var(--muted-foreground); }
+.agents-catalogue tr[data-status="not-a-candidate"] { color: var(--muted-foreground); }
+
+.agents-action {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--surface-0);
+    padding: .875rem 1rem;
+}
+
+.agents-outcome-success { color: var(--foreground); }
+.agents-outcome-failure { color: var(--foreground); }
+
+.agents-details { padding: .25rem 0 1rem; }
+.agents-summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.agents-summary:focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; border-radius: .25rem; }
+
+.agents-log-entry { border-left: 2px solid var(--border); padding-left: .625rem; }
+.agents-log-confirmed { border-left-color: var(--band-systems); }
+.agents-log-error { border-left-style: dashed; }
+
+.agents-scenarios { display: grid; gap: .5rem; }
+@container (min-width: 34rem) { .agents-scenarios { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.agents-scenario {
+    min-width: 0;
+    min-height: 2.75rem;
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    background: var(--surface-0);
+    padding: .625rem .75rem;
+    text-align: left;
+}
+.agents-scenario[aria-pressed="true"] { border-color: var(--foreground); }

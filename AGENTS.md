@@ -3215,3 +3215,53 @@ access and on the before/after storage reads, which is the same position
 recorded that canary failing on exactly two fixtures — 2/72 false passes for
 `hallucination/parroted`, deliberately left failing, and 3/24 false blocks for
 `neuron/technical`.
+
+### What turns one tool call into working towards a goal? — 2026-09-15
+
+On `experiment/21-agents`, branched from `main` after the calculator-handoff
+experiment merged. An experiment on `agents`: a fictional library, a small
+catalogue, and one fixed goal — *find two mystery books under 200 pages that
+are available now.* **Take the next step** runs one tool and puts its result
+beside the button: search returns candidates by genre, check returns a
+candidate's real page count and current availability. The catalogue table
+marks each row live — *not a candidate*, *candidate — not checked yet*,
+*confirmed*, *discarded* — so the whole run is visible, not just the latest
+line. The loop stops the moment two distinct books are confirmed and names
+the evidence: *"The Silver Key and Whispers in the Library are both
+mysteries, under 200 pages, and available in the latest check."* Read
+`docs/one-goal-one-loop.md` for what was verified and what was not.
+
+**The policy is one pure function that cannot see the catalogue.**
+`decide(progress)` in `src/lib/experiments/agents.ts` takes only what the
+loop has learned so far — searched, candidates, checked results, confirmed
+ids — and never the catalogue itself; a test asserts its arity is exactly
+one. A search hit alone is never confirmed, only a checked result that is
+both under the page limit and available. Three catalogues over the same
+eight books make the point concrete under **Try a problem**: everything goes
+to plan; a candidate that would have matched turns out to be unavailable,
+so the next action genuinely changes and the loop still succeeds; or no
+second match exists at all, and the loop checks every candidate and reports
+**"The task is unfinished"** rather than declaring success.
+
+A **Stop** control is visible any time a step is in flight or the run is
+going by itself, and **Run the remaining steps** only appears after a manual
+step. A checkbox can make one step report a tool error instead of a result —
+the failed attempt is logged, nothing in `progress` changes, and the very
+next decision is identical to the one that just failed, so retrying loses
+nothing. The reducer uses the same request-id discipline as the tool-use and
+RAG experiments: a stale or duplicate `resolve`, including one delivered
+after Reset or a dataset change, is silently ignored.
+
+Verified: a real explanation submitted through the live assessor moved
+`agents` `unexplored → known` and left all ten other existing marks
+byte-identical; playing a full run, switching datasets, and forcing an error
+left learner-model storage byte-identical when no explanation was submitted.
+**Not verified this session**: the browser-automation tool's `resize_window`
+did not change the tab's actual `window.innerWidth`, so the 320px layout was
+checked by constraining the experiment's own container in the live DOM
+rather than by resizing the browser, and a `Tab`-key press did not move
+`document.activeElement`, so keyboard focus order rests on this panel using
+only native `<button>`, `<input type="checkbox">`, and `<details>/<summary>`
+elements, the same primitives already audited in the sibling panels it was
+built alongside. No phone, no screen reader, no calibration run — the graph,
+assessor, schema, fixtures, and model list are untouched.
