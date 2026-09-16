@@ -1,3 +1,41 @@
+> **Can a convincing detail still be wrong? 2026-09-15:** On
+> `experiment/19-hallucination`, branched from merged `main`. An experiment on
+> `hallucination`: a fictional museum description says the Harbor Light radio
+> first appeared in 1984; one action checks the independent record and finds
+> 1991. The exact year is marked, the mismatch is named in words, and the result
+> sits beside the sentence on a wide pane and immediately after it on a narrow
+> one. **Try another description** reaches a supported year, a second mismatch,
+> and an exhibit missing from the tiny catalogue. That last case says “Not found
+> in these records”, never “false”. Read `docs/convincing-detail.md` for the
+> implementation and browser checks. Its PR targets `main`.
+>
+> The sentence maker combines only prepared exhibit names, years, and wording
+> patterns. It does not receive the record list. The checker receives the
+> finished claim and finds its record by stable exhibit ID, so making and
+> checking are separate in the function signatures rather than only in the
+> lesson copy. Tests change the records without changing the sentence and cover
+> supported, contradicted, and missing outcomes. There is no live model,
+> confidence meter, real citation, or invented hallucination rate.
+>
+> A 320px browser pass found the first action **592px below the experiment
+> title** because the narrow layout stacked an entire sentence card before a
+> separate action card. Moving the action directly after the claim reduced that
+> to **389px**. At 1200px it is 376px; at 720×450 it is 395px. Page scroll,
+> clipping and off-right controls stayed zero after resizing 1200→320. Keyboard
+> reached and opened both long details at 720×450 while the guide pane, not the
+> document, scrolled. Experiment state and an unfinished explanation survived a
+> trip away and back, and the learner-model storage stayed byte-identical.
+>
+> A disagreement with the authored text is recorded and **not acted on**: the
+> graph says training does not distinguish truth from truth-shaped text and
+> implies no route to uncertainty. Further training can reward factual accuracy
+> and acknowledging uncertainty, and systems can check outside sources. Fluent
+> wording still does not prove a check happened, which is the narrower claim on
+> screen. The graph, assessor, explanation checker, schema, fixtures and model
+> list are untouched; no calibration run was required or run. No phone, screen
+> reader, learner, or literal browser-chrome 200% zoom was used; 640px reflow was
+> checked as the zoom equivalent.
+
 > **Why does it answer, instead of adding more questions? 2026-09-15:** On
 > `experiment/18-post-training`, branched from `main` after the notice-search
 > experiment and rebased onto it after the picking-a-word one merged. An experiment on `pretraining-vs-posttraining`: somebody asks *"My
