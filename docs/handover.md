@@ -1,3 +1,92 @@
+> **Data safety, consent and the skip rule, 2026-09-16:** On
+> `fix/01-safety-and-consent`, branched from `main` after the agents experiment
+> merged. Five findings from the 2026-09-16 audit of the live site, fixed in
+> order. Its PR targets `main`.
+>
+> 1. **"Start a fresh conversation" wiped the whole map**, unconfirmed, from the
+>    screen reached at the moment the map is worth having. It now clears the
+>    transcript and typed draft only. Clearing is a separate **Clear my map…**
+>    beside it and in the menu, behind a confirmation that names what goes
+>    (every mark, the conversation, the typed answer, experiment progress) and
+>    what stays (walkthrough position, connection settings). The copy lives in
+>    `src/lib/session/confirmations.ts` with a test, and quotes no count.
+> 2. **"Start over" and "Load example progress" were one click.** "Start over" is
+>    now **Clear my map…** with the confirmation above. The example loader is
+>    labelled **(for testing)**, has its own confirmation, and sits with **Mark
+>    by hand (for testing)** under a labelled **Testing** group
+>    (`Menu.GroupLabel`). Clear my map is deliberately *not* in that group: it is
+>    a learner action, not a harness, so the group holds two items, not three.
+> 3. **The walkthrough's "Read it to me" granted the microphone.** One stored
+>    flag, `edgewise.voice.v1`, meant both. Now `edgewise.read-aloud.v1` is a
+>    persisted preference that only ever speaks, and hands-free listening is
+>    in-memory state that starts off in every conversation. The panel is keyed on
+>    a counter `useSession` bumps on reset, so permission cannot carry into a
+>    fresh conversation. The handoff sentence ("reads each question, then opens
+>    your mic automatically. Google transcribes your audio.") is on screen above
+>    **Talk and listen** before it is pressed. The legacy key is removed on load.
+>    `say` reads hands-free from a ref after speech ends, so stopping hands-free
+>    mid-sentence cannot open the mic when the sentence finishes.
+> 4. **"skip" came back `unclear` and re-asked the node.** `isSkip` in
+>    `src/lib/session/skip.ts` matches the *whole* answer (skip, pass, next, move
+>    on and a few short variants, any case or punctuation) and the route settles
+>    it before the free-tier cap and before any model call: marked `blocked`,
+>    exactly as "I don't know" is, then the next node's first probe. Whole-answer
+>    matching is the point, and tested: "It predicts the next word…" is an
+>    answer. A visible **Skip** button sits beside **I don't know**. It costs no
+>    allowance.
+> 5. **The model's last acknowledgement set the closing's tone** ("We have
+>    reached a point where the mechanics aren't clear"). On any terminating turn,
+>    model-backed or skipped, `say` is the scripted `FINAL_ACKNOWLEDGEMENT`
+>    ("Thank you — that gives me enough to draw your map."). The prompt, schema
+>    and `decide` are untouched; the model still writes a line, and the route
+>    drops it.
+>
+> **Verified in the browser** (Claude in Chrome against `pnpm dev`; BrowserOS neo
+> refused the connection):
+>
+> - A diagnostic completed by skipping, then **Start a fresh conversation**:
+>   `edgewise.learner.v1` byte-identical before and after, checked twice.
+> - Typing `skip` into the answer box and pressing Enter: no model call (the
+>   server log reads `-> blocked (skipped, no model call)`), the node recorded
+>   `blocked` with no verdict from a model, and the next question was a
+>   different node (`features-and-representation` → `training-vs-inference`).
+> - Walkthrough **Read it to me**, then **Continue from my map**, with
+>   `SpeechRecognition.prototype.start` and `getUserMedia` wrapped to count
+>   calls: the question was read aloud, and after the reading ended **0**
+>   recogniser starts, **0** `getUserMedia` calls, no "Listening…", microphone
+>   permission still `prompt`. Positive control with both stubbed so no real
+>   prompt could appear: pressing **Talk and listen** opened the recogniser once.
+>   After a fresh conversation the count did not move again.
+> - A real model-backed terminating turn through `/api/turn` (one free-tier
+>   call): `blocked`, `done`, and `say` was the scripted line.
+> - Both confirmations render their copy; **Keep my map** and Escape leave
+>   storage untouched.
+> - The menu's long "(for testing)…" label overflowed a fixed 40px row; the menu
+>   is wider and rows are `min-h-10` now, all four measured at 40px.
+>
+> **Not verified.** Where focus lands when a confirmation opens from the menu:
+> `initialFocus` is set to **Keep my map**, but this browser tool cannot drive
+> real keyboard focus (the same limit `docs/one-goal-one-loop.md` records), and
+> a scripted click left the menu stuck open, which looks like a tool artifact
+> and was not proven either way. No screen reader, no phone, and no real
+> microphone permission prompt was triggered on purpose.
+>
+> **`pnpm calibrate --runs 3`** was run because the route's decision path
+> changed, though the canary calls `decide` directly and nothing it exercises
+> was edited. Diagnostic: **0/48 false passes, 0/12 false blocks, 12/12
+> misconceptions flagged, 32/48 exact** — matching the baseline. Conversation
+> cases: **1/4 contaminated** — `halo` (four strong answers, then a hollow one)
+> came back `unclear` where not-known was wanted; the baseline recorded 0/4. Not
+> a false pass: in a live session the node would be asked once more, and a
+> second `unclear` is overridden to `shaky`. But it is a regression against the
+> recorded baseline on
+> unchanged prompt, schema and model, and it is written down rather than
+> explained away. The same run's explain canary: 1/72 false passes
+> (`hallucination/parroted`), 3/24 false blocks (`neuron/technical`), the
+> figures recent sessions already record. Cost about $0.07.
+>
+> 938 tests, lint, typecheck and the Webpack build pass.
+
 > **The agents experiment, audited for learning experience, 2026-09-16:** On
 > `experiment/21-agents`. The loop worked; it taught badly. An audit driven
 > against the running app found the three things a loop is made of were never

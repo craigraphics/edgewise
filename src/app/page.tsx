@@ -29,6 +29,7 @@ import { ConceptList } from '@/components/map/concept-list';
 import { MapLegend } from '@/components/map/legend';
 import { AppHeader } from '@/components/shell/header';
 import { type Mode } from '@/components/shell/mode-switch';
+import { Confirm } from '@/components/session/confirm';
 import { Conversation } from '@/components/session/conversation';
 import { Inspector, MARKS } from '@/components/session/inspector';
 import { Setup, setupLabel } from '@/components/session/setup';
@@ -44,6 +45,7 @@ import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
 import { EMPTY_EXPLAIN_REQUESTS, EXPERIMENT_HEADLINE, EXPERIMENT_TITLE_ID, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
 import { useLearnerModel } from '@/lib/learner/store';
+import { CLEAR_MAP, LOAD_EXAMPLE } from '@/lib/session/confirmations';
 import { useSessionConfig } from '@/lib/session/config';
 import { useSession } from '@/lib/session/use-session';
 import { useWalkthrough } from '@/lib/walkthrough/store';
@@ -63,6 +65,7 @@ export default function Page() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [walkNodeId, setWalkNodeId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirming, setConfirming] = useState<'clear' | 'example' | null>(null);
   const [presenting, setPresenting] = useState(false);
   const [draft, setDraft] = useState('');
   const neuronExperiment = useNeuronExperiment();
@@ -209,10 +212,22 @@ export default function Page() {
     else if (playing) goto(selectedId ? { kind: 'idea', id: selectedId } : null);
   };
 
-  const reset = () => {
-    resetMarks();
+  /**
+   * A new conversation, and nothing else. Marks are the learner's and survive.
+   *
+   * "Start a fresh conversation" used to call the full reset below, so the end
+   * of a diagnostic — the moment the map is finally worth having — offered a
+   * single unconfirmed press that erased it.
+   */
+  const newConversation = () => {
     session.reset();
     setDraft('');
+  };
+
+  /** Everything. Only ever reached through the `CLEAR_MAP` confirmation. */
+  const clearMap = () => {
+    resetMarks();
+    newConversation();
     setSelectedId(null);
     setPractice(null);
     goto(null);
@@ -263,16 +278,21 @@ export default function Page() {
       <a className="skip-link" href="#guide" onClick={() => { setSurface('guide'); requestAnimationFrame(() => panelRef.current?.focus()); }}>Skip to conversation</a>
       <a className="skip-link" href="#concept-map" onClick={() => { setSurface('map'); requestAnimationFrame(() => document.getElementById('concept-map')?.focus()); }}>Skip to map</a>
       {settingsOpen && <Setup onClose={() => setSettingsOpen(false)} config={config} onSave={save} onForget={forget} />}
+      {confirming && <Confirm
+        copy={confirming === 'clear' ? CLEAR_MAP : LOAD_EXAMPLE}
+        onConfirm={confirming === 'clear' ? clearMap : loadFixture}
+        onClose={() => setConfirming(null)}
+      />}
       {!presenting && <AppHeader
         mode={view === 'mark' ? 'session' : view}
         onModeChange={changeView}
         marking={view === 'mark'}
         onLeaveMarking={() => changeView('session')}
         tools={[
-          { label: 'Mark by hand (for testing)', onSelect: () => { setView('mark'); setSurface('map'); } },
-          { label: 'Load example progress', onSelect: loadFixture },
-          { label: 'Start over', onSelect: reset },
-          ...(configReady ? [{ label: setupLabel(config), onSelect: () => setSettingsOpen(true), separated: true }] : []),
+          ...(configReady ? [{ label: setupLabel(config), onSelect: () => setSettingsOpen(true) }] : []),
+          { label: 'Clear my map…', onSelect: () => setConfirming('clear'), separated: configReady },
+          { label: 'Mark by hand (for testing)', onSelect: () => { setView('mark'); setSurface('map'); }, group: 'Testing' },
+          { label: 'Load example progress (for testing)…', onSelect: () => setConfirming('example') },
         ]}
       />}
       {!presenting && <nav aria-label="Workspace" className="border-border flex shrink-0 border-b panel:hidden">
@@ -302,13 +322,14 @@ export default function Page() {
               <p className="text-sm">Keys 1–4 mark it. Press <kbd>f</kbd> to hide the controls before sharing the screen. Escape brings them back.</p>
             </div>
           ) : <Conversation
+            key={session.conversation}
             messages={session.messages} status={session.status} error={session.error} firstTime={!started}
             draft={draft} onDraftChange={setDraft}
             onStart={() => session.start(model.states)} onAnswer={text => session.answer(text, model.states)}
             onRetry={session.retry} onConfigure={() => setSettingsOpen(true)}
             onExplore={() => { if (lead) openNode(lead.id); else changeView('walk'); }}
             onWalk={() => changeView('walk')} onPlay={() => playExperiment('neuron')}
-            lead={leadDetail} onReset={reset}
+            lead={leadDetail} onNewConversation={newConversation} onClearMap={() => setConfirming('clear')}
           />}
         </section>
         <section id="concept-map" tabIndex={-1} aria-label="Concept map" className={cn('min-h-0 min-w-0 flex-col px-5 pt-5 pb-3 sm:px-8 panel:col-start-1 panel:row-start-1', compact && surface !== 'map' && !presenting ? 'hidden' : 'flex')}>

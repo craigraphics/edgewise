@@ -21,7 +21,10 @@ type Props = {
   firstTime: boolean;
   onStart: () => void;
   onAnswer: (text: string) => void;
-  onReset: () => void;
+  /** Clears the transcript only. Marks are kept. */
+  onNewConversation: () => void;
+  /** Asks first, then clears the map. */
+  onClearMap: () => void;
   onRetry: () => void;
   onConfigure: () => void;
   onExplore: () => void;
@@ -53,7 +56,7 @@ export function Conversation({
   firstTime,
   onStart,
   onAnswer,
-  onReset, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
+  onNewConversation, onClearMap, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
   lead,
 }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -98,7 +101,8 @@ export function Conversation({
      * toggle is asking for — while the backlog stays silent, because only the
      * latest message is ever considered below.
      */
-    if (!voice.enabled) {
+    const voiced = voice.readAloud || voice.handsFree;
+    if (!voiced) {
       lastSpoken.current = Math.max(0, messages.length - 1);
       return;
     }
@@ -114,14 +118,25 @@ export function Conversation({
     if (status === 'running' || status === 'done') void voice.say(message.content, status === 'running');
     /*
      * Deps are narrowed deliberately: the whole `voice` object is rebuilt every
-     * render, so depending on it re-runs this constantly. `enabled` and `say`
-     * are the only fields read here, and `say` is stable per `enabled`. The
+     * render, so depending on it re-runs this constantly. The two settings and `say`
+     * are the only fields read here, and `say` is stable per setting. The
      * marker guards against double-speaking, but relying on a guard to undo an
      * effect that should not have fired is how the sibling project ended up
      * with three stale audio loops fighting over one recorder.
      */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, status, voice.enabled, voice.say]);
+  }, [messages, status, voice.readAloud, voice.handsFree, voice.say]);
+
+  /*
+   * A listen press re-reads the question on screen and then opens the
+   * microphone. With reading aloud already on, that question has been spoken
+   * and the marker is past it, so without parking it here the press would do
+   * nothing at all.
+   */
+  const talkAndListen = useCallback(() => {
+    lastSpoken.current = Math.max(0, messages.length - 1);
+    voice.startHandsFree();
+  }, [messages.length, voice]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -276,7 +291,16 @@ export function Conversation({
             <Button size="touch" onClick={onExplore} className="min-h-12 w-full">
               {lead ? 'Explore this idea' : 'Open the walkthrough'} <ArrowRightIcon />
             </Button>
-            <Button variant="ghost" size="touch" onClick={onReset}>Start a fresh conversation</Button>
+            {/*
+             * Two different actions, deliberately far apart in weight. A fresh
+             * conversation keeps every mark; it used to wipe the whole map in
+             * one unconfirmed press, from the screen somebody reaches at the
+             * exact moment the map has become worth having.
+             */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="ghost" size="touch" onClick={onNewConversation}>Start a fresh conversation</Button>
+              <Button variant="ghost" size="touch" onClick={onClearMap} className="text-muted-foreground">Clear my map…</Button>
+            </div>
           </div>
         ) : (
           <>
@@ -324,6 +348,15 @@ export function Conversation({
               </Button>
 
               {/*
+               * Skip is always valid and always moves on. The server recognises
+               * it before any model call and records it as "I don't know" is
+               * recorded, so it can never come back as the same question.
+               */}
+              <Button size="touch" variant="outline" onClick={() => submit('Skip')} disabled={!answering || busy}>
+                Skip
+              </Button>
+
+              {/*
                * Why it helps, next to the button rather than in a paragraph
                * somewhere.
                *
@@ -355,7 +388,7 @@ export function Conversation({
                * the tutor talks back. A microphone icon would promise a
                * transcript you get to correct first.
                */}
-              {voice.supported.listen && voice.enabled ? (
+              {voice.supported.listen && voice.handsFree ? (
                 <Button
                   size="touch"
                   className="ml-auto"
@@ -376,7 +409,7 @@ export function Conversation({
               ) : null}
             </div>
 
-            <VoiceToggle voice={voice} />
+            <VoiceControls voice={voice} onTalkAndListen={talkAndListen} />
           </>
         )}
       </div>
@@ -384,18 +417,42 @@ export function Conversation({
   );
 }
 
-function VoiceToggle({ voice }: { voice: ReturnType<typeof useVoice> }) {
+/**
+ * Two separate consents, two separate controls.
+ *
+ * Reading aloud sends nothing anywhere and is remembered. Talking and listening
+ * opens the microphone and sends audio to Google, so it is never remembered: it
+ * needs a press in this conversation, and the sentence saying what will happen
+ * sits above that press rather than appearing after it.
+ */
+function VoiceControls({ voice, onTalkAndListen }: { voice: ReturnType<typeof useVoice>; onTalkAndListen: () => void }) {
   if (!voice.supported.listen && !voice.supported.speak) {
     return <p className="text-muted-foreground mt-3 text-sm">Voice isn’t available in this browser. You can type every answer.</p>;
   }
   return (
-    <div className="border-border mt-3 border-t pt-3">
-      <Button variant="outline" size="touch" onClick={voice.toggle} aria-pressed={voice.enabled}>
-        <AudioLines /> {voice.enabled ? 'Turn voice off' : voice.supported.listen ? 'Talk and listen' : 'Read aloud'}
-      </Button>
-      <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-        {voice.supported.listen ? 'Voice reads each question, then opens your mic. Google transcribes your audio. Typing stays available.' : 'Questions are read aloud. Type your answers below.'}
-      </p>
+    <div className="border-border mt-3 space-y-2 border-t pt-3">
+      {voice.supported.listen && !voice.handsFree ? (
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Talk and listen reads each question, then opens your mic automatically. Google transcribes your audio. Typing stays available.
+        </p>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        {voice.supported.listen ? (
+          <Button variant="outline" size="touch" onClick={voice.handsFree ? voice.stopHandsFree : onTalkAndListen} aria-pressed={voice.handsFree}>
+            <AudioLines /> {voice.handsFree ? 'Stop talking and listening' : 'Talk and listen'}
+          </Button>
+        ) : null}
+        {voice.supported.speak && !voice.handsFree ? (
+          <Button variant="ghost" size="touch" onClick={() => voice.setReadAloud(!voice.readAloud)} aria-pressed={voice.readAloud}>
+            {voice.readAloud ? 'Stop reading questions aloud' : 'Read questions aloud'}
+          </Button>
+        ) : null}
+      </div>
+      {voice.handsFree ? (
+        <p className="text-muted-foreground text-xs leading-relaxed">Your mic opens after each question. Google transcribes your audio.</p>
+      ) : !voice.supported.listen ? (
+        <p className="text-muted-foreground text-xs leading-relaxed">Questions can be read aloud. Type your answers below.</p>
+      ) : null}
     </div>
   );
 }
