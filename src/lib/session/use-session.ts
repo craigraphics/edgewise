@@ -58,6 +58,12 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
   const [status, setStatus] = useState<'idle' | 'thinking' | 'running' | 'done' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [spend, setSpend] = useState(0);
+  /*
+   * Changes whenever the conversation is thrown away. The panel is keyed on it,
+   * so anything that belongs to one conversation — above all, permission to
+   * open the microphone — cannot carry into the next.
+   */
+  const [conversation, setConversation] = useState(0);
   const pending = useRef<Record<string, unknown> | null>(null);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
@@ -174,7 +180,8 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
     setFollowUps(0);
     setStatus('idle');
     setError(null);
+    setConversation((current) => current + 1);
   }, []);
 
-  return { messages, status, error, spend, nodeId, start, answer, retry, reset };
+  return { messages, status, error, spend, nodeId, conversation, start, answer, retry, reset };
 }

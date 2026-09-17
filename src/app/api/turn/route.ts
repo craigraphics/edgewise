@@ -7,6 +7,7 @@ import { SETTLES, type Decision, type SettledState } from '@/lib/agent/schema';
 import { settle } from '@/lib/agent/verdict';
 import { leadNode, nextToAsk, withMark } from '@/lib/graph/frontier';
 import { closingFor, nothingToAsk } from '@/lib/session/closing';
+import { FINAL_ACKNOWLEDGEMENT, isSkip, skipTurn } from '@/lib/session/skip';
 import { GRAPH } from '@/lib/graph/load';
 import { nodeState, type LearnerModel, type NodeState } from '@/lib/graph/types';
 import { isWhitelisted, MODELS } from '@/lib/models';
@@ -95,6 +96,19 @@ export async function POST(request: Request) {
 
   const current = GRAPH.nodes.find((node) => node.id === input.currentNodeId);
   if (!current) return NextResponse.json({ error: 'UNKNOWN_NODE' }, { status: 400 });
+
+  /*
+   * A skip is settled here, before the cap and before any model call.
+   *
+   * Sent to the model, "skip" was judged an answer that did not address the
+   * question and the same node was asked again — the interrogation this product
+   * cannot survive. It is recorded exactly as "I don't know" is and moves on.
+   * It costs nothing, so it does not count against the free allowance either.
+   */
+  if (isSkip(input.answer)) {
+    console.log(`[turn] ${current.id} -> blocked (skipped, no model call)`);
+    return NextResponse.json({ ...skipTurn(GRAPH, learner, current), sessionToken: input.sessionToken ?? null });
+  }
 
   // Resolve the key, and cap the free path before spending anything.
   let apiKey = input.apiKey?.trim() ?? '';
@@ -192,7 +206,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       done: upcoming === null,
-      say,
+      // On the last turn the model's own acknowledgement is dropped. It once
+      // read "We have reached a point where the mechanics aren't clear" — a
+      // verdict, in the cheapest model's words, straight before the closing.
+      say: upcoming === null ? FINAL_ACKNOWLEDGEMENT : say,
       // The payoff line is scripted for the same reason the opening is: it is
       // the single most important sentence in the product, and leaving it to
       // the cheapest model on the list produced vague endings like "we have

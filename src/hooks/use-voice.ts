@@ -17,15 +17,38 @@ import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
  * Voice is opt-in and never the only way in. Chrome is the only reliable target,
  * the recognition is not on-device, and plenty of people are somewhere they
  * cannot talk out loud.
+ *
+ * Reading aloud and listening are two separate consents, held differently.
+ *
+ * - `readAloud` is a preference and persists. Hearing text read out sends
+ *   nothing anywhere.
+ * - `handsFree` — speak, then open the microphone — is never persisted. It
+ *   lives for one mounted conversation and starts off every time.
+ *
+ * They used to be one stored flag, `edgewise.voice.v1`. Pressing "Read it to
+ * me" in the walkthrough set it, and the next conversation then read its first
+ * question and opened the microphone without anybody having pressed a listen
+ * control. Audio going to Google has to follow a press made in that
+ * conversation, next to the sentence saying so — not a choice made somewhere
+ * else, about something else.
  */
 
-const KEY = 'edgewise.voice.v1';
+const READ_ALOUD_KEY = 'edgewise.read-aloud.v1';
+/** The old combined flag. Never read; removed so a stale "on" cannot linger. */
+const LEGACY_KEY = 'edgewise.voice.v1';
 
 export function useVoice(onFinalTranscript: (text: string) => void) {
   const speaker = useRef<Speaker | null>(null);
   const listener = useRef<Listener | null>(null);
 
-  const [enabled, setEnabled] = useState(false);
+  const [readAloud, setReadAloudState] = useState(false);
+  const [handsFree, setHandsFree] = useState(false);
+  /*
+   * Read after the speech finishes, not captured when it started: stopping
+   * hands-free while a question is being read must not open the microphone
+   * the moment the reading ends.
+   */
+  const handsFreeNow = useRef(false);
   const [supported, setSupported] = useState({ speak: false, listen: false });
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
@@ -60,7 +83,8 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     setSupported({ speak: speaker.current.available, listen: listener.current.available });
 
     try {
-      setEnabled(window.localStorage.getItem(KEY) === 'on');
+      window.localStorage.removeItem(LEGACY_KEY);
+      setReadAloudState(window.localStorage.getItem(READ_ALOUD_KEY) === 'on');
     } catch {
       /* storage unavailable; voice just starts off */
     }
@@ -131,50 +155,72 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
   }, []);
 
   /**
-   * Speaks a turn, then opens the microphone.
+   * Speaks a turn, then — only in hands-free — opens the microphone.
    *
    * `andListen` is false for the closing turn — nothing is being asked, and
-   * leaving the microphone open after "that's everything" is unsettling.
+   * leaving the microphone open after "that's everything" is unsettling. Even
+   * when it is true, reading aloud alone never listens: only a press on a
+   * listen control in this conversation turns `handsFree` on.
    */
   const say = useCallback(
     async (text: string, andListen: boolean) => {
-      if (!enabled || !speaker.current?.available) return;
+      if (!(readAloud || handsFree) || !speaker.current?.available) return;
 
       setSpeaking(true);
       await speaker.current.speak(text);
       setSpeaking(false);
 
-      if (andListen) listen();
+      if (andListen && handsFreeNow.current) listen();
     },
-    [enabled, listen],
+    [handsFree, listen, readAloud],
   );
 
-  const toggle = useCallback(() => {
-    setEnabled((current) => {
-      const next = !current;
+  const silence = useCallback(() => {
+    speaker.current?.stop();
+    listener.current?.stop();
+    setSpeaking(false);
+    setListening(false);
+  }, []);
+
+  const setReadAloud = useCallback(
+    (next: boolean) => {
+      setReadAloudState(next);
       if (!next) {
         speaker.current?.stop();
-        listener.current?.stop();
         setSpeaking(false);
-        setListening(false);
       }
       try {
-        window.localStorage.setItem(KEY, next ? 'on' : 'off');
+        window.localStorage.setItem(READ_ALOUD_KEY, next ? 'on' : 'off');
       } catch {
         /* preference just will not persist */
       }
-      return next;
-    });
+    },
+    [],
+  );
+
+  /** Called only from a press on a listen control. Never persisted. */
+  const startHandsFree = useCallback(() => {
+    handsFreeNow.current = true;
+    setHandsFree(true);
   }, []);
 
+  const stopHandsFree = useCallback(() => {
+    handsFreeNow.current = false;
+    setHandsFree(false);
+    silence();
+  }, [silence]);
+
   return {
-    enabled,
+    readAloud,
+    handsFree,
     supported,
     speaking,
     listening,
     interim,
     error,
-    toggle,
+    setReadAloud,
+    startHandsFree,
+    stopHandsFree,
     say,
     listen,
     stopListening,

@@ -39,16 +39,20 @@ export function DialogPanel({
   className,
   children,
   labelledBy,
+  initialFocus,
 }: {
   className?: string;
   children: React.ReactNode;
   labelledBy?: string;
+  /** Where focus lands on open. Defaults to the primitive's first tabbable. */
+  initialFocus?: React.RefObject<HTMLElement | null>;
 }) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop className="fixed inset-0 z-100 bg-black/55 backdrop-blur-[2px] transition-opacity duration-[--dur-slow] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
       <DialogPrimitive.Popup
         aria-labelledby={labelledBy}
+        initialFocus={initialFocus}
         className={cn(
           'bg-surface-1 border-border fixed z-100 flex flex-col overflow-hidden border shadow-2xl outline-none',
           // Phone: a sheet off the bottom edge, so the dismiss lands under a thumb.
