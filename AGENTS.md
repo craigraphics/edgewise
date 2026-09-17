@@ -3215,3 +3215,106 @@ access and on the before/after storage reads, which is the same position
 recorded that canary failing on exactly two fixtures — 2/72 false passes for
 `hallucination/parroted`, deliberately left failing, and 3/24 false blocks for
 `neuron/technical`.
+
+### What turns one tool call into working towards a goal? — 2026-09-15
+
+On `experiment/21-agents`, branched from `main` after the calculator-handoff
+experiment merged. An experiment on `agents`: a fictional library, a small
+catalogue, and one fixed goal — *find two mystery books under 200 pages that
+are available now.* **Take the next step** runs one tool and puts its result
+beside the button: search returns candidates by genre, check returns a
+candidate's real page count and current availability. The catalogue table
+marks each row live — *not a candidate*, *candidate — not checked yet*,
+*confirmed*, *discarded* — so the whole run is visible, not just the latest
+line. The loop stops the moment two distinct books are confirmed and names
+the evidence: *"The Silver Key and Whispers in the Library are both
+mysteries, under 200 pages, and available in the latest check."* Read
+`docs/one-goal-one-loop.md` for what was verified and what was not.
+
+**The policy is one pure function that cannot see the catalogue.**
+`decide(progress)` in `src/lib/experiments/agents.ts` takes only what the
+loop has learned so far — searched, candidates, checked results, confirmed
+ids — and never the catalogue itself; a test asserts its arity is exactly
+one. A search hit alone is never confirmed, only a checked result that is
+both under the page limit and available. Three catalogues over the same
+eight books make the point concrete under **Try a problem**: everything goes
+to plan; a candidate that would have matched turns out to be unavailable,
+so the next action genuinely changes and the loop still succeeds; or no
+second match exists at all, and the loop checks every candidate and reports
+**"The task is unfinished"** rather than declaring success.
+
+A **Stop** control is visible any time a step is in flight or the run is
+going by itself, and **Run the remaining steps** only appears after a manual
+step. A checkbox can make one step report a tool error instead of a result —
+the failed attempt is logged, nothing in `progress` changes, and the very
+next decision is identical to the one that just failed, so retrying loses
+nothing. The reducer uses the same request-id discipline as the tool-use and
+RAG experiments: a stale or duplicate `resolve`, including one delivered
+after Reset or a dataset change, is silently ignored.
+
+**A learning-experience pass, 2026-09-16, after an audit against the running
+app.** The first build was correct and taught badly, and five of the defects
+were breaches of rules this file already states.
+
+- **The decision was never shown.** `decide(progress)` is the node, and only
+  its result was rendered, behind a button reading *Take the next step* while
+  every sibling names its action. `describeDecision` now puts the action and
+  the reason above the button, both read off `decide`, and the button carries
+  that name: *Check The Silver Key*.
+- **The ending needed a press that ran nothing.** Measured: six presses for
+  five tool calls, with the fifth already reporting *2 of 2 confirmed*. The
+  stopping condition — the thing this node is about — was staged as the loop
+  failing to notice it had finished. `resolve` settles in the same action
+  now: five presses, five steps, with a test requiring the two to be equal.
+- **The readout promised steps the loop would not take.** *"Check the next
+  candidate."* sat directly above *"The task is unfinished."* Every such
+  sentence is read off the next decision now.
+- **Scenario labels gave away the ending**, against the rule
+  `one-step-at-a-time` records with a test behind it. They name the shelf now,
+  and `LIBRARY_SCENARIOS` moved into the lib so a test can reject a spoiler.
+- **The node's hardest half was behind a `<details>`.** The `simplificationCost`
+  and the second misconception are on the main path now, in a **What made it
+  stop** card that also names the `MAX_STEPS` ceiling as a rule a person wrote
+  and points at the two candidates the loop never checked — the stopping
+  condition visible for free, and previously unremarked.
+
+**The first action was 737px below the panel title**, against 308-395 across
+five siblings measured as controls in the same run, with 359px of it a
+catalogue table whose cells were all em dashes before anything was looked up.
+The fix was structural, not a copy trim: a two-column cockpit holding the goal
+and the next decision with the readout spanning beneath, the table below the
+action and not rendered until the search returns it, and Reset out of the
+header because a control that appears mid-run must not move the first action.
+**261 now, constant across pristine, mid-run and a resize down and back.**
+
+**Both of this panel's `@container` rules were dead.** `.agents-lab` never set
+`container-type: inline-size`, which every sibling `-lab` root does, so
+neither the cockpit's columns nor the existing three-column scenario grid ever
+appeared at any width; and the threshold was 40rem against a 557px content
+box. Nineteenth time a defect here was found by measuring rather than reading.
+
+**A sixth wrong probe.** A contrast run reported 1.17:1 for ordinary
+foreground text in light mode, on a heading that is visibly near-black on
+cream: computed colours here serialise as `lab(...)`, which canvas
+`fillStyle` silently rejects, so text and backdrop were both read as the black
+fill underneath. Exactly the trap `docs/what-gets-sent.md` records, met again
+by a probe written on that doc's own advice. With a Lab-to-sRGB conversion the
+figures separate by theme and match the shell's recorded values: worst text
+**5.55** light and **7.89** dark, band accents **5.72** and **6.75**.
+
+Verified: a real explanation submitted through the live assessor moved
+`agents` `unexplored → known` and left all ten other existing marks
+byte-identical; that was before this pass and was not repeated, and the path
+is unchanged. After it, a **populated ten-mark model** stayed byte-identical
+across a full run, all three shelves, a forced error, twenty rapid presses,
+every disclosure and Reset, with **zero fetches, zero XHRs and zero new
+resource loads** and no animations.
+**Not verified this session**: the browser-automation tool's `resize_window`
+did not change the tab's actual `window.innerWidth`, so the 320px layout was
+checked by constraining the experiment's own container in the live DOM
+rather than by resizing the browser, and a `Tab`-key press did not move
+`document.activeElement`, so keyboard focus order rests on this panel using
+only native `<button>`, `<input type="checkbox">`, and `<details>/<summary>`
+elements, the same primitives already audited in the sibling panels it was
+built alongside. No phone, no screen reader, no calibration run — the graph,
+assessor, schema, fixtures, and model list are untouched.

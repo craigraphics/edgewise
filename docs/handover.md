@@ -1,3 +1,83 @@
+> **The agents experiment, audited for learning experience, 2026-09-16:** On
+> `experiment/21-agents`. The loop worked; it taught badly. An audit driven
+> against the running app found the three things a loop is made of were never
+> in view together, the decision itself was never shown, and the stopping
+> condition arrived as a press that ran nothing. Read
+> `docs/one-goal-one-loop.md` for the before/after measurements.
+>
+> Five of the defects broke rules this repo already states. The button said
+> **Take the next step** where every sibling names its action, so
+> `describeDecision` now shows the action and the reason above the button,
+> both read off `decide`, and the button reads **Check The Silver Key**.
+> Measured six presses for five tool calls, with the fifth already reporting
+> *2 of 2 confirmed*: `resolve` settles in the same action now, five for five,
+> with a test requiring the two to be equal. *"Check the next candidate."* sat
+> directly above *"The task is unfinished."*; every such sentence is read off
+> the next decision now. The scenario labels gave away the endings. And the
+> node's `simplificationCost` and second misconception were in the second
+> paragraph of a `<details>`, so they are on the main path now in a **What
+> made it stop** card that also names the 12-step ceiling as a rule a person
+> wrote and points at the two candidates the loop never checked.
+>
+> **The first action was 737px below the panel title**, against 308-395 across
+> five siblings measured as controls in the same run, 359px of it a catalogue
+> table of em dashes. Structural fix, not a copy trim: a two-column cockpit
+> holding the goal and the next decision, the table below the action and not
+> rendered until the search returns it, Reset out of the header. **261 now,
+> constant pristine, mid-run and after a resize.** Both of this panel's
+> `@container` rules were also dead — `.agents-lab` never set
+> `container-type: inline-size` — so the scenario grid had never been three
+> columns either.
+>
+> Plus a sixth wrong probe with a tell already written down: 1.17:1 for
+> ordinary foreground text in light mode, because computed colours here
+> serialise as `lab(...)` and canvas `fillStyle` silently rejects them. With a
+> Lab-to-sRGB conversion, worst text 5.55 light and 7.89 dark.
+>
+> 927 tests, lint, typecheck, validate-graph and the Webpack build pass. A
+> populated ten-mark model stayed byte-identical across everything, with zero
+> network requests and no animations. **No assessed explanation was
+> re-submitted after this pass**; the earlier one moved `agents`
+> `unexplored → known` and that path is unchanged. No phone, no screen reader,
+> and the browser tool still cannot resize the real viewport, so narrow widths
+> were proxied by constraining the panel's own container.
+
+> **What turns one tool call into working towards a goal? 2026-09-15:** On
+> `experiment/21-agents`, branched from `main` after the calculator-handoff
+> experiment merged. An experiment on `agents`: a fictional library, a small
+> catalogue, and one fixed goal — find two mystery books under 200 pages that
+> are available now. **Take the next step** runs one tool (search or check)
+> and puts the result beside the button, with the catalogue table updating
+> live per row: not a candidate, candidate, confirmed, discarded. The loop
+> stops the moment two distinct books are confirmed and names the evidence.
+> Read `docs/one-goal-one-loop.md` for what was verified and what was not.
+> Its PR targets `main`.
+>
+> `decide(progress)` in `src/lib/experiments/agents.ts` takes only what the
+> loop has learned so far and never the catalogue — a test asserts its arity
+> is exactly one — so a search hit alone can never count as confirmed. Three
+> catalogues over the same eight books sit under **Try a problem**:
+> everything goes to plan; a candidate that would have matched turns out to
+> be unavailable, so the next action genuinely changes and the loop still
+> succeeds; or no second match exists, and the loop reports **"The task is
+> unfinished"** rather than declaring success. A **Stop** control is visible
+> any time a step is running or auto-running, and a checkbox can make one
+> step report a tool error — the failed attempt changes nothing, so the same
+> decision can be retried without losing progress. The reducer uses the same
+> request-id discipline as tool-use and RAG: a stale or duplicate `resolve`
+> is silently ignored.
+>
+> A real explanation submitted through the live assessor moved `agents`
+> `unexplored → known` and left ten other existing marks byte-identical.
+> This session's browser tool could not actually resize the tab's viewport
+> or move keyboard focus via `Tab`, so the 320px layout was checked by
+> constraining the experiment's container in the live DOM instead, and
+> keyboard order rests on this panel using only native `button`,
+> `input[type=checkbox]`, and `details`/`summary` elements — the same
+> primitives already audited in the sibling experiments it was built
+> alongside. No phone, no screen reader. The graph, assessor, schema,
+> fixtures, and model list are untouched; no calibration run was required.
+
 > **If a model makes text, who does the actual calculation? 2026-09-15:** On
 > `experiment/20-tool-use`, branched from merged `main`. An experiment on
 > `tool-use`: a scripted request asks for three 87cm boards, named app code
