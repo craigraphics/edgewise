@@ -7,6 +7,7 @@ import { SETTLES, type Decision, type SettledState } from '@/lib/agent/schema';
 import { settle } from '@/lib/agent/verdict';
 import { leadNode, nextToAsk, withMark } from '@/lib/graph/frontier';
 import { closingFor, nothingToAsk } from '@/lib/session/closing';
+import { openingFor } from '@/lib/session/opening';
 import { FINAL_ACKNOWLEDGEMENT, isSkip, skipTurn } from '@/lib/session/skip';
 import { GRAPH } from '@/lib/graph/load';
 import { nodeState, type LearnerModel, type NodeState } from '@/lib/graph/types';
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       done: false,
       nodeId: opening.id,
       followUps: 0,
-      say: `${OPENING} ${opening.probes[0]}`,
+      say: openingFor(opening),
       sessionToken: input.sessionToken ?? null,
     });
   }
@@ -233,9 +234,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'TURN_FAILED' }, { status: 500 });
   }
 }
-
-const OPENING =
-  "Let's work out where your understanding of this currently sits — there are no right answers here, and \"I don't know\" is genuinely useful. Starting somewhere near the bottom:";
 
 /** Narrows a verdict to the three that actually settle a node. */
 function isSettling(verdict: Decision['verdict']): verdict is SettledState {
