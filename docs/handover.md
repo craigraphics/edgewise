@@ -191,6 +191,15 @@
 > 125 KB and is the largest single asset in the landing chunk. About 45 files of
 > mechanical change with no behavioural result, which does not belong in the same
 > diff as eight behavioural fixes.
+>
+> **The brief for that work is `docs/lazy-experiments-brief.md`**, written to be
+> handed to a fresh session. Writing it turned up the thing that was not known
+> when this was deferred: **16 of the 22 hooks take their initial state from a
+> constant in the same lib module the panel uses**, and several of those modules
+> are 10–17 KB because the constant is the head of a corpus the experiment is
+> built on. A naive hook split drags most of `lib/experiments` straight back into
+> the landing chunk. The brief names the three ways out and says to measure which
+> modules are reachable before choosing, rather than assuming the split works.
 
 > **Feedback, persistence, and copy in the conversation loop, 2026-09-17:** On
 > `fix/02-conversation-feedback`, branched from `main` after the safety-and-consent
