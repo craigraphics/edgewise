@@ -884,6 +884,9 @@
 }
 .skip-link { position: fixed; left: 1rem; top: -10rem; z-index: 200; }
 .skip-link:focus { top: 1rem; padding: .75rem 1rem; color: var(--background); background: var(--foreground); }
+/* Both links used to land on the same coordinates, so tabbing from the first to
+   the second replaced it in place and read as nothing having happened. */
+.skip-link-second:focus { top: 4.25rem; }
 button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
   outline: 2px solid var(--foreground);
   outline-offset: 3px;

@@ -24,3 +24,29 @@ export function panelAlreadyShows(options: {
   if (selectedId !== nodeId) return false;
   return compact ? surface === 'guide' : true;
 }
+
+/**
+ * Where focus goes when the panel for `nodeId` closes.
+ *
+ * Closing used to focus a DOM node captured when the panel opened. That is the
+ * wrong identity: the focused view is keyed on the node it draws, so the element
+ * that opened the panel is routinely replaced before it can be focused again —
+ * `isConnected` comes back false and focus falls through to the map section
+ * instead of the idea you were just reading about. Switching format, or walking
+ * idea to idea through the inspector's prerequisite buttons, breaks it the same
+ * way.
+ *
+ * So remember which idea it was and find whatever currently represents it. All
+ * three map formats carry `data-node`, so one selector covers the SVG group, the
+ * focused card and the list row without knowing which is on screen.
+ *
+ * The id comes from the graph rather than from anything a visitor can type, but
+ * it is still going into a selector: anything that is not a plain id gets the
+ * section instead of being interpolated.
+ */
+export const MAP_SECTION = 'concept-map';
+
+export function returnFocusSelector(nodeId: string | null): string {
+  if (!nodeId || !/^[a-z0-9-]+$/i.test(nodeId)) return `#${MAP_SECTION}`;
+  return `[data-node="${nodeId}"]`;
+}

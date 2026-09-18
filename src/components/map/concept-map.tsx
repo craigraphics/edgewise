@@ -21,6 +21,7 @@ import {
   NODE_RADIUS,
   NODE_WIDTH,
   accentPath,
+  cameraOn,
   cameraShowing,
   clampCamera,
   edgePath,
@@ -111,6 +112,15 @@ type Props = {
   covered?: ReadonlySet<string>;
   /** How the map sits in its pane at rest. See `FitMode` in the layout module. */
   fit?: FitMode;
+  /**
+   * The node the resting camera looks at, when the map is bigger than its pane.
+   *
+   * Only the position moves; `fit` still decides the scale. A phone cannot have
+   * both the whole shape and a label anybody can read, so it gets a readable
+   * scale pointed somewhere worth starting, and the Fit control — which always
+   * means the whole thing — is how you ask for the overview.
+   */
+  restOn?: string | null;
   /** Suppresses the staggered first reveal — used when the map is remounted. */
   quiet?: boolean;
   showControls?: boolean;
@@ -125,6 +135,7 @@ export function ConceptMap({
   highlightedId,
   covered,
   fit = 'legible',
+  restOn = null,
   quiet = false,
   showControls = true,
   className,
@@ -163,12 +174,17 @@ export function ConceptMap({
    * its default because the window moved a pixel is a map you cannot use.
    */
   const touched = useRef(false);
+  const restPoint = restOn ? (layout.points.get(restOn) ?? null) : null;
   useEffect(() => {
     if (pane.width === 0 || pane.height === 0) return;
     setCamera((current) =>
-      touched.current && current ? clampCamera(current, content, pane) : fitCamera(content, pane, fit),
+      touched.current && current
+        ? clampCamera(current, content, pane)
+        : restPoint
+          ? cameraOn(content, pane, fit, restPoint)
+          : fitCamera(content, pane, fit),
     );
-  }, [content, fit, pane]);
+  }, [content, fit, pane, restPoint]);
 
   const lead = leadNode(graph, model);
 

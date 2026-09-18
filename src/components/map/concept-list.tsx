@@ -21,7 +21,7 @@ export function ConceptList({ graph, model, selectedId, onSelect }: {
         return (
           <li key={node.id} className="border-border border-b">
             <button
-              data-list-node={node.id}
+              data-node={node.id}
               aria-current={selectedId === node.id ? 'true' : undefined}
               onClick={() => onSelect(node.id)}
               className="hover:bg-surface-2 flex w-full items-start gap-4 px-3 py-4 text-left"

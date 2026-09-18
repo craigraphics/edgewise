@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useVoice } from '@/hooks/use-voice';
 import type { ConceptNode, NodeState } from '@/lib/graph/types';
+import { absorbAllowance, allowanceToken } from '@/lib/session/allowance';
 import type { SessionConfig } from '@/lib/session/config';
 
 /**
@@ -56,7 +57,6 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<{ say: string; moved: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
   const submit = useCallback(
     async (text: string) => {
@@ -81,7 +81,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
             currentState: state,
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: token,
+            sessionToken: allowanceToken(),
           }),
         });
 
@@ -90,6 +90,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           state?: NodeState;
           moved?: boolean;
           sessionToken?: string | null;
+          turnsLeft?: number | null;
           error?: string;
         };
 
@@ -99,7 +100,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           return;
         }
 
-        if (data.sessionToken !== undefined) setToken(data.sessionToken);
+        absorbAllowance(data);
         if (data.state) onEarned(node.id, data.state);
         setReply({ say: data.say ?? '', moved: Boolean(data.moved) });
         setDraft('');
@@ -111,7 +112,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
         if (!controller.signal.aborted || controller.signal.reason === 'timeout') setBusy(false);
       }
     },
-    [busy, config, node.id, onEarned, state, token],
+    [busy, config, node.id, onEarned, state],
   );
 
   const voice = useVoice(submit);

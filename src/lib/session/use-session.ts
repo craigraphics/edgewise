@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { NodeState } from '@/lib/graph/types';
 
+import { absorbAllowance, allowanceToken } from './allowance';
 import type { SessionConfig } from './config';
 
 /**
@@ -27,6 +28,7 @@ type TurnResponse = {
   nodeId?: string | null;
   followUps?: number;
   sessionToken?: string | null;
+  turnsLeft?: number | null;
   model?: string;
   costUsd?: number;
   error?: string;
@@ -54,7 +56,6 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
   const [messages, setMessages] = useState<Message[]>([]);
   const [nodeId, setNodeId] = useState<string | null>(null);
   const [followUps, setFollowUps] = useState(0);
-  const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'thinking' | 'running' | 'done' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [spend, setSpend] = useState(0);
@@ -88,7 +89,9 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
             // Sent only when present. An empty string would look like a key.
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: token,
+            // Read at send time from the one shared store, so the walkthrough's
+            // interruptions and this conversation spend the same allowance.
+            sessionToken: allowanceToken(),
           }),
         });
 
@@ -113,7 +116,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
         if (active.current === controller) active.current = null;
       }
     },
-    [config.apiKey, config.model, token],
+    [config.apiKey, config.model],
   );
 
   const absorb = useCallback(
@@ -123,7 +126,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
         setMessages((current) => [...current, ...spoken.map((content) => ({ role: 'assistant' as const, content }))]);
       }
       if (data.mark) applyMark(data.mark.nodeId, data.mark.state);
-      if (data.sessionToken !== undefined) setToken(data.sessionToken);
+      absorbAllowance(data);
       if (typeof data.costUsd === 'number') setSpend((current) => current + data.costUsd!);
 
       setNodeId(data.nodeId ?? null);

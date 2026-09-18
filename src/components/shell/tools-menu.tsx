@@ -23,7 +23,20 @@ import { Button } from '@/components/ui/button';
  * called "Testing", so a visitor who opens this menu can tell which items are
  * for them and which are for somebody running the gate.
  */
-export type ToolItem = { label: string; onSelect: () => void; separated?: boolean; group?: string };
+export type ToolItem = {
+  label: string;
+  /**
+   * A second line under the label, for state the label should not have to
+   * carry. The allowance item uses it: the label names what pressing it does,
+   * the detail says where the allowance currently stands. Putting both on one
+   * line produced "Shared free allowance · 25 turns", which read as a statement
+   * rather than as something to press — and the number never moved.
+   */
+  detail?: string;
+  onSelect: () => void;
+  separated?: boolean;
+  group?: string;
+};
 type Item = ToolItem;
 
 export function ToolsMenu({ items }: { items: Item[] }) {
@@ -51,9 +64,10 @@ export function ToolsMenu({ items }: { items: Item[] }) {
                   <Menu.Item
                     key={item.label}
                     onClick={item.onSelect}
-                    className="data-highlighted:bg-surface-1 flex min-h-10 py-2 cursor-default items-center rounded-sm px-2.5 text-sm outline-none select-none"
+                    className="data-highlighted:bg-surface-1 flex min-h-10 flex-col justify-center gap-0.5 py-2 cursor-default rounded-sm px-2.5 text-sm outline-none select-none"
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    {item.detail ? <span className="text-muted-foreground text-2xs">{item.detail}</span> : null}
                   </Menu.Item>
                 ))}
               </Menu.Group>

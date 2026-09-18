@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useVoice } from '@/hooks/use-voice';
 import { stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, LearnerModel, NodeState } from '@/lib/graph/types';
+import { absorbAllowance, allowanceToken } from '@/lib/session/allowance';
 import type { SessionConfig } from '@/lib/session/config';
 import { spokenForm, stepFor } from '@/lib/walkthrough/script';
 import { useWalkthrough } from '@/lib/walkthrough/store';
@@ -40,7 +41,6 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -131,17 +131,17 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
             alreadySaid: step ? spokenForm(step) : '',
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: token,
+            sessionToken: allowanceToken(),
           }),
         });
 
-        const data = (await response.json()) as { say?: string; error?: string; sessionToken?: string | null };
+        const data = (await response.json()) as { say?: string; error?: string; sessionToken?: string | null; turnsLeft?: number | null };
         if (!response.ok || data.error) {
           setError(ERRORS[data.error ?? ''] ?? 'Something went wrong. The walkthrough itself is unaffected.');
           return;
         }
 
-        if (data.sessionToken !== undefined) setToken(data.sessionToken);
+        absorbAllowance(data);
         setAside(data.say ?? null);
         setQuestion('');
         if (data.say && voice.readAloud) void voice.say(data.say, false);
@@ -151,7 +151,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         setBusy(false);
       }
     },
-    [busy, config, currentNode, interrupt, step, token, voice],
+    [busy, config, currentNode, interrupt, step, voice],
   );
 
   if (!walk.hydrated) return null;
