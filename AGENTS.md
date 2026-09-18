@@ -1730,6 +1730,13 @@ though"* — a broken microphone took working speech down with it.
 - "helps me find where to begin" sits under "I don't know" and is tied to it
   with `aria-describedby`. Beside both buttons it read as a caption for the row.
 
+**The idea panel had the same coupling, the other way round.** It offered "Say
+it instead" for explain-back and no way to hear the idea itself — found when
+the owner looked for read aloud there and it was nowhere. It now has **Read it
+to me**, through `useReadOut`: speaker only, no listener, no preference. One
+press reads the intuition, example and caveat in the walkthrough's words, and
+opening another idea stops it.
+
 Verified in the browser at 1230px: the consent note appears on first press and
 "Not now" records nothing; turning read aloud on reads the current question and
 leaves the microphone closed. **Not verified:** the hands-free handover after a
