@@ -32,41 +32,46 @@ export function NeuronExperiment({ onExplain, experiment }: Props) {
   const resultComparedWithStart = result ? compareOutput(result.output) : null;
 
   return <section className="neuron-lab" aria-labelledby="neuron-lab-title">
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <p className="eyebrow">A quick experiment · runs in your browser</p>
-        <h3 id="neuron-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How does one neuron score a movie?</h3>
-      </div>
-      <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>
-    </div>
-    <p className="mt-3 max-w-2xl text-base">Imagine a streaming app has already turned one movie into two numbers. A single artificial neuron can combine them into one match score.</p>
-    <p className="text-muted-foreground mt-2 max-w-2xl text-sm">The neuron never sees the movie and does not know what funny or mysterious means. It only receives the numbers <strong className="text-foreground">2</strong> and <strong className="text-foreground">1</strong>.</p>
+    {/*
+     * No Reset in this header. It used to sit here ungated, so the first
+     * interactive control in the panel was one that undid nothing — and at
+     * narrow widths it wrapped onto its own row, which meant showing it once
+     * something had changed would have pushed the sliders further down. It
+     * lives below the action now, where appearing cannot move anything above it.
+     */}
+    <p className="eyebrow">A quick experiment · runs in your browser</p>
+    <h3 id="neuron-lab-title" tabIndex={-1} className="font-display mt-2 text-2xl outline-none sm:text-3xl">How does one neuron score a movie?</h3>
+    <p className="mt-3 max-w-2xl text-base">One neuron turns a movie’s two numbers into a single match score — without ever seeing the film.</p>
 
-    <div className="neuron-movie mt-5">
-      <div className="neuron-movie-title">
-        <span className="neuron-movie-icon" aria-hidden><Film size={22} /></span>
-        <span><span className="eyebrow block">Tonight’s movie</span><strong className="mt-1 block">A comedy mystery</strong></span>
+    {/* The setup: what the neuron is given, and what it does with it untouched.
+        Side by side once there is room, because neither is the thing to read. */}
+    <div className="neuron-setup mt-5">
+      <div className="neuron-movie">
+        <div className="neuron-movie-title">
+          <span className="neuron-movie-icon" aria-hidden><Film size={22} /></span>
+          <span><span className="eyebrow block">Tonight’s movie</span><strong className="mt-1 block">A comedy mystery</strong></span>
+        </div>
+        <div className="neuron-features" aria-label="The movie represented as two numbers">
+          <span><span className="text-muted-foreground text-xs">Comedy</span><strong className="font-display">2</strong></span>
+          <span><span className="text-muted-foreground text-xs">Mystery</span><strong className="font-display">1</strong></span>
+        </div>
       </div>
-      <div className="neuron-features" aria-label="The movie represented as two numbers">
-        <span><span className="text-muted-foreground text-xs">Comedy</span><strong className="font-display">2</strong></span>
-        <span><span className="text-muted-foreground text-xs">Mystery</span><strong className="font-display">1</strong></span>
-      </div>
-    </div>
 
-    <div className="neuron-baseline mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-      <span className="font-medium">Starting settings</span>
-      <span>Both traits count once</span><ArrowRight size={15} aria-hidden />
-      <span>Match score <strong className="font-mono">{BASELINE.output}</strong></span>
+      <div className="neuron-baseline flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="font-medium">Untouched</span>
+        <span>both count once</span><ArrowRight size={15} aria-hidden />
+        <span>score <strong className="font-mono">{BASELINE.output}</strong></span>
+      </div>
     </div>
 
     <fieldset className="mt-5 min-w-0">
       <legend className="text-sm font-medium">1. Change what matters</legend>
-      <p className="text-muted-foreground mt-1 text-sm">These two settings are the neuron’s <strong className="text-foreground">weights</strong>. A weight controls how strongly one number affects the score.</p>
+      <p className="text-muted-foreground mt-1 text-sm">These are the neuron’s <strong className="text-foreground">weights</strong>: how strongly each number counts.</p>
       <div className="neuron-machine mt-3">
         <div className="space-y-3">
           {INPUTS.map((input, i) => <div key={i} className="neuron-input">
             <div className="flex items-center justify-between gap-3">
-              <span><span className="text-muted-foreground block text-xs">{i === 0 ? 'Comedy' : 'Mystery'} · movie number {input}</span><label htmlFor={`neuron-weight-${i}`} className="text-sm font-medium">How much it counts</label></span>
+              <span><span className="text-muted-foreground block text-xs">{i === 0 ? 'Comedy' : 'Mystery'} · number {input}</span><label htmlFor={`neuron-weight-${i}`} className="text-sm font-medium">How much it counts</label></span>
               <output htmlFor={`neuron-weight-${i}`} className="neuron-weight-value font-mono font-medium">{signed(weights[i])}×</output>
             </div>
             <input id={`neuron-weight-${i}`} type="range" min={-2} max={2} step={0.5} value={weights[i]} aria-label={`How much ${i === 0 ? 'comedy' : 'mystery'} counts`} aria-valuetext={`${weights[i]} times the movie number ${input}`} onChange={e => changeWeight(i, Number(e.target.value))} className="neuron-slider mt-2 w-full" />
@@ -94,6 +99,10 @@ export function NeuronExperiment({ onExplain, experiment }: Props) {
     <div className="mt-4 flex flex-wrap items-center gap-3">
       <Button size="touch" disabled={!changed || !prediction || result !== null} onClick={() => { run(); requestAnimationFrame(() => document.getElementById('neuron-result')?.scrollIntoView({ block: 'nearest' })); }}>Score the movie <ArrowRight aria-hidden /></Button>
       <p className="text-muted-foreground text-sm">{result ? 'Move either setting to try again.' : changed ? 'Make a prediction, then see what happens.' : 'Move either slider to begin. Arrow keys work too.'}</p>
+      {/* Offered only once a weight has moved: a Reset on an untouched screen
+          is a control with nothing to do. `changed` is the same flag the
+          prediction and the score button already wait for. */}
+      {changed && <button className="text-muted-foreground inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4" onClick={reset}><RotateCcw size={14} aria-hidden />Reset experiment</button>}
     </div>
 
     <div aria-live="polite" aria-atomic="true">

@@ -972,11 +972,20 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
 }
 .playable-invitation-learning:hover { background: color-mix(in oklch, var(--band-learning) 12%, var(--surface-0)); }
 .neuron-lab {
+    /* Its own container. The rules below used to be a viewport media query,
+       which is the wrong number: this panel is drawn inside the map pane, and
+       at a 1230px viewport that pane gives it a 664px content box while at 660
+       it gives 557. Measured, both. */
+    container-type: inline-size;
     padding: clamp(1rem, 2.5vw, 1.75rem);
     border: 1px solid var(--border);
     border-radius: 1rem;
     background: var(--surface-1);
 }
+/* What the neuron is given, and what it scores untouched. Side by side once
+   there is room: stacked, the two of them put the first slider 198px further
+   down, on a panel whose whole point is the slider. */
+.neuron-setup { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; align-items: stretch; }
 .neuron-movie {
     display: flex;
     align-items: center;
@@ -1001,7 +1010,7 @@ button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
 .neuron-features { display: grid; grid-template-columns: repeat(2, minmax(5.5rem, 1fr)); gap: .5rem; }
 .neuron-features > span { padding: .625rem .75rem; border-radius: .625rem; background: var(--surface-2); }
 .neuron-features strong { display: block; margin-top: .125rem; font-size: 1.75rem; line-height: 1; }
-.neuron-baseline { padding: .75rem 1rem; border-left: 2px solid var(--band-networks); background: var(--surface-2); }
+.neuron-baseline { display: flex; align-items: center; padding: .75rem 1rem; border-left: 2px solid var(--band-networks); background: var(--surface-2); }
 .neuron-machine { display: grid; grid-template-columns: minmax(0, 1fr) 2rem minmax(100px, .55fr); align-items: stretch; gap: .75rem; }
 .neuron-input { padding: .875rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface-0); }
 .neuron-weight-value { min-width: 3.5rem; text-align: right; }
@@ -1035,9 +1044,24 @@ fieldset:disabled .neuron-choice { cursor: default; }
     .neuron-reveal { animation: neuron-appear 280ms ease-out; }
     @keyframes neuron-appear { from { opacity: 0; transform: translateY(.25rem); } to { opacity: 1; transform: translateY(0); } }
 }
-@media (max-width: 600px) {
+/* 30rem, chosen from the measured content box rather than copied from a
+   sibling: this panel gets 15.1rem at a 320px viewport, 19.5 at 390, 34.8 at
+   660 and 41.5 at 1230. Everything from 660 up keeps the wide composition it
+   already had; everything below it keeps the narrow one. */
+@container (min-width: 30rem) {
+    .neuron-setup { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+}
+@container (max-width: 29.999rem) {
     .neuron-movie { align-items: stretch; flex-direction: column; }
     .neuron-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* The movie is context, not the subject. At this width its own furniture
+       was 170px of the distance to the first slider. The icon is decorative and
+       already `aria-hidden`, so it is the first thing that can go. */
+    .neuron-features > span { padding: .5rem .625rem; }
+    .neuron-features strong { font-size: 1.25rem; }
+    .neuron-movie { padding: .75rem; gap: .625rem; }
+    .neuron-movie-icon { display: none; }
+    .neuron-baseline { padding: .625rem .875rem; }
     .neuron-machine { grid-template-columns: minmax(0, 1fr); }
     .neuron-operator { flex-direction: row; gap: 1.5rem; }
     .neuron-output { flex-direction: row; justify-content: space-between; gap: .75rem; padding: .5rem 1rem; }
