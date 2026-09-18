@@ -4,7 +4,13 @@ import { Overture } from '@/components/overture/overture';
 import { GRAPH } from '@/lib/graph/load';
 
 export const metadata: Metadata = {
-  title: 'Edgewise — the shape of what you do not know yet',
+  /*
+   * Absolute, because the root layout sets `template: '%s — Edgewise'` and this
+   * title already opens with the site's name. A plain string went through the
+   * template and served "Edgewise — the shape of what you do not know yet —
+   * Edgewise".
+   */
+  title: { absolute: 'Edgewise — the shape of what you do not know yet' },
 };
 
 /**
