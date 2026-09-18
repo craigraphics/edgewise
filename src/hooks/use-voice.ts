@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { usePersisted, writePersisted } from '@/lib/persisted';
 import { browserListener, LISTEN_ERROR_COPY, LISTENER_TIMING, type Listener } from '@/lib/voice/listener';
 import { needsMicrophoneHandover } from '@/lib/voice/platform';
 import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
@@ -9,23 +10,37 @@ import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
 /**
  * Binds the speaker and listener to React, and runs the hands-free loop.
  *
- * The loop is: speak the tutor's turn, then open the microphone, then hand the
- * finished transcript back for sending. Hands-free is the point of a spoken
- * tutor — having to click between every exchange puts you back at a keyboard,
- * which is the thing text mode is already for.
+ * The two directions are separate choices, because they cost different things.
+ * Reading aloud is local and private; answering out loud needs the microphone
+ * and sends audio to Google. They used to be one "Talk and listen" switch, so
+ * somebody who only wanted to hear the questions had to accept the microphone
+ * to get them — and on Android, where recognition is the unreliable half and
+ * speech is not, a broken microphone took working speech down with it.
+ *
+ * - `readAloud` is a standing preference about the tutor's turns.
+ * - Answering out loud is a per-turn action, behind a consent asked once.
+ * - Hands-free is not a third switch. It is what happens when both are in use:
+ *   `say(text, true)` reads the turn and then opens the microphone.
  *
  * Voice is opt-in and never the only way in. Chrome is the only reliable target,
  * the recognition is not on-device, and plenty of people are somewhere they
  * cannot talk out loud.
  */
 
+// The key predates the split and meant "voice on". It now means "read aloud",
+// which is the half of that choice that needed no consent, so existing
+// preferences carry over without re-asking anything.
 const KEY = 'edgewise.voice.v1';
+const MIC_CONSENT_KEY = 'edgewise.mic-consent.v1';
 
 export function useVoice(onFinalTranscript: (text: string) => void) {
   const speaker = useRef<Speaker | null>(null);
   const listener = useRef<Listener | null>(null);
 
-  const [enabled, setEnabled] = useState(false);
+  // Through the shared store, so the walkthrough and the conversation agree
+  // about the preference rather than each reading it once on mount.
+  const readAloud = usePersisted(KEY) === 'on';
+  const micConsented = usePersisted(MIC_CONSENT_KEY) === 'yes';
   const [supported, setSupported] = useState({ speak: false, listen: false });
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
@@ -58,12 +73,6 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
       handoverMs: needsMicrophoneHandover() ? LISTENER_TIMING.HANDOVER_MS : 0,
     });
     setSupported({ speak: speaker.current.available, listen: listener.current.available });
-
-    try {
-      setEnabled(window.localStorage.getItem(KEY) === 'on');
-    } catch {
-      /* storage unavailable; voice just starts off */
-    }
 
     return () => {
       speaker.current?.stop();
@@ -131,14 +140,16 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
   }, []);
 
   /**
-   * Speaks a turn, then opens the microphone.
+   * Speaks a turn, then — if asked — opens the microphone.
    *
-   * `andListen` is false for the closing turn — nothing is being asked, and
-   * leaving the microphone open after "that's everything" is unsettling.
+   * `andListen` is the caller's to decide, and should be true only when the
+   * learner is already answering out loud. It is false for the closing turn —
+   * nothing is being asked, and leaving the microphone open after "that's
+   * everything" is unsettling.
    */
   const say = useCallback(
     async (text: string, andListen: boolean) => {
-      if (!enabled || !speaker.current?.available) return;
+      if (!readAloud || !speaker.current?.available) return;
 
       setSpeaking(true);
       await speaker.current.speak(text);
@@ -146,35 +157,35 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
       if (andListen) listen();
     },
-    [enabled, listen],
+    [readAloud, listen],
   );
 
-  const toggle = useCallback(() => {
-    setEnabled((current) => {
-      const next = !current;
-      if (!next) {
-        speaker.current?.stop();
-        listener.current?.stop();
-        setSpeaking(false);
-        setListening(false);
-      }
-      try {
-        window.localStorage.setItem(KEY, next ? 'on' : 'off');
-      } catch {
-        /* preference just will not persist */
-      }
-      return next;
-    });
-  }, []);
+  /*
+   * Turning reading off stops the reading and nothing else. A microphone the
+   * learner opened themselves is theirs to close — it is a different choice
+   * now, and silencing the tutor should not cut somebody off mid-answer.
+   */
+  const toggleReadAloud = useCallback(() => {
+    if (readAloud) {
+      speaker.current?.stop();
+      setSpeaking(false);
+    }
+    writePersisted(KEY, readAloud ? 'off' : 'on');
+  }, [readAloud]);
+
+  /** Recorded once, the first time somebody agrees to their audio going to Google. */
+  const consentToMic = useCallback(() => writePersisted(MIC_CONSENT_KEY, 'yes'), []);
 
   return {
-    enabled,
+    readAloud,
+    micConsented,
     supported,
     speaking,
     listening,
     interim,
     error,
-    toggle,
+    toggleReadAloud,
+    consentToMic,
     say,
     listen,
     stopListening,

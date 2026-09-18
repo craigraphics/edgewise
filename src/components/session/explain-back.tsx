@@ -8,6 +8,8 @@ import { useVoice } from '@/hooks/use-voice';
 import type { ConceptNode, NodeState } from '@/lib/graph/types';
 import type { SessionConfig } from '@/lib/session/config';
 
+import { MicConsentNote, useMicStart } from './mic-consent';
+
 /**
  * Explaining an idea back in your own words — the only thing that clears a block.
  *
@@ -115,6 +117,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
   );
 
   const voice = useVoice(submit);
+  const mic = useMicStart(voice);
 
   if (!open) {
     return (
@@ -152,12 +155,14 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
         />
       )}
 
+      {mic.asking ? <MicConsentNote onConfirm={mic.confirm} onCancel={mic.cancel} /> : null}
+
       <div className="flex flex-wrap items-center gap-2">
         <Button size="touch" onClick={() => void submit(draft)} disabled={busy || !draft.trim()}>
           Check my explanation
         </Button>
         {voice.supported.listen && !voice.listening ? (
-          <Button size="touch" variant="outline" onClick={voice.listen} disabled={busy}>
+          <Button size="touch" variant="outline" onClick={mic.start} disabled={busy || mic.asking}>
             Say it instead
           </Button>
         ) : null}

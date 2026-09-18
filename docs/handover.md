@@ -1,3 +1,7 @@
+> **Voice split, 2026-09-17:** On `experiment/03-split-voice`, branched from
+> `main`. Read aloud and answering out loud are separate controls; hands-free
+> follows a spoken answer. See the last section of `AGENTS.md`. PR targets `main`.
+
 > **Predictor experiment, 2026-09-11:** On `experiment/02-learning-from-examples`,
 > branched from merged `main`. A real least-squares fit on the
 > `prediction-from-examples` node, local to the browser, with the fit held as a

@@ -90,7 +90,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
   const advance = walk.advance;
 
   useEffect(() => {
-    if (!playing || !step || !voice.enabled) return;
+    if (!playing || !step || !voice.readAloud) return;
     if (spokenAt.current === walk.position) return;
 
     spokenAt.current = walk.position;
@@ -144,7 +144,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         if (data.sessionToken !== undefined) setToken(data.sessionToken);
         setAside(data.say ?? null);
         setQuestion('');
-        if (data.say && voice.enabled) void voice.say(data.say, false);
+        if (data.say && voice.readAloud) void voice.say(data.say, false);
       } catch {
         setError('Could not reach the server. The walkthrough itself is unaffected.');
       } finally {
@@ -331,7 +331,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
                   interrupt();
                   return;
                 }
-                if (!voice.enabled) voice.toggle();
+                if (!voice.readAloud) voice.toggleReadAloud();
                 // Re-read the step we are on rather than skipping it.
                 spokenAt.current = -1;
                 setPlaying(true);

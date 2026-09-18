@@ -1695,3 +1695,42 @@ control in this panel is at least 40px.
 *and* a number field, and the slider's `aria-valuetext` carries the prediction so
 a screen reader hears the consequence once per committed change rather than on
 every frame. Nothing on the drawing is draggable.
+
+### Reading aloud and answering out loud are separate — 2026-09-17
+
+On `experiment/03-split-voice`, branched from `main`. The conversation had one
+"Talk and listen" switch that joined both directions, under a divider at the
+bottom of the composer, with a permanent paragraph about Google beneath it.
+
+**They cost different things, so they are different choices.** Reading aloud is
+local and private; answering out loud needs the microphone and sends audio to
+Google. Joined, somebody who only wanted to hear the questions had to accept the
+microphone to get them. On Android — where the field report was *"phones do not
+record the audio of the user, I can listen to the audio from the browser
+though"* — a broken microphone took working speech down with it.
+
+- **Read aloud** is a toggle beside the question it reads, because it is a
+  preference about the question. While a turn is being read the same place
+  offers "Stop reading", which is not the same as turning reading off.
+- **Answering out loud** is a 40px wave button beside Send, labelled "Stop and
+  send" while listening. Wave, not microphone, and beside Send rather than in
+  the field: the spoken answer is sent, not dictated for editing. It was
+  labelled first and measured — the row needed ~400px and the panel gives it
+  349 on a 1230px laptop, so it wrapped.
+- **The Google disclosure is asked once**, on the first press of either
+  microphone (conversation or explain-back), and consent is persisted. Printed
+  permanently, it also guarded reading aloud, which sends nothing anywhere.
+- **Hands-free is not a switch.** After a spoken answer, the next question —
+  if read aloud — opens the microphone when it finishes. After a typed answer
+  it does not. The microphone opening on its own for somebody who just chose
+  the keyboard is the surprise this split exists to remove.
+- `edgewise.voice.v1` used to mean "voice on" and now means "read aloud" — the
+  half that needed no consent — so existing preferences carry over. It is read
+  through `usePersisted`, so the walkthrough and the conversation agree.
+- "helps me find where to begin" sits under "I don't know" and is tied to it
+  with `aria-describedby`. Beside both buttons it read as a caption for the row.
+
+Verified in the browser at 1230px: the consent note appears on first press and
+"Not now" records nothing; turning read aloud on reads the current question and
+leaves the microphone closed. **Not verified:** the hands-free handover after a
+spoken answer (needs a real microphone session), and any phone.
