@@ -38,6 +38,16 @@ describe('stepFor', () => {
     }
   });
 
+  it('keeps the brief pass brief without restating that they had it', () => {
+    // "You already had this one" is the diagnostic result, read back. The pass
+    // being short is enough; saying why is the mark again.
+    const restated = /\b(already|had|knew|know|known|solid|got)\b/i;
+    for (const entry of GRAPH.nodes) {
+      const opener = stepFor(entry, 'known').opener.replace(entry.label, '');
+      expect(opener).not.toMatch(restated);
+    }
+  });
+
   it('carries the simplification cost whenever the node declares one', () => {
     expect(stepFor(neuron, 'blocked').caveat).toBe(neuron.simplificationCost);
     expect(stepFor(tokens, 'blocked').caveat).toBeNull();
