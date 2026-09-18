@@ -49,6 +49,7 @@ import { useLearnerModel } from '@/lib/learner/store';
 import { CLEAR_MAP, LOAD_EXAMPLE } from '@/lib/session/confirmations';
 import { useSessionConfig } from '@/lib/session/config';
 import { useAllowance } from '@/lib/session/allowance';
+import { lastQuestion } from '@/lib/session/stored-conversation';
 import { useSession } from '@/lib/session/use-session';
 import { useWalkthrough } from '@/lib/walkthrough/store';
 import { cn } from '@/lib/utils';
@@ -109,7 +110,8 @@ export default function Page() {
   const covered = useMemo(() => coveredBy(GRAPH, walk.position), [walk.position]);
   const lead = leadNode(GRAPH, model);
   const selected = GRAPH.nodes.find(node => node.id === selectedId) ?? null;
-  const started = Object.values(model.states).some(state => state !== 'unexplored') || walk.position > 0;
+  const marked = Object.values(model.states).some(state => state !== 'unexplored');
+  const started = marked || walk.position > 0;
   const format = mapFormat ?? (view === 'mark' ? (compact ? 'list' : 'diagram') : 'focus');
   const leadDetail = lead ? { node: lead, state: stateOf(model, lead.id), resting: downstreamOf(GRAPH, lead.id).length } : null;
   const highlighted = view === 'session' ? session.nodeId : view === 'walk' ? walkNodeId : null;
@@ -352,7 +354,13 @@ export default function Page() {
             </div>
           ) : <Conversation
             key={session.conversation}
-            messages={session.messages} status={session.status} error={session.error} firstTime={!started}
+            messages={session.messages} status={session.status} error={session.error}
+            // Keyed on marks, not on having visited: "the ideas already on your
+            // map" said to somebody with nothing on it is not true.
+            firstTime={!marked}
+            resumable={session.resumable ? { question: lastQuestion(session.resumable) } : null}
+            onResume={session.resume}
+            onStartAgain={() => { newConversation(); void session.start(model.states); }}
             draft={draft} onDraftChange={setDraft}
             onStart={() => session.start(model.states)} onAnswer={text => session.answer(text, model.states)}
             onRetry={session.retry} onConfigure={() => setSettingsOpen(true)}

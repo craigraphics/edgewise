@@ -48,6 +48,28 @@
 >    the format" and "the sibling project" to somebody who has no idea what
 >    either means.
 >
+> **Merged with `fix/02-conversation-feedback` (PR #34), which landed first and
+> reached for the same problem.** That branch moved the conversation's token
+> into `localStorage` so a reload would not "quietly hand out a new allowance" —
+> the same class of finding, one surface of three. It left the walkthrough's and
+> explain-back's own `useState` tokens alone, so the divergence was still there.
+>
+> The resolution keeps their property and generalises it: `allowance.ts` is the
+> single owner and is now **persisted under its own key**, so the count survives
+> a reload and a second tab as well as being shared across all three surfaces.
+> `token` came off `StoredConversation`, because an allowance is not a property
+> of a conversation — it survives a fresh one, it is spent by a walkthrough
+> interruption and by an explanation, and it has nothing to do with the graph
+> version that record is discarded on. Their test for the token surviving a
+> graph-version change moved to `allowance.test.ts`, where it is now true of all
+> three.
+>
+> **Not migrated:** a browser that spent turns against the build between #34
+> merging and this will start one fresh allowance, because the old token sat
+> under the conversation key. One browser, one extra session of a shared quota —
+> the same cost `token.ts` already accepts for an expired token, and cheaper
+> than carrying a migration for a window of hours.
+>
 > 3. **One name per destination.** The walkthrough was called five things in one
 >    file. The rule, written where the strings are: an ACTION says what happens
 >    using the destination's one name; a PLACE LABEL says where you are. So every
@@ -169,6 +191,99 @@
 > 125 KB and is the largest single asset in the landing chunk. About 45 files of
 > mechanical change with no behavioural result, which does not belong in the same
 > diff as eight behavioural fixes.
+
+> **Feedback, persistence, and copy in the conversation loop, 2026-09-17:** On
+> `fix/02-conversation-feedback`, branched from `main` after the safety-and-consent
+> fixes merged. Eight findings from the 2026-09-16 audit, fixed in order. Its PR
+> targets `main`.
+>
+> 1. **The explain-back result rendered under the form, at or below the fold, and
+>    the form stayed open.** The outcome now replaces the form, is scrolled into
+>    view, and carries **its own state badge** — measured, the inspector's badge
+>    at the top of the panel was 340px above the viewport when the reply landed,
+>    so bringing "the changed badge into view" had to mean drawing the new mark
+>    beside the words that earned it, not scrolling to the old one. One live
+>    region spans the whole exchange ("Reading it…", then the reply in its
+>    place), mounted before the request so the change is announced. Focus moves
+>    to **Explain it again**, because the control that had it has just gone.
+>    `StateBadge` moved to `src/components/session/state-badge.tsx`; the
+>    inspector re-exports `STATE_COPY` so its three other callers are untouched.
+> 2. **The closing and "Your next step" were outside the live region.** The
+>    closing used to drop into the transcript, on the reasoning that there is
+>    nothing left to hold still — but the pinned turn *is* the live region, so a
+>    screen reader heard every question and then silence. The pinned element now
+>    persists into the ending and holds the closing sentence **and** the
+>    next-step control, so both are in one atomic announcement. The composer
+>    keeps only "Start a fresh conversation" and "Clear my map…".
+> 3. **The in-flight conversation was lost on remount.** The settled transcript,
+>    the current node, the follow-up count and the free-allowance token are
+>    persisted in `edgewise.conversation.v1` and read through `usePersisted`,
+>    with `parseConversation` discarding a record written against another graph
+>    and refusing to resume on a node that no longer exists. Only settled turns
+>    are written: an answer in flight stays in memory, so a reload can never
+>    resume on a dangling reply. A found conversation is **offered, not
+>    imposed** — "Pick up where you left off" beside "Start again", with the last
+>    question quoted — because landing straight on a half-finished question,
+>    possibly with voice about to speak, is not what a reload should do.
+>    A side effect worth knowing: the free allowance now survives a reload, where
+>    before reloading quietly handed out a fresh one.
+> 4. **"Starting somewhere near the bottom" was said at a mid-map frontier.**
+>    `openingFor` (tested) says it only when the first node asked is on layer 0,
+>    and otherwise "Picking up from where your map already reaches:". Verified
+>    both ways in the browser.
+> 5. **"Keep exploring from the ideas already on your map" appeared with zero
+>    marks.** It was keyed on `started`, which includes walkthrough position.
+>    Keyed on marks now. Verified with walkthrough position 1 and no marks.
+> 6. **"Check my explanation" enabled for "ok".** `explanationReadiness` needs
+>    four words and says why beside the control, wired through
+>    `aria-describedby`; the same rule is held inside `submit`, because a spoken
+>    "ok" never passes the disabled button.
+> 7. **A typed question replaced the "Say it more simply" paragraph.** The
+>    walkthrough keeps every reworder and answer as its own item under the step,
+>    labelled "Said more simply" / "You asked", keyed to the step's position
+>    rather than cleared by the buttons — the walk also moves on by itself.
+> 8. **"You already had this one — just in passing" restated the diagnostic.**
+>    The opener is `"<label>, briefly."` and the line under the step reads "A
+>    brief pass on this one." The no-grading test now also rejects
+>    already/had/knew/know/known/solid/got in a brief-pass opener, across all 23
+>    nodes.
+>
+> **Verified in the browser** (BrowserOS neo against `pnpm dev`, at 1230x842 and
+> at 390x779 through a CDP viewport override — `window.resizeTo` is refused and
+> this tool cannot resize the real window):
+>
+> - A real explanation on `features-and-representation` at 1230x842: result
+>   408–761 of 842 with the form gone, focus on **Explain it again**, the mark
+>   `known`, and the outcome's own **Solid** badge on screen while the panel's
+>   own badge sat at −340. At 390x779: result 414–698, badge 671–698.
+> - A diagnostic finished by skipping: the closing and **Explore this idea** sit
+>   inside one `aria-live="polite" aria-atomic` region at 141–436 (laptop) and
+>   172–467 (phone), no page scroll either way.
+> - Refresh mid-conversation: "Your conversation, where you left it" quoting the
+>   exact last question; pressing **Pick up where you left off** returned the
+>   same question with the transcript and mark intact. A second tab opened
+>   against a live conversation showed the same offer, and **Start again** there
+>   left one scripted opening message.
+> - The layout probe at both sizes, and after resizing down and back:
+>   `pageScrollV`, `pageScrollH`, `clippedRight` and off-right controls all 0.
+>   The three map-view buttons remain 36px, as before this branch.
+> - One real reword and one real typed question in the walkthrough: both kept,
+>   in order, under their own labels.
+>
+> **Not verified.** No screen reader — the live regions are checked as markup
+> and by what is in them, not by hearing them; no phone (390x779 is an emulated
+> viewport, not a handset); no second-browser or private-window check of the
+> storage-disabled path beyond the existing `try/catch` in `persisted.ts`.
+>
+> **`pnpm calibrate` was not run.** The assessor prompt, the decision schema,
+> `verdict.ts` and the model list are untouched. The only route change is the
+> scripted opening sentence, which makes no model call, and the transcript now
+> reaching the server out of storage rather than out of component state — the
+> same array either way. The last session's figures stand as the current state of
+> the canary.
+>
+> 952 tests (+14), lint, typecheck, validate-graph and the production build pass.
+
 
 > **Data safety, consent and the skip rule, 2026-09-16:** On
 > `fix/01-safety-and-consent`, branched from `main` after the agents experiment
