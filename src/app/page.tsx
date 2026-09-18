@@ -369,7 +369,7 @@ export default function Page() {
                 <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing && isExperimentId(focusNode.id) ? EXPERIMENT_HEADLINE[focusNode.id] : 'Ideas build on ideas.'}</h1>
               </div>
               <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
-                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => changeFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
+                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => changeFormat(item)} className={cn('min-h-10 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
               </div>
             </div>
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
