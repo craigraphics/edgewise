@@ -19,6 +19,13 @@ import { cn } from '@/lib/utils';
  *
  * The labels say what happens rather than naming a mode. "Session" and "Walk me
  * through it" sat here once and neither told anyone what it would do.
+ *
+ * Those same words are on the panel's primary button, deliberately — one name
+ * per destination, and this is the one. What that cost was a visitor meeting
+ * two controls saying "Find my starting point" with nothing to say which was
+ * which. So the group states its own role in three words. It is a caption, not
+ * a heading: `aria-label` already names the group for anything not reading the
+ * screen, so this is `aria-hidden` rather than said twice.
  */
 
 export type Mode = 'session' | 'walk';
@@ -46,6 +53,9 @@ export function ModeSwitch({
         className,
       )}
     >
+      <span aria-hidden className="text-muted-foreground hidden pr-1 pl-2 text-xs lg:inline">
+        I want to
+      </span>
       {OPTIONS.map((option) => {
         const active = value === option.id;
         return (

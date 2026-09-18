@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ConceptMap } from '@/components/map/concept-map';
 import { useNeuronExperiment } from '@/components/experiments/neuron-experiment';
 import { useTokenizerExperiment } from '@/components/experiments/tokenizer-experiment';
@@ -40,13 +41,14 @@ import { downstreamOf, leadNode, stateOf } from '@/lib/graph/frontier';
 import { GRAPH } from '@/lib/graph/load';
 import { coveredBy } from '@/lib/graph/order';
 import { hashFor, parseDeepLink, type DeepLink } from '@/lib/map/deep-link';
-import { panelAlreadyShows } from '@/lib/map/panel';
+import { MAP_SECTION, panelAlreadyShows, returnFocusSelector } from '@/lib/map/panel';
 import type { NodeState } from '@/lib/graph/types';
 import { upgrade } from '@/lib/graph/upgrade';
 import { EMPTY_EXPLAIN_REQUESTS, EXPERIMENT_HEADLINE, EXPERIMENT_TITLE_ID, isExperimentId, type ExperimentId } from '@/lib/experiments/registry';
 import { useLearnerModel } from '@/lib/learner/store';
 import { CLEAR_MAP, LOAD_EXAMPLE } from '@/lib/session/confirmations';
 import { useSessionConfig } from '@/lib/session/config';
+import { useAllowance } from '@/lib/session/allowance';
 import { lastQuestion } from '@/lib/session/stored-conversation';
 import { useSession } from '@/lib/session/use-session';
 import { useWalkthrough } from '@/lib/walkthrough/store';
@@ -58,6 +60,7 @@ export default function Page() {
   const { model, hydrated, mark, reset: resetMarks, loadFixture } = useLearnerModel(GRAPH);
   const { config, hydrated: configReady, save, forget } = useSessionConfig();
   const session = useSession(config, mark);
+  const allowance = useAllowance();
   const walk = useWalkthrough(GRAPH);
   const compact = useMedia(SHEET_QUERY);
   const [view, setView] = useState<View>('session');
@@ -94,7 +97,16 @@ export default function Page() {
   const [practice, setPractice] = useState<ExperimentId | null>(null);
   const [explainRequest, setExplainRequest] = useState(EMPTY_EXPLAIN_REQUESTS);
   const panelRef = useRef<HTMLElement>(null);
-  const returnFocus = useRef<Element | null>(null);
+  /**
+   * The idea the panel was opened from, so closing can hand focus back to it.
+   *
+   * An id and not the element itself. The focused view is keyed on the node it
+   * draws, so the button that opened the panel is routinely replaced before it
+   * can be focused again — the old element-reference version came back
+   * disconnected and dropped focus on the map section instead. See
+   * `returnFocusSelector`.
+   */
+  const returnFocus = useRef<string | null>(null);
   const covered = useMemo(() => coveredBy(GRAPH, walk.position), [walk.position]);
   const lead = leadNode(GRAPH, model);
   const selected = GRAPH.nodes.find(node => node.id === selectedId) ?? null;
@@ -140,12 +152,17 @@ export default function Page() {
    * `playExperiment` sets it back immediately afterwards.
    */
   const openNode = useCallback((id: string) => {
-    if (!selectedId) returnFocus.current = document.activeElement;
+    /*
+     * Recorded on every open, not only the first. Walking idea to idea through
+     * the inspector's prerequisite buttons used to leave this pointing at
+     * whatever opened the panel several ideas ago.
+     */
+    returnFocus.current = id;
     setSelectedId(id);
     setPractice(null);
     setSurface('guide');
     goto({ kind: 'idea', id });
-  }, [goto, selectedId]);
+  }, [goto]);
 
   const playExperiment = (id: ExperimentId) => {
     setView('session');
@@ -180,14 +197,20 @@ export default function Page() {
   const closeNode = useCallback(() => {
     // `practice` is deliberately left alone: on a wide screen the experiment
     // lives in the map pane and this button closes the guide beside it.
-    setSelectedId(null);
-    goto(null);
-    if (compact) setSurface('map');
-    requestAnimationFrame(() => {
-      const target = returnFocus.current;
-      if (target?.isConnected && (target instanceof HTMLElement || target instanceof SVGElement)) target.focus({ preventScroll: true });
-      else document.getElementById('concept-map')?.focus({ preventScroll: true });
+    /*
+     * Flushed rather than deferred to an animation frame. The map is `hidden`
+     * below the breakpoint while the guide is up, and `requestAnimationFrame`
+     * is not a promise that React has committed — so the focus call could land
+     * on a `display: none` element, silently do nothing, and leave focus on the
+     * body. Committing first means the element exists when we reach for it.
+     */
+    flushSync(() => {
+      setSelectedId(null);
+      if (compact) setSurface('map');
     });
+    goto(null);
+    const target = document.querySelector<HTMLElement | SVGElement>(returnFocusSelector(returnFocus.current));
+    (target ?? document.getElementById(MAP_SECTION))?.focus({ preventScroll: true });
   }, [compact, goto]);
 
   useEffect(() => {
@@ -277,8 +300,14 @@ export default function Page() {
 
   return (
     <div className="bg-surface-0 flex h-dvh flex-col overflow-hidden">
-      <a className="skip-link" href="#guide" onClick={() => { setSurface('guide'); requestAnimationFrame(() => panelRef.current?.focus()); }}>Skip to conversation</a>
-      <a className="skip-link" href="#concept-map" onClick={() => { setSurface('map'); requestAnimationFrame(() => document.getElementById('concept-map')?.focus()); }}>Skip to map</a>
+      {/*
+        * Flushed, not deferred. Below the panel breakpoint both regions carry
+        * `hidden` when they are not the visible surface, and focusing a
+        * `display: none` element does nothing at all — which is what a skip
+        * link landing on a section whose controls measure 0px looks like.
+        */}
+      <a className="skip-link" href="#guide" onClick={() => { flushSync(() => setSurface('guide')); panelRef.current?.focus(); }}>Skip to conversation</a>
+      <a className="skip-link skip-link-second" href="#concept-map" onClick={() => { flushSync(() => setSurface('map')); document.getElementById(MAP_SECTION)?.focus(); }}>Skip to map</a>
       {settingsOpen && <Setup onClose={() => setSettingsOpen(false)} config={config} onSave={save} onForget={forget} />}
       {confirming && <Confirm
         copy={confirming === 'clear' ? CLEAR_MAP : LOAD_EXAMPLE}
@@ -291,7 +320,7 @@ export default function Page() {
         marking={view === 'mark'}
         onLeaveMarking={() => changeView('session')}
         tools={[
-          ...(configReady ? [{ label: setupLabel(config), onSelect: () => setSettingsOpen(true) }] : []),
+          ...(configReady ? [{ ...setupLabel(config, allowance.turnsLeft), onSelect: () => setSettingsOpen(true) }] : []),
           { label: 'Clear my map…', onSelect: () => setConfirming('clear'), separated: configReady },
           { label: 'Mark by hand (for testing)', onSelect: () => { setView('mark'); setSurface('map'); }, group: 'Testing' },
           { label: 'Load example progress (for testing)…', onSelect: () => setConfirming('example') },
@@ -340,7 +369,7 @@ export default function Page() {
             lead={leadDetail} onNewConversation={newConversation} onClearMap={() => setConfirming('clear')}
           />}
         </section>
-        <section id="concept-map" tabIndex={-1} aria-label="Concept map" className={cn('min-h-0 min-w-0 flex-col px-5 pt-5 pb-3 sm:px-8 panel:col-start-1 panel:row-start-1', compact && surface !== 'map' && !presenting ? 'hidden' : 'flex')}>
+        <section id={MAP_SECTION} tabIndex={-1} aria-label="Concept map" className={cn('min-h-0 min-w-0 flex-col px-5 pt-5 pb-3 sm:px-8 panel:col-start-1 panel:row-start-1', compact && surface !== 'map' && !presenting ? 'hidden' : 'flex')}>
           {!presenting && <>
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -348,13 +377,13 @@ export default function Page() {
                 <h1 className={cn("font-display mt-1 font-medium", playing ? "text-xl sm:text-2xl" : "text-2xl")}>{playing && isExperimentId(focusNode.id) ? EXPERIMENT_HEADLINE[focusNode.id] : 'Ideas build on ideas.'}</h1>
               </div>
               <div role="group" aria-label="Map view" className="border-border flex rounded-lg border p-1">
-                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => changeFormat(item)} className={cn('min-h-9 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
+                {(['focus', 'diagram', 'list'] as const).map(item => <button key={item} aria-pressed={format === item} onClick={() => changeFormat(item)} className={cn('min-h-10 rounded-md px-3 text-sm', format === item ? 'bg-foreground text-background' : 'text-muted-foreground')}>{item === 'focus' ? 'Focus' : item === 'diagram' ? 'Full map' : 'List'}</button>)}
               </div>
             </div>
             <p className={cn("text-muted-foreground mb-4 text-sm", playing && "hidden sm:block")}>{format === 'focus' ? 'One idea and its closest connections. Follow any thread that interests you.' : format === 'diagram' ? 'Read from top to bottom. Select an idea to trace what builds on it.' : 'The same connections, in reading order. Select an idea to explore.'}</p>
             {format !== 'focus' && <MapLegend graph={GRAPH} className="border-border mb-4 border-b pb-4" />}
           </>}
-          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} phasesExperiment={phasesExperiment} lossExperiment={lossExperiment} stepsExperiment={stepsExperiment} generalizationExperiment={generalizationExperiment} embeddingsExperiment={embeddingsExperiment} holdoutExperiment={holdoutExperiment} parametersExperiment={parametersExperiment} backpropExperiment={backpropExperiment} attentionExperiment={attentionExperiment} transformerExperiment={transformerExperiment} contextExperiment={contextExperiment} nextTokenExperiment={nextTokenExperiment} ragExperiment={ragExperiment} samplingExperiment={samplingExperiment} preferenceExperiment={preferenceExperiment} hallucinationExperiment={hallucinationExperiment} toolUseExperiment={toolUseExperiment} agentExperiment={agentExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit={compact ? 'width' : 'legible'} quiet={started} showControls={!presenting} />)}
+          {hydrated && (format === 'focus' && !presenting ? <FocusedMap key={focusNode.id} graph={GRAPH} node={focusNode} model={model} neuronExperiment={neuronExperiment} tokenizerExperiment={tokenizerExperiment} predictorExperiment={predictorExperiment} representationExperiment={representationExperiment} phasesExperiment={phasesExperiment} lossExperiment={lossExperiment} stepsExperiment={stepsExperiment} generalizationExperiment={generalizationExperiment} embeddingsExperiment={embeddingsExperiment} holdoutExperiment={holdoutExperiment} parametersExperiment={parametersExperiment} backpropExperiment={backpropExperiment} attentionExperiment={attentionExperiment} transformerExperiment={transformerExperiment} contextExperiment={contextExperiment} nextTokenExperiment={nextTokenExperiment} ragExperiment={ragExperiment} samplingExperiment={samplingExperiment} preferenceExperiment={preferenceExperiment} hallucinationExperiment={hallucinationExperiment} toolUseExperiment={toolUseExperiment} agentExperiment={agentExperiment} playing={playing} alreadyOpen={focusNodeIsOpen} onSelect={openNode} onPlay={playExperiment} onExplain={explainExperiment} /> : format === 'list' && !presenting ? <ConceptList graph={GRAPH} model={model} selectedId={selectedId} onSelect={openNode} /> : <ConceptMap graph={GRAPH} model={model} onSelect={node => openNode(node.id)} selectedId={selectedId} highlightedId={highlighted} covered={covered} fit="legible" restOn={compact ? (lead?.id ?? null) : null} quiet={started} showControls={!presenting} />)}
           {!presenting && <p className="text-muted-foreground pt-3 text-xs">{format === 'focus' ? 'Every idea is open to explore · Full map shows all 23' : format === 'diagram' ? 'Scroll to move · Use + to zoom' : `${GRAPH.nodes.length} connected ideas · Saved in this browser`}</p>}
         </section>
       </main>

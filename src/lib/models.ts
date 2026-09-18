@@ -34,7 +34,7 @@
 export const MODELS = {
   'gemini-3.1-flash-lite': {
     label: 'Gemini 3.1 Flash Lite',
-    note: 'Cheapest that holds the format. Proven on a structured interview loop in the sibling project.',
+    note: 'The default. Cheapest model that reliably answers in the exact form this app needs.',
     /** USD per 1M tokens, paid tier. Zero on free — kept so usage stays comparable. */
     input: 0.25,
     output: 1.5,

@@ -14,7 +14,6 @@ const live: StoredConversation = {
   nodeId: GRAPH.nodes[1].id,
   followUps: 1,
   done: false,
-  token: 'signed',
 };
 
 describe('parseConversation', () => {
@@ -31,10 +30,13 @@ describe('parseConversation', () => {
     expect(isResumable(parseConversation(GRAPH, null))).toBe(false);
   });
 
-  it('discards a transcript written against another graph, but keeps the allowance token', () => {
+  /* The allowance moved out of this record and into `allowance.ts`, under its
+     own key — it is not a property of a conversation, and it must survive the
+     graph version changing under one. Its own test covers it. */
+  it('discards a transcript written against another graph', () => {
     const parsed = parseConversation(GRAPH, JSON.stringify({ ...live, graphVersion: -1 }));
     expect(parsed.messages).toEqual([]);
-    expect(parsed.token).toBe('signed');
+    expect(isResumable(parsed)).toBe(false);
   });
 
   it('does not resume on a node that no longer exists', () => {

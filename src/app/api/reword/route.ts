@@ -5,8 +5,8 @@ import { ModelUnavailableError } from '@/lib/agent/decide';
 import { reword } from '@/lib/agent/reword';
 import { GRAPH } from '@/lib/graph/load';
 import { isWhitelisted, MODELS } from '@/lib/models';
-import { fallbackKey, serverDefaultModel } from '@/lib/provider';
-import { canMeter, FREE_DAILY_CAP, FREE_TURN_CAP, issue, overCap, spendSoFar } from '@/lib/session/token';
+import { serverDefaultModel } from '@/lib/provider';
+import { meterFreeTurn } from '@/lib/session/metering';
 
 /**
  * An interruption during the walkthrough: "simpler", or a question.
@@ -53,23 +53,20 @@ export async function POST(request: Request) {
   let apiKey = input.apiKey?.trim() ?? '';
   let token = input.sessionToken ?? null;
 
+  /*
+   * `turnsLeft` is null under a key of their own: there is no cap, so there is
+   * no number, and the settings menu says so rather than printing an allowance
+   * that does not apply.
+   */
+  let turnsLeft: number | null = null;
+
   if (!byok) {
-    if (!canMeter()) return NextResponse.json({ error: 'FREE_TIER_UNAVAILABLE' }, { status: 503 });
+    const metered = await meterFreeTurn(token);
+    if (!metered.ok) return NextResponse.json({ error: metered.error, cap: metered.cap }, { status: metered.status });
 
-    const spend = await spendSoFar(token);
-    const over = overCap(spend);
-    if (over) {
-      return NextResponse.json(
-        { error: over, cap: over === 'FREE_DAILY_SPENT' ? FREE_DAILY_CAP : FREE_TURN_CAP },
-        { status: 429 },
-      );
-    }
-
-    const shared = fallbackKey();
-    if (!shared) return NextResponse.json({ error: 'FREE_TIER_UNAVAILABLE' }, { status: 503 });
-
-    apiKey = shared;
-    token = await issue(spend.turns + 1, spend.daily + 1);
+    apiKey = metered.apiKey;
+    token = metered.token;
+    turnsLeft = metered.turnsLeft;
   }
 
   try {
@@ -87,7 +84,7 @@ export async function POST(request: Request) {
       `[reword] ${node.id} ${input.mode} via ${result.model} ${result.latencyMs}ms $${result.costUsd.toFixed(5)}`,
     );
 
-    return NextResponse.json({ say: result.say, sessionToken: token, model: result.model, costUsd: result.costUsd });
+    return NextResponse.json({ say: result.say, sessionToken: token, turnsLeft, model: result.model, costUsd: result.costUsd });
   } catch (error) {
     if (error instanceof ModelUnavailableError) {
       return NextResponse.json(

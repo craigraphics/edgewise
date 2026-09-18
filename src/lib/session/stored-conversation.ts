@@ -28,24 +28,25 @@ export type StoredConversation = {
   nodeId: string | null;
   followUps: number;
   done: boolean;
-  /**
-   * The signed free-allowance token. Kept across a fresh conversation, as it
-   * always was in memory, and now across a reload too — otherwise reloading
-   * would quietly hand out a new allowance.
-   */
-  token: string | null;
 };
 
-export function emptyConversation(graph: ConceptGraph, token: string | null = null): StoredConversation {
-  return { graphVersion: graph.version, messages: [], nodeId: null, followUps: 0, done: false, token };
+/*
+ * The signed free-allowance token used to be carried here, so that a reload
+ * would not quietly hand out a new allowance. It lives in `allowance.ts` now,
+ * under its own key: it is not a property of a conversation — it survives a
+ * fresh one, it is spent by a walkthrough interruption and by an explanation,
+ * and it has nothing to do with the graph version this record is discarded on.
+ * The reload property it was put here for is kept, and now covers all three.
+ */
+export function emptyConversation(graph: ConceptGraph): StoredConversation {
+  return { graphVersion: graph.version, messages: [], nodeId: null, followUps: 0, done: false };
 }
 
 export function parseConversation(graph: ConceptGraph, raw: string | null): StoredConversation {
   if (!raw) return emptyConversation(graph);
   try {
     const parsed = JSON.parse(raw) as Partial<StoredConversation>;
-    const token = typeof parsed.token === 'string' ? parsed.token : null;
-    if (parsed.graphVersion !== graph.version || !Array.isArray(parsed.messages)) return emptyConversation(graph, token);
+    if (parsed.graphVersion !== graph.version || !Array.isArray(parsed.messages)) return emptyConversation(graph);
 
     const messages = parsed.messages.filter(
       (message): message is Message =>
@@ -58,10 +59,10 @@ export function parseConversation(graph: ConceptGraph, raw: string | null): Stor
 
     // A live conversation needs a node to be about. Without one there is no
     // question to return to, so there is nothing to resume.
-    if (!done && !nodeId) return emptyConversation(graph, token);
+    if (!done && !nodeId) return emptyConversation(graph);
 
     const followUps = Number.isInteger(parsed.followUps) ? Math.min(3, Math.max(0, parsed.followUps!)) : 0;
-    return { graphVersion: graph.version, messages, nodeId, followUps, done, token };
+    return { graphVersion: graph.version, messages, nodeId, followUps, done };
   } catch {
     return emptyConversation(graph);
   }

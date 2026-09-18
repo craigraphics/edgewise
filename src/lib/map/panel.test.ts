@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { panelAlreadyShows } from './panel';
+import { GRAPH } from '@/lib/graph/load';
+
+import { panelAlreadyShows, returnFocusSelector } from './panel';
 
 const OPEN = { selectedId: 'neuron', nodeId: 'neuron' };
 
@@ -32,5 +34,28 @@ describe('whether the panel already shows an idea', () => {
   it('still offers the press on a narrow window while the map is the visible surface', () => {
     expect(panelAlreadyShows({ ...OPEN, compact: true, surface: 'map' })).toBe(false);
     expect(panelAlreadyShows({ ...OPEN, compact: true, surface: 'guide' })).toBe(true);
+  });
+});
+
+describe('returnFocusSelector', () => {
+  it('names the element for the idea that was open', () => {
+    expect(returnFocusSelector('neuron')).toBe('[data-node="neuron"]');
+  });
+
+  it('falls back to the map section when no idea was open', () => {
+    expect(returnFocusSelector(null)).toBe('#concept-map');
+  });
+
+  /* Every id in the graph has to survive this, or closing lands nowhere. */
+  it('accepts every id the graph actually uses', () => {
+    for (const node of GRAPH.nodes) {
+      expect(returnFocusSelector(node.id)).toBe(`[data-node="${node.id}"]`);
+    }
+  });
+
+  it('refuses to build a selector out of anything that is not an id', () => {
+    for (const hostile of ['"] , [autofocus] , [', 'a b', 'node]', '']) {
+      expect(returnFocusSelector(hostile)).toBe('#concept-map');
+    }
   });
 });

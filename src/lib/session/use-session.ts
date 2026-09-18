@@ -6,6 +6,7 @@ import { GRAPH } from '@/lib/graph/load';
 import type { NodeState } from '@/lib/graph/types';
 import { usePersisted, writePersisted } from '@/lib/persisted';
 
+import { absorbAllowance, allowanceToken } from './allowance';
 import type { SessionConfig } from './config';
 import {
   CONVERSATION_KEY,
@@ -42,6 +43,7 @@ type TurnResponse = {
   nodeId?: string | null;
   followUps?: number;
   sessionToken?: string | null;
+  turnsLeft?: number | null;
   model?: string;
   costUsd?: number;
   error?: string;
@@ -130,7 +132,9 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
             // Sent only when present. An empty string would look like a key.
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: current().token,
+            // Read at send time from the one shared store, so the walkthrough's
+            // interruptions and this conversation spend the same allowance.
+            sessionToken: allowanceToken(),
           }),
         });
 
@@ -155,7 +159,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
         if (active.current === controller) active.current = null;
       }
     },
-    [config.apiKey, config.model, current],
+    [config.apiKey, config.model],
   );
 
   /** Writes one settled turn: the history it was sent with, the answer, and the reply. */
@@ -165,7 +169,7 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
       if (data.mark) applyMark(data.mark.nodeId, data.mark.state);
       if (typeof data.costUsd === 'number') setSpend((total) => total + data.costUsd!);
 
-      const before = current();
+      absorbAllowance(data);
       commit({
         graphVersion: GRAPH.version,
         messages: [
@@ -176,13 +180,12 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
         nodeId: data.nodeId ?? null,
         followUps: data.followUps ?? 0,
         done: Boolean(data.done),
-        token: data.sessionToken !== undefined ? data.sessionToken : before.token,
       });
       setSent(null);
       setPhase('ready');
       setAttached(true);
     },
-    [applyMark, commit, current],
+    [applyMark, commit],
   );
 
   const start = useCallback(
@@ -190,11 +193,11 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
       if (active.current) return;
       setSent(null);
       setAttached(true);
-      commit(emptyConversation(GRAPH, current().token));
+      commit(emptyConversation(GRAPH));
       const data = await post({ states, history: [], answer: '', currentNodeId: null, followUps: 0 });
       if (data) absorb(data, [], null);
     },
-    [absorb, commit, current, post],
+    [absorb, commit, post],
   );
 
   /** Joins the conversation found in storage. */
@@ -235,13 +238,13 @@ export function useSession(config: SessionConfig, applyMark: (nodeId: string, st
     active.current = null;
     previous?.abort();
     pending.current = null;
-    commit(emptyConversation(GRAPH, current().token));
+    commit(emptyConversation(GRAPH));
     setSent(null);
     setAttached(false);
     setPhase('ready');
     setError(null);
     setConversation((count) => count + 1);
-  }, [commit, current]);
+  }, [commit]);
 
   const nodeId = live && !stored.done ? stored.nodeId : null;
   const resumable = !attached && phase === 'ready' && isResumable(stored) ? stored : null;

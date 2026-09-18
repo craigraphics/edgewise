@@ -1,3 +1,197 @@
+> **Phone map, navigation, accessibility and weight, 2026-09-17:** On
+> `fix/03-phone-and-polish`, branched from `main` after the safety-and-consent
+> pass merged. Eight findings from the 2026-09-16 audit. The ninth — bundle
+> weight — was measured, written down and deliberately left for its own PR; see
+> the end. Its PR targets `main`.
+>
+> 1. **The full map was illegible on a phone and its cards were half a tap
+>    target.** Measured before: at 390 the pane is ~350px against 904x1038
+>    content units, so `fit='width'` resolved to scale 0.387 — a **5.0px label
+>    and a 26.3px card**. At 660 it was 8.6px and 44.8px. Below the panel
+>    breakpoint the map now rests at `legible` with the camera on the lead node:
+>    **12px labels and 62.8px cards at both 390 and 660**, and the existing Fit
+>    control — which always meant `'all'` — still shows all 23, verified. So the
+>    overview argument in `layout.ts` survives as something you ask for rather
+>    than the only thing a phone was offered. `'width'` existed for a drag sheet
+>    the recognition-first proposal removed.
+>
+>    `cameraOn` is pure and tested, and its test caught the thing worth keeping:
+>    `panBounds` deliberately does not pin the vertical axis when the pane is
+>    taller than the map, because that is how `fitCamera` puts the root at the
+>    top rather than the middle. Centring there would have opened the map on a
+>    band of empty space above the one node everything rests on. An axis the view
+>    already covers is left alone rather than centred and then clamped.
+>
+> 2. **"Shared free allowance · 25 turns" could not move, and could not have.**
+>    The number was `FREE_TURN_CAP` interpolated. The real count was unavailable
+>    for a reason worth recording: the session token lived in three independent
+>    `useState`s — `useSession`, the walkthrough and explain-back — each starting
+>    at null, so **each surface opened its own 25-turn allowance** and
+>    alternating between them got you three. `AGENTS.md` already recorded the
+>    opposite as the design: *"Interruptions and explanations now share that
+>    allowance."* They did not.
+>
+>    One external store owns the token now, in memory, the shape `persisted.ts`
+>    established. The three routes' byte-identical metering blocks became
+>    `meterFreeTurn`, which returns the number every one of them already computed
+>    and threw away — the **binding** cap, because the daily allowance can be the
+>    smaller one. Absent fields mean unchanged, so the scripted opening and a
+>    skipped turn cannot reset a count they did not spend; that rule is unit
+>    tested and was confirmed live. Measured through the running app: opening
+>    **25**, one real answer **24**, one walkthrough interruption **23** — the
+>    cross-surface sharing that did not work before. With a key set the row reads
+>    *"Your own key… / Gemini 3.1 Flash Lite · no allowance cap"* and shows no
+>    count. Menu rows measure 58/40/40/40, all clear of the 40px floor.
+>
+>    An allowance is a fact about the service, not a score about the learner, and
+>    it never appears beside the map. Also: the default model's note said "holds
+>    the format" and "the sibling project" to somebody who has no idea what
+>    either means.
+>
+> **Merged with `fix/02-conversation-feedback` (PR #34), which landed first and
+> reached for the same problem.** That branch moved the conversation's token
+> into `localStorage` so a reload would not "quietly hand out a new allowance" —
+> the same class of finding, one surface of three. It left the walkthrough's and
+> explain-back's own `useState` tokens alone, so the divergence was still there.
+>
+> The resolution keeps their property and generalises it: `allowance.ts` is the
+> single owner and is now **persisted under its own key**, so the count survives
+> a reload and a second tab as well as being shared across all three surfaces.
+> `token` came off `StoredConversation`, because an allowance is not a property
+> of a conversation — it survives a fresh one, it is spent by a walkthrough
+> interruption and by an explanation, and it has nothing to do with the graph
+> version that record is discarded on. Their test for the token surviving a
+> graph-version change moved to `allowance.test.ts`, where it is now true of all
+> three.
+>
+> **Not migrated:** a browser that spent turns against the build between #34
+> merging and this will start one fresh allowance, because the old token sat
+> under the conversation key. One browser, one extra session of a shared quota —
+> the same cost `token.ts` already accepts for an expired token, and cheaper
+> than carrying a migration for a window of hours.
+>
+> 3. **One name per destination.** The walkthrough was called five things in one
+>    file. The rule, written where the strings are: an ACTION says what happens
+>    using the destination's one name; a PLACE LABEL says where you are. So every
+>    button says "Teach me everything", and the phone tab and the panel's
+>    `aria-label` still say "Walkthrough", exactly as they say "Conversation"
+>    opposite "Find my starting point". The header switch keeps the same words as
+>    the panel's primary button — that is the point of one name — and states its
+>    own role in three words so the two stop reading as rival primary actions.
+>
+> 4. **`/intro` served "Edgewise — … — Edgewise"** and shipped **no headings and
+>    no landmark at all**. The still version is a properly structured document;
+>    the animated one was a bare `<div>` and five `<p>`s, and it is the version
+>    everybody gets, because the reduced-motion switch only resolves after
+>    hydration. Now: one `<main>`, an `<h1>` and five `<h2>`s, read off the
+>    captions rather than added as hidden twins — an `sr-only` heading inside a
+>    640vh scroll track is how this project last added 1602px of stray page
+>    scroll. Title verified in the served document.
+>
+> 5. **404 was the framework default with no way home.** A `not-found.tsx` in the
+>    product's voice, mirroring `error.tsx`, saying first that the map is safe.
+>    Server component; its plain-string title renders "Page not found — Edgewise"
+>    through the same template `/intro` had to opt out of.
+>
+> 6. **The neuron panel opened with a Reset that undid nothing, and buried its
+>    slider.** The hook had computed `changed` all along and was the one place
+>    not using it. Reset is gated and has moved below the action, because at
+>    narrow widths the header row wraps and revealing it there would have pushed
+>    the sliders down — measured, the first slider is at 395px before and after a
+>    weight moves. The first slider was **580px** below the title at 1230x842
+>    against siblings measured in the same run (agents 261, context-window 198);
+>    it is **395** now, and 419 at 660.
+>
+>    **`.neuron-lab` had no `container-type` and its responsive rules were a
+>    viewport media query** — the same dead-query defect the agents panel had.
+>    Measured, the map pane gives this panel a 664px content box at a 1230px
+>    viewport and 557px at 660, so the viewport was never the number those rules
+>    wanted. `@container` at 30rem now, chosen from the measured box: 15.1rem at
+>    320, 19.5 at 390, 34.8 at 660, 41.5 at 1230, 44.4 at 1440.
+>
+>    At 320 it is **635, down from 801, and still outside** the 293–550 the other
+>    panels measured at that width in the same run. Recorded rather than rounded
+>    off: the only other slider-first panel, `loss`, measures **789** there. A
+>    slider carries two lines of its own label above it, and this one has to
+>    establish what the movie's two numbers are before a weight means anything.
+>
+> 7. **Close and Escape disagreed about where focus went.** Both call the same
+>    function, so the asymmetry was in the stored value, not the code path:
+>    `returnFocus` held a DOM element captured when the panel opened, and the
+>    focused view is keyed on the node it draws, so that element is routinely
+>    replaced, comes back disconnected and falls through to the map section. It
+>    also only recorded on the first open, so walking idea to idea through the
+>    inspector left it several ideas stale. It remembers the **id** now and finds
+>    whatever currently represents it; all three formats carry `data-node`.
+>    Verified with real key events, not synthetic ones: Tab to a node, Enter,
+>    then Escape — and again leaving by the Close button — both return focus to
+>    that node, in Focus, Full map and List.
+>
+> 8. **"Skip to map" could focus a `display: none` section.** Both links set the
+>    surface and then focused inside `requestAnimationFrame`, which is not a
+>    promise that React has committed, and below the breakpoint the target
+>    carries `hidden` until it does — focus silently did nothing, which is what
+>    the audit measured as 0px-tall controls. `flushSync` first, then focus; the
+>    same shape was fixed in the close path. Both links also landed on identical
+>    coordinates, so tabbing between them replaced one in place; they sit at 16
+>    and 68 now. Verified: both land on real 678–721px sections at 390 and 1230.
+>
+> **Verified in the browser** (BrowserOS neo against `pnpm dev`, plus a
+> production `next start` for the bundle figures). The layout probe from
+> `AGENTS.md` at **390, 660, 1230 and 1440, after resizing down from 1920** —
+> zero page scroll, zero `clippedRight`, zero controls off-right, and **zero
+> undersized controls**, which also turned up a pre-existing one: the three
+> map-view segments were `min-h-9` (36px), under the 40px finger target this
+> repo already enforces through `size="touch"`. Raised. A populated learner
+> model stayed **byte-identical** through the whole neuron panel and through the
+> full-map interactions, with `document.getAnimations()` empty.
+>
+> **This session's browser tool could drive a real viewport**, which the last
+> two sessions could not: `Emulation.setDeviceMetricsOverride` through
+> `browser.cdpJsonForPage` gives a true `innerWidth`, and
+> `Emulation.setFocusEmulationEnabled` makes `:focus` styling measurable in a
+> background tab. Narrow widths were not proxied by constraining a container.
+> **Worth reusing.**
+>
+> **One probe was wrong before it was believed.** A synthetic Escape dispatched
+> on `document` reported that Escape did not close the panel. It is an artefact:
+> `event.target` for a real keypress is the focused element, and the handler's
+> `target?.closest(...)` throws on a Document, which has no `closest`. Dispatched
+> on the focused element — and then with real key events — Escape works. No
+> product bug; a reminder that a synthetic event is not the thing it imitates.
+>
+> **`pnpm calibrate` was not run.** The prompt, the decision schema, the fixtures
+> and the model list are untouched, and the canary calls `decide` directly rather
+> than through the route, so it could not observe the metering change. The
+> extraction is covered by `metering.test.ts` and by driving a real turn end to
+> end. Recent sessions record the explain canary failing on two known fixtures —
+> 2/72 false passes for `hallucination/parroted`, deliberately left failing, and
+> 3/24 false blocks for `neuron/technical`; that state is unchanged.
+>
+> **Not verified.** No physical handset, no VoiceOver or NVDA session, and no
+> learner. One correction to an earlier estimate: at 660 the node card measured
+> 44.8px, over the 40px floor — the defect at that width was the 8.6px label, not
+> the tap target.
+>
+> 964 tests, lint, typecheck and the Turbopack production build pass.
+>
+> **Finding 9, bundle weight, deferred with its numbers.** Measured on a
+> production `next start`, landing route: **508 KB compressed / 1734 KB raw over
+> 15 JS files, largest chunk 215 KB compressed / 721 KB raw.** The audit's
+> premise is partly wrong and that is worth writing down: **the tokenizer worker
+> is already a separate chunk.** `js-tiktoken` is reachable only from
+> `tokenizer.worker.ts` and `context.worker.ts`, both built with
+> `new Worker(new URL(…, import.meta.url))`, which both bundlers split out; no
+> app module imports `tokenizer-engine.ts`. The real blocker is different: every
+> experiment file exports **both** its `use*Experiment` hook and its panel, and
+> `src/app/page.tsx` imports all 22 hooks so state survives navigation, so
+> `next/dynamic` in `focused-map.tsx` would remove nothing. Lazy loading needs 22
+> hooks split into their own modules first, each checked to import nothing
+> heavy — `embeddings` would violate that, since `content/word-vectors.json` is
+> 125 KB and is the largest single asset in the landing chunk. About 45 files of
+> mechanical change with no behavioural result, which does not belong in the same
+> diff as eight behavioural fixes.
+
 > **Feedback, persistence, and copy in the conversation loop, 2026-09-17:** On
 > `fix/02-conversation-feedback`, branched from `main` after the safety-and-consent
 > fixes merged. Eight findings from the 2026-09-16 audit, fixed in order. Its PR
@@ -89,6 +283,7 @@
 > the canary.
 >
 > 952 tests (+14), lint, typecheck, validate-graph and the production build pass.
+
 
 > **Data safety, consent and the skip rule, 2026-09-16:** On
 > `fix/01-safety-and-consent`, branched from `main` after the agents experiment

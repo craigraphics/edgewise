@@ -111,7 +111,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
     const mark = stateOf(model, n.id);
     const playable: ExperimentId | null = isExperimentId(n.id) ? n.id : null;
     return <div key={n.id} className="focus-neighbour">
-      <button onClick={() => onSelect(n.id)} className="focus-neighbour-open">
+      <button data-node={n.id} onClick={() => onSelect(n.id)} className="focus-neighbour-open">
         <svg width={14} height={14} aria-hidden className="shrink-0"><NodeGlyph state={mark} cx={7} cy={7} colour={`var(--band-${n.band})`} /></svg>
         <span className="min-w-0 flex-1 text-left"><span className="block text-sm font-medium">{n.label}</span><span className="text-muted-foreground block text-xs">{STATE_COPY[mark]}</span></span>
         <ArrowRight size={15} aria-hidden className="shrink-0" />
@@ -163,7 +163,7 @@ export function FocusedMap({ graph, node, model, playing, alreadyOpen, onSelect,
         {alreadyOpen ? <div className="mt-3">
           <h2 className="font-display text-2xl">{node.label}</h2>
           {!playing && <p className="text-muted-foreground mt-1 text-sm">{node.subtitle}</p>}
-        </div> : <button onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
+        </div> : <button data-node={node.id} onClick={() => onSelect(node.id)} className="group mt-3 block w-full text-left">
           <h2 className="font-display text-2xl">{node.label}</h2>
           {!playing && <span className="text-muted-foreground mt-1 block text-sm">{node.subtitle}</span>}
           {!playing && <span className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm underline underline-offset-4">Explore this idea <ArrowRight size={15} aria-hidden /></span>}

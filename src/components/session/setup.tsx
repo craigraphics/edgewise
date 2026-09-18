@@ -154,9 +154,27 @@ export function Setup({ onClose, config, onSave, onForget }: Props) {
   );
 }
 
-/** The label for the menu entry that opens it. */
-export function setupLabel(config: SessionConfig): string {
-  return config.apiKey.trim()
-    ? `Your own key · ${MODELS[config.model].label}`
-    : `Shared free allowance · ${FREE_TURN_CAP} turns`;
+/**
+ * The menu entry that opens this, as a label and a second line of state.
+ *
+ * It used to be one string, `Shared free allowance · 25 turns`. Two things were
+ * wrong with it. It read as a statement rather than as something to press, on a
+ * row that opens a dialog. And the 25 was `FREE_TURN_CAP` interpolated — the
+ * cap, not the remainder — so it said 25 on the first turn and on the last one.
+ *
+ * `turnsLeft` comes from the routes, which have always computed it and thrown
+ * it away. Null before the first turn, when nothing has been spent and the cap
+ * is the honest thing to say, and null under a key of their own, which has no
+ * cap at all.
+ */
+export function setupLabel(config: SessionConfig, turnsLeft: number | null): { label: string; detail: string } {
+  if (config.apiKey.trim()) {
+    return { label: 'Your own key…', detail: `${MODELS[config.model].label} · no allowance cap` };
+  }
+
+  const left = turnsLeft ?? FREE_TURN_CAP;
+  return {
+    label: 'Use your own key…',
+    detail: `Shared allowance · ${left} ${left === 1 ? 'turn' : 'turns'} left`,
+  };
 }
