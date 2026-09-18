@@ -148,7 +148,11 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           aria-label={prompt ?? `Your explanation of ${node.label}`}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder={`So ${node.label.toLowerCase()} is basically…`}
+          // Not built from the label. Labels are headings, not noun phrases —
+          // "What a 'neuron' is", "How wrong you are" — so any sentence built
+          // around one reads "is is" on half the map. The heading above
+          // already names the idea.
+          placeholder="The way I’d put it is…"
           rows={4}
           disabled={busy}
           className="bg-surface-1 resize-none"
