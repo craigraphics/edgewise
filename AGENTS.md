@@ -3318,3 +3318,115 @@ only native `<button>`, `<input type="checkbox">`, and `<details>/<summary>`
 elements, the same primitives already audited in the sibling panels it was
 built alongside. No phone, no screen reader, no calibration run — the graph,
 assessor, schema, fixtures, and model list are untouched.
+
+### A phone gets a readable map, not a small one — 2026-09-17
+
+On `fix/03-phone-and-polish`, from the 2026-09-16 audit. The map below the panel
+breakpoint used `fit='width'`, which at a 390px viewport is a 350px pane against
+904x1038 content units: **scale 0.387, a 5.0px label and a 26.3px card**. Both
+measured. At 660 it was 8.6px and 44.8px.
+
+It rests at `legible` now — never below 12px — with the camera on the lead node
+rather than the top-left corner. **12px labels and 62.8px cards at 390 and 660.**
+The whole shape is still one press away, because `refit` always meant `'all'` and
+is untouched. So the overview argument stated in `fitScale` survives as a gesture
+somebody makes, rather than as the only thing a phone was ever offered. `'width'`
+existed for a drag sheet the recognition-first proposal removed; it is kept for
+any future layout that overlays the map, and nothing rests on it.
+
+**`cameraOn` leaves alone any axis the view already covers**, rather than
+centring and letting `clampCamera` sort it out. Its own test caught why:
+`panBounds` deliberately does not pin the vertical axis when the pane is taller
+than the map, because that is how `fitCamera` puts the root at the top instead of
+the middle. Centring there opens the map on a band of empty space above the one
+node everything else rests on.
+
+### One name per destination; a place label names the place
+
+The walkthrough was called five things in one file — *explore the walkthrough*,
+*open walkthrough*, *open the walkthrough*, *revisit the walkthrough*, *teach me
+everything* — so nothing told a visitor they were the same door.
+
+**An action says what happens, using the destination's one name. A place label
+says where you are.** Every button to the walkthrough says "Teach me everything";
+the phone tab and the panel's `aria-label` say "Walkthrough", exactly as they say
+"Conversation" opposite "Find my starting point".
+
+The header switch carrying the same words as the panel's primary button is the
+point of the rule, not a breach of it. What that cost was two controls with
+identical labels and no way to tell them apart, so the switch states its own role
+in three words instead of being renamed.
+
+### The allowance was a constant, and the cap was three caps
+
+`setupLabel` interpolated `FREE_TURN_CAP`, so the settings menu read
+"Shared free allowance · 25 turns" on the first turn and on the last.
+
+The real count was unavailable, and the reason is the more useful finding: the
+signed session token lived in **three independent `useState`s** — `use-session`,
+the walkthrough and explain-back — each starting at null, so each surface opened
+its own 25-turn allowance and alternating between them got you three. This file
+had already recorded the opposite as the design: *"Interruptions and explanations
+now share that allowance."* They did not, and nothing was measuring it.
+
+`src/lib/session/allowance.ts` owns the token, in memory, as an external store —
+the shape `persisted.ts` established, and for the reason that file gives: a value
+several components read and write cannot be per-component state without drifting.
+`src/lib/session/metering.ts` replaces the three routes' byte-identical metering
+blocks and returns the number all of them already computed and discarded.
+
+Two rules in it are load-bearing:
+
+- **The count is the binding cap**, `min(session, daily)`. Late in a day the
+  per-browser allowance is what will actually stop somebody, and reporting 20
+  when the answer is 3 is the same dishonesty as the fixed 25, in a form that is
+  harder to notice.
+- **An absent field means unchanged, not null.** The scripted opening and a skip
+  both spend nothing, mint nothing and report no count; read as null, either
+  would wipe a count the session had earned.
+
+Measured live: opening 25, one real answer 24, one walkthrough interruption 23.
+
+**This is not a score.** The rule this file holds — never a score, never a
+count — is about the learner's understanding. An allowance is a fact about the
+service, it lives inside a menu, and it never appears beside the map.
+
+### Return focus by identity, not by element
+
+Closing an idea used to focus a DOM element captured when the panel opened. That
+is the wrong identity: the focused view is keyed on the node it draws, so the
+button that opened the panel is routinely replaced before it can be focused
+again — `isConnected` comes back false and focus falls through to the map
+section. It also only recorded on the first open, so walking idea to idea through
+the inspector's prerequisite buttons left it several ideas stale.
+
+It remembers the **id** and finds whatever currently represents it. All three map
+formats carry `data-node`, so one selector covers the SVG group, the focused card
+and the list row without knowing which is on screen.
+
+### `requestAnimationFrame` is not a promise that React has committed
+
+Both skip links, and the close path, set state and then focused inside a
+`requestAnimationFrame`. Below the panel breakpoint the region they target
+carries `hidden` until React commits, and **focusing a `display: none` element
+silently does nothing** — which is exactly what "the skip link targets a section
+whose controls are 0px tall" looks like from outside. `flushSync` first, then
+focus.
+
+### Two things this session's browser tool could do that the last two could not
+
+`Emulation.setDeviceMetricsOverride` through `browser.cdpJsonForPage` gives a
+**true `innerWidth`**, so narrow widths no longer have to be proxied by
+constraining a container — a substitution `docs/one-goal-one-loop.md` and
+`docs/handover.md` both had to record. And
+`Emulation.setFocusEmulationEnabled` makes `:focus` styling measurable in a
+background tab, which is how the two skip links were caught sitting at identical
+coordinates.
+
+**One probe was wrong before it was believed.** A synthetic Escape dispatched on
+`document` reported that Escape did not close the panel. It is an artefact: the
+target of a real keypress is the focused element, and the handler's
+`target?.closest(...)` throws on a Document, which has no `closest`. Dispatched
+on the focused element, and then with real key events, it works. A synthetic
+event is not the thing it imitates — the same lesson as measuring the wrong
+quantity, one level down.
