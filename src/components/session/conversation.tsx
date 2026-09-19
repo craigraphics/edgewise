@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRightIcon, AudioLines, Square } from 'lucide-react';
+import { ArrowRightIcon, AudioLines, Square, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import type { ConceptNode, NodeState } from '@/lib/graph/types';
 import type { Message } from '@/lib/session/use-session';
 import { cn } from '@/lib/utils';
 
+import { MicConsentNote, useMicStart } from './mic-consent';
 import { VoiceHalo } from './voice-halo';
 
 type Props = {
@@ -82,7 +83,35 @@ export function Conversation({
     [status, onAnswer, onDraftChange],
   );
 
-  const voice = useVoice(submit);
+  /*
+   * Whether the learner's last answer was spoken.
+   *
+   * Hands-free is not a switch any more; it is what somebody is already doing.
+   * Answer out loud and the next question, read aloud, opens the microphone
+   * after it. Type an answer and it does not — the microphone opening on its
+   * own for somebody who has just chosen the keyboard is the surprise this
+   * split exists to remove.
+   */
+  const answeringAloud = useRef(false);
+
+  const submitSpoken = useCallback(
+    (text: string) => {
+      answeringAloud.current = true;
+      submit(text);
+    },
+    [submit],
+  );
+
+  const submitTyped = useCallback(
+    (text: string) => {
+      answeringAloud.current = false;
+      submit(text);
+    },
+    [submit],
+  );
+
+  const voice = useVoice(submitSpoken);
+  const mic = useMicStart(voice);
 
   /*
    * Measured only while the microphone is actually open. The tutor's own turn is
@@ -90,7 +119,9 @@ export function Conversation({
    * page, so the halo shows for both voices but only reacts to one — which is
    * the right way round, since the question it answers is "can it hear me".
    */
-  const micLevel = useMicLevel(voice.listening);
+  // Not while the permission prompt is up: a second capture asking at the same
+  // moment has nothing to measure yet.
+  const micLevel = useMicLevel(voice.listening && !voice.waiting);
 
   /*
    * Speak each new tutor turn once.
@@ -109,8 +140,7 @@ export function Conversation({
      * toggle is asking for — while the backlog stays silent, because only the
      * latest message is ever considered below.
      */
-    const voiced = voice.readAloud || voice.handsFree;
-    if (!voiced) {
+    if (!voice.readAloud) {
       lastSpoken.current = Math.max(0, messages.length - 1);
       return;
     }
@@ -123,28 +153,17 @@ export function Conversation({
 
     lastSpoken.current = messages.length;
     // Leaving the microphone open after "that's everything" is unsettling.
-    if (status === 'running' || status === 'done') void voice.say(message.content, status === 'running');
+    if (status === 'running' || status === 'done') void voice.say(message.content, status === 'running' && answeringAloud.current);
     /*
      * Deps are narrowed deliberately: the whole `voice` object is rebuilt every
-     * render, so depending on it re-runs this constantly. The two settings and `say`
-     * are the only fields read here, and `say` is stable per setting. The
+     * render, so depending on it re-runs this constantly. `readAloud` and `say`
+     * are the only fields read here, and `say` is stable per `readAloud`. The
      * marker guards against double-speaking, but relying on a guard to undo an
      * effect that should not have fired is how the sibling project ended up
      * with three stale audio loops fighting over one recorder.
      */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, status, voice.readAloud, voice.handsFree, voice.say]);
-
-  /*
-   * A listen press re-reads the question on screen and then opens the
-   * microphone. With reading aloud already on, that question has been spoken
-   * and the marker is past it, so without parking it here the press would do
-   * nothing at all.
-   */
-  const talkAndListen = useCallback(() => {
-    lastSpoken.current = Math.max(0, messages.length - 1);
-    voice.startHandsFree();
-  }, [messages.length, voice]);
+  }, [messages, status, voice.readAloud, voice.say]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -262,7 +281,15 @@ export function Conversation({
        */}
       {current ? (
         <div className={cn('border-border/60 mb-4 shrink-0 overflow-y-auto border-b pb-4', done ? 'max-h-[70%]' : 'max-h-[42%]')} tabIndex={0} role="region" aria-label={done ? 'Where this leaves you' : 'Current question'}>
-          <p className="eyebrow mb-3">{done ? 'Where this leaves you' : 'A place to begin'}</p>
+          {/*
+           * Reading aloud is a preference about the question, so it sits with
+           * the question. It used to live at the bottom of the composer, under
+           * a divider, fused to the microphone.
+           */}
+          <div className="mb-2 flex min-h-10 items-center justify-between gap-2">
+            <p className="eyebrow">{done ? 'Where this leaves you' : 'A place to begin'}</p>
+            <ReadAloudControl voice={voice} />
+          </div>
           <div aria-live="polite" aria-atomic="true">
             <p key={current} className="font-display text-read edgewise-rise max-w-[60ch]">{current}</p>
             {done ? (
@@ -367,7 +394,9 @@ export function Conversation({
                  microphone opens. Stopping lives in the button below, which is
                  the same control that started it. */
               <div className="border-border flex h-[5.25rem] items-center rounded-lg border border-dashed px-3">
-                <span className="text-muted-foreground text-base">Listening…</span>
+                <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
+                  {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : 'Listening…'}
+                </span>
               </div>
             ) : (
               <Textarea
@@ -377,7 +406,7 @@ export function Conversation({
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
-                    submit(draft);
+                    submitTyped(draft);
                   }
                 }}
                 placeholder="Say what you think — half-formed is fine"
@@ -387,87 +416,105 @@ export function Conversation({
               />
             )}
 
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <Button size="touch" onClick={() => submit(draft)} disabled={busy || !draft.trim()}>
-                Send
-              </Button>
+            {mic.asking ? (
+              <div className="mt-2.5">
+                <MicConsentNote onConfirm={mic.confirm} onCancel={mic.cancel} />
+              </div>
+            ) : null}
 
+            {/*
+             * Two groups, not one wrapping row. The alternative answer on the
+             * left, and the two ways of sending on the right, with Send last —
+             * where the eye ends and where every composer people have used puts
+             * it.
+             */}
+            <div className="mt-2.5 flex flex-wrap items-start justify-between gap-x-2 gap-y-2.5">
               {/*
                * A real button, not permission buried in a prompt — and not a
                * ghost either. The escape hatch has to be as easy to reach as
                * the answer, or someone who feels they should know will guess
                * instead, which tells the diagnostic nothing and makes them feel
-               * worse. It was styled as the quietest control on the row, next
-               * to "Stop reading"; it is the most useful answer anyone gives
-               * here and it is now styled like one.
+               * worse.
+               *
+               * Why it helps sits directly under it and is tied to it. Set
+               * beside both buttons, it read as a caption for the row, and it
+               * was unclear which of the two it described.
                */}
-              <Button size="touch" variant="outline" onClick={() => submit("I don't know")} disabled={!answering || busy}>
-                I don&rsquo;t know
-              </Button>
-
               {/*
+               * The two alternatives to answering sit together, with the
+               * caption under the pair rather than in a column of its own:
+               * set as its own column it was the widest thing on the row, and
+               * with Skip beside it the row overflowed a laptop's panel by 2px
+               * and broke unevenly.
+               *
                * Skip is always valid and always moves on. The server recognises
                * it before any model call and records it as "I don't know" is
                * recorded, so it can never come back as the same question.
                */}
-              <Button size="touch" variant="outline" onClick={() => submit('Skip')} disabled={!answering || busy}>
-                Skip
-              </Button>
+              <div className="flex flex-col items-start gap-1">
+                <div className="flex gap-2">
+                  <Button
+                    size="touch"
+                    variant="outline"
+                    onClick={() => submit("I don't know")}
+                    disabled={!answering || busy}
+                    aria-describedby="idk-why"
+                  >
+                    I don&rsquo;t know
+                  </Button>
+                  <Button size="touch" variant="outline" onClick={() => submit('Skip')} disabled={!answering || busy}>
+                    Skip
+                  </Button>
+                </div>
+                <span id="idk-why" className="text-muted-foreground text-2xs">
+                  helps me find where to begin
+                </span>
+              </div>
 
-              {/*
-               * Why it helps, next to the button rather than in a paragraph
-               * somewhere.
-               *
-               * Styled as the alternative to a disabled Send, it still read as
-               * the thing you press when you have failed at the real one. It is
-               * the most useful answer anybody gives here — it is information,
-               * not an absence of it — and the sentence saying so has to be
-               * within a glance of the control, at the moment somebody is
-               * deciding whether to guess instead.
-               */}
-              <span className="text-muted-foreground order-last w-full text-2xs sm:order-none sm:w-auto">
-                helps me find where to begin
-              </span>
+              <div className="ml-auto flex items-center gap-2">
+                {/*
+                 * One control for talking, not two: it starts the microphone and
+                 * stops it, the way voice mode works everywhere else people have
+                 * met it. Available whether or not the questions are read aloud
+                 * — answering out loud and listening are separate choices.
+                 *
+                 * Wave rather than a microphone, beside Send rather than inside
+                 * the field, because this is not dictation. What you say is not
+                 * typed into the box for you to edit: it IS the answer, and it
+                 * goes off the moment you stop. That is the convention people
+                 * have already met — a wave next to Send is voice mode, a
+                 * microphone in the field is dictation.
+                 *
+                 * An icon at rest, labelled once it is doing something. With a
+                 * label as well, the row needed ~400px and the panel gives it
+                 * 349 on a laptop, so it wrapped into a ragged second line. The
+                 * first press explains itself through the consent note, and the
+                 * listening state says "Stop and send" in words.
+                 */}
+                {voice.supported.listen ? (
+                  <Button
+                    size={voice.listening ? 'touch' : 'icon-touch'}
+                    variant={voice.listening ? 'default' : 'outline'}
+                    onClick={voice.listening ? voice.stopListening : mic.start}
+                    // Stopping stays available even mid-request; only starting is
+                    // held back while a turn is in flight.
+                    disabled={(busy || !answering || mic.asking) && !voice.listening}
+                    aria-label={voice.waiting ? 'Cancel' : voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                    title={voice.waiting ? 'Cancel' : voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                  >
+                    {voice.listening ? <Square className="fill-current" /> : <AudioLines />}
+                    {/* Nothing has been heard yet, so there is nothing to send. */}
+                    {voice.waiting ? 'Cancel' : voice.listening ? 'Stop and send' : null}
+                  </Button>
+                ) : null}
 
-              {voice.speaking ? (
-                <Button size="touch" variant="ghost" onClick={voice.stopSpeaking}>
-                  Stop reading
-                </Button>
-              ) : null}
-
-              {/*
-               * One control for talking, not two: it starts the microphone and
-               * stops it, the way voice mode works everywhere else people have
-               * met it.
-               *
-               * Wave rather than a microphone because this is not dictation.
-               * What you say is not typed into the box for you to edit and
-               * send: it IS the answer, it goes off the moment you stop, and
-               * the tutor talks back. A microphone icon would promise a
-               * transcript you get to correct first.
-               */}
-              {voice.supported.listen && voice.handsFree ? (
-                <Button
-                  size="touch"
-                  className="ml-auto"
-                  variant={voice.listening ? 'default' : 'outline'}
-                  onClick={voice.listening ? voice.stopListening : voice.listen}
-                  // Stopping stays available even mid-request; only starting is
-                  // held back while a turn is in flight.
-                  disabled={busy && !voice.listening}
-                  title={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
-                >
-                  {voice.listening ? <Square className="fill-current" /> : <AudioLines />}
-                  {/* Labelled, not an icon on its own. Answering out loud is a
-                      different route through the product rather than a
-                      preference, and an unlabelled glyph makes it look like a
-                      setting somebody else has already decided about. */}
-                  {voice.listening ? 'Stop and send' : 'Answer out loud'}
-                </Button>
-              ) : null}
+                {voice.listening ? null : (
+                  <Button size="touch" onClick={() => submitTyped(draft)} disabled={busy || !draft.trim()}>
+                    Send
+                  </Button>
+                )}
+              </div>
             </div>
-
-            <VoiceControls voice={voice} onTalkAndListen={talkAndListen} />
           </>
         )}
       </div>
@@ -476,41 +523,33 @@ export function Conversation({
 }
 
 /**
- * Two separate consents, two separate controls.
+ * Whether the tutor's turns are read out. A standing preference, not a mode:
+ * it changes nothing about how somebody answers.
  *
- * Reading aloud sends nothing anywhere and is remembered. Talking and listening
- * opens the microphone and sends audio to Google, so it is never remembered: it
- * needs a press in this conversation, and the sentence saying what will happen
- * sits above that press rather than appearing after it.
+ * While a turn is being read the same place offers to stop it, since that is
+ * where somebody looks when they want the reading to stop — and stopping one
+ * reading is not the same as turning reading off.
  */
-function VoiceControls({ voice, onTalkAndListen }: { voice: ReturnType<typeof useVoice>; onTalkAndListen: () => void }) {
-  if (!voice.supported.listen && !voice.supported.speak) {
-    return <p className="text-muted-foreground mt-3 text-sm">Voice isn’t available in this browser. You can type every answer.</p>;
+function ReadAloudControl({ voice }: { voice: ReturnType<typeof useVoice> }) {
+  if (!voice.supported.speak) return null;
+
+  if (voice.speaking) {
+    return (
+      <Button size="touch" variant="ghost" onClick={voice.stopSpeaking} className="-mr-2">
+        <Square className="fill-current" /> Stop reading
+      </Button>
+    );
   }
+
   return (
-    <div className="border-border mt-3 space-y-2 border-t pt-3">
-      {voice.supported.listen && !voice.handsFree ? (
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Talk and listen reads each question, then opens your mic automatically. Google transcribes your audio. Typing stays available.
-        </p>
-      ) : null}
-      <div className="flex flex-wrap gap-2">
-        {voice.supported.listen ? (
-          <Button variant="outline" size="touch" onClick={voice.handsFree ? voice.stopHandsFree : onTalkAndListen} aria-pressed={voice.handsFree}>
-            <AudioLines /> {voice.handsFree ? 'Stop talking and listening' : 'Talk and listen'}
-          </Button>
-        ) : null}
-        {voice.supported.speak && !voice.handsFree ? (
-          <Button variant="ghost" size="touch" onClick={() => voice.setReadAloud(!voice.readAloud)} aria-pressed={voice.readAloud}>
-            {voice.readAloud ? 'Stop reading questions aloud' : 'Read questions aloud'}
-          </Button>
-        ) : null}
-      </div>
-      {voice.handsFree ? (
-        <p className="text-muted-foreground text-xs leading-relaxed">Your mic opens after each question. Google transcribes your audio.</p>
-      ) : !voice.supported.listen ? (
-        <p className="text-muted-foreground text-xs leading-relaxed">Questions can be read aloud. Type your answers below.</p>
-      ) : null}
-    </div>
+    <Button
+      size="touch"
+      variant="ghost"
+      onClick={voice.toggleReadAloud}
+      aria-pressed={voice.readAloud}
+      className={cn('-mr-2', !voice.readAloud && 'text-muted-foreground')}
+    >
+      {voice.readAloud ? <Volume2 /> : <VolumeX />} Read aloud
+    </Button>
   );
 }

@@ -15,7 +15,7 @@ import { browserListener, LISTENER_TIMING, type ListenError } from './listener';
  * so each case says out loud which browser behaviour it is asserting against.
  */
 
-const { SILENCE_MS, TICK_MS, RESTART_MS, CLOSING_MS } = LISTENER_TIMING;
+const { SILENCE_MS, TICK_MS, RESTART_MS, CLOSING_MS, MAX_UNOPENED } = LISTENER_TIMING;
 
 type Handler<T> = ((event: T) => void) | null;
 
@@ -36,6 +36,7 @@ class FakeRecogniser {
   onresult: Handler<{ resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }> = null;
   onerror: Handler<{ error: string }> = null;
   onend: (() => void) | null = null;
+  onaudiostart: (() => void) | null = null;
 
   constructor() {
     FakeRecogniser.live.push(this);
@@ -55,6 +56,11 @@ class FakeRecogniser {
   }
 
   /* ---- driven by the test ---- */
+
+  /** Audio capture has begun: any permission prompt has been answered. */
+  open() {
+    this.onaudiostart?.();
+  }
 
   say(transcript: string, isFinal = true) {
     this.onresult?.({
@@ -212,6 +218,7 @@ describe('Android: the last result arrives on the way out', () => {
   it('keeps a final result that lands after the silence window closes it', () => {
     const log = record();
     browserListener().start(log.handlers);
+    latest().open();
 
     // Android does not reliably send interim results, so a whole answer can be
     // spoken with nothing advancing the window. The window closes it; the
@@ -227,6 +234,7 @@ describe('Android: the last result arrives on the way out', () => {
   it('still ends the turn when the recogniser never says it finished', () => {
     const log = record();
     browserListener().start(log.handlers);
+    latest().open();
 
     vi.advanceTimersByTime(SILENCE_MS + TICK_MS);
     expect(log.ends).toBe(0);
@@ -321,6 +329,7 @@ describe('failures are reported, and always end the turn', () => {
     browserListener().start(log.handlers);
 
     for (let elapsed = 0; elapsed < SILENCE_MS * 2; elapsed += RESTART_MS) {
+      latest().open();
       latest().fail('no-speech');
       latest().end();
       vi.advanceTimersByTime(RESTART_MS);
@@ -331,6 +340,88 @@ describe('failures are reported, and always end the turn', () => {
     expect(log.results).toEqual([]);
     // Bounded by the window, not unbounded by the restart.
     expect(FakeRecogniser.live.length).toBeLessThanOrEqual(SILENCE_MS / RESTART_MS + 2);
+  });
+});
+
+describe('the permission prompt', () => {
+  /*
+   * Reported from real use: on a first visit "Say it instead" put Chrome's
+   * permission prompt up, and by the time it was allowed the silence window —
+   * which had been running since `start()` — had already closed the turn. The
+   * first thing somebody saw after granting the microphone was it closing.
+   */
+  it('does not run the silence window while the prompt is up', () => {
+    const log = record();
+    browserListener().start(log.handlers);
+
+    // Somebody reading the prompt. The recogniser neither opens nor ends.
+    vi.advanceTimersByTime(SILENCE_MS * 5);
+    expect(log.ends).toBe(0);
+    expect(latest().stopped).toBe(false);
+  });
+
+  it('gives the full window from the moment the microphone opens', () => {
+    const log = record();
+    browserListener().start(log.handlers);
+
+    vi.advanceTimersByTime(SILENCE_MS * 3);
+    latest().open();
+
+    vi.advanceTimersByTime(SILENCE_MS - TICK_MS * 2);
+    expect(latest().stopped).toBe(false);
+
+    vi.advanceTimersByTime(TICK_MS * 3);
+    expect(latest().stopped).toBe(true);
+  });
+
+  it('counts a result as the microphone having opened', () => {
+    // Not every platform reports audiostart. One that does not must still
+    // close on a pause, or the turn would wait for it forever.
+    const log = record();
+    browserListener().start(log.handlers);
+
+    latest().say('it adds up weighted inputs', true);
+    vi.advanceTimersByTime(SILENCE_MS + TICK_MS);
+    expect(latest().stopped).toBe(true);
+  });
+
+  it('ends the turn when recognisers keep ending without ever opening', () => {
+    const log = record();
+    browserListener().start(log.handlers);
+
+    for (let attempt = 0; attempt < MAX_UNOPENED; attempt += 1) {
+      latest().end();
+      vi.advanceTimersByTime(RESTART_MS);
+    }
+
+    expect(log.ends).toBe(1);
+    expect(FakeRecogniser.live).toHaveLength(MAX_UNOPENED);
+  });
+
+  it('says when the microphone has opened, once, and not before', () => {
+    // The interface says "Waiting for the microphone" until this fires, so
+    // firing early would put "Listening…" over a prompt again.
+    let opens = 0;
+    browserListener().start({ ...record().handlers, onOpen: () => (opens += 1) });
+
+    vi.advanceTimersByTime(SILENCE_MS);
+    expect(opens).toBe(0);
+
+    latest().open();
+    latest().say('weights', false);
+    latest().end();
+    vi.advanceTimersByTime(RESTART_MS);
+    latest().open();
+    expect(opens).toBe(1);
+  });
+
+  it('still reports a refused prompt', () => {
+    const log = record();
+    browserListener().start(log.handlers);
+
+    latest().fail('not-allowed');
+    expect(log.errors).toEqual(['denied']);
+    expect(log.ends).toBe(1);
   });
 });
 
@@ -349,7 +440,9 @@ describe('the handover before the microphone opens', () => {
     const log = record();
     browserListener({ handoverMs: HANDOVER }).start(log.handlers);
 
-    vi.advanceTimersByTime(HANDOVER + SILENCE_MS - TICK_MS * 2);
+    vi.advanceTimersByTime(HANDOVER);
+    latest().open();
+    vi.advanceTimersByTime(SILENCE_MS - TICK_MS * 2);
     expect(log.ends).toBe(0);
     expect(latest().stopped).toBe(false);
   });

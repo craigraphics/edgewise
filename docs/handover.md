@@ -1,3 +1,7 @@
+> **Voice split, 2026-09-17:** On `experiment/03-split-voice`, branched from
+> `main`. Read aloud and answering out loud are separate controls; hands-free
+> follows a spoken answer. See the last section of `AGENTS.md`. PR targets `main`.
+
 > **Phone map, navigation, accessibility and weight, 2026-09-17:** On
 > `fix/03-phone-and-polish`, branched from `main` after the safety-and-consent
 > pass merged. Eight findings from the 2026-09-16 audit. The ninth — bundle

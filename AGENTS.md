@@ -3430,3 +3430,74 @@ target of a real keypress is the focused element, and the handler's
 on the focused element, and then with real key events, it works. A synthetic
 event is not the thing it imitates — the same lesson as measuring the wrong
 quantity, one level down.
+
+### Reading aloud and answering out loud are separate — 2026-09-17
+
+On `experiment/03-split-voice`, branched from `main`. The conversation had one
+"Talk and listen" switch that joined both directions, under a divider at the
+bottom of the composer, with a permanent paragraph about Google beneath it.
+
+**They cost different things, so they are different choices.** Reading aloud is
+local and private; answering out loud needs the microphone and sends audio to
+Google. Joined, somebody who only wanted to hear the questions had to accept the
+microphone to get them. On Android — where the field report was *"phones do not
+record the audio of the user, I can listen to the audio from the browser
+though"* — a broken microphone took working speech down with it.
+
+- **Read aloud** is a toggle beside the question it reads, because it is a
+  preference about the question. While a turn is being read the same place
+  offers "Stop reading", which is not the same as turning reading off.
+- **Answering out loud** is a 40px wave button beside Send, labelled "Stop and
+  send" while listening. Wave, not microphone, and beside Send rather than in
+  the field: the spoken answer is sent, not dictated for editing. It was
+  labelled first and measured — the row needed ~400px and the panel gives it
+  349 on a 1230px laptop, so it wrapped.
+- **The Google disclosure is asked on the first press in each conversation**
+  (and each explain-back), before the microphone opens, and is never persisted.
+  Printed permanently, it also guarded reading aloud, which sends nothing
+  anywhere. *Merged with #33, which had split the same switch independently
+  and made the rule that consent to the microphone is never remembered — the
+  first version of this branch persisted it, and gave that up in the merge.*
+- **Hands-free is not a switch.** After a spoken answer, the next question —
+  if read aloud — opens the microphone when it finishes. After a typed answer
+  it does not. The microphone opening on its own for somebody who just chose
+  the keyboard is the surprise this split exists to remove.
+- Read aloud is `edgewise.read-aloud.v1`, from #33, and the old combined
+  `edgewise.voice.v1` is removed on mount. It is read through `usePersisted`,
+  so the walkthrough and the conversation agree. #33's explicit "Talk and
+  listen" switch is replaced by the implicit rule above; both hold that the
+  microphone never opens without a press in the same conversation.
+- "helps me find where to begin" sits under "I don't know" and is tied to it
+  with `aria-describedby`. Beside both buttons it read as a caption for the row.
+
+**The idea panel had the same coupling, the other way round.** It offered "Say
+it instead" for explain-back and no way to hear the idea itself — found when
+the owner looked for read aloud there and it was nowhere. It now has **Read it
+to me**, through `useReadOut`: speaker only, no listener, no preference. One
+press reads the intuition, example and caveat in the walkthrough's words, and
+opening another idea stops it.
+
+**The silence window ran through the permission prompt.** Reported from real
+use: on a first visit, "Say it instead" put Chrome's microphone prompt up, and
+by the time it was allowed the turn had already closed — the window started at
+`start()`, and reading a prompt takes longer than four seconds. It now starts
+when the microphone actually opens (`audiostart`, or a first result where that
+is not reported). Since the window can no longer bound a recogniser that ends
+instantly without opening, `MAX_UNOPENED` does: three such ends and the turn
+closes. One waiting on a prompt does not end, so is never counted. The three
+prompt tests in `listener.test.ts` fail against the old listener.
+
+**Waiting is not listening.** Until the microphone opens (`onOpen`), both mic
+surfaces say *"Waiting for the microphone… allow it when your browser asks."*
+and the stop control reads **Cancel** — nothing has been heard, so there is
+nothing to send, and cancelling does not show "did not catch anything". The text
+appears only if opening takes over 500ms: with permission granted it opens in
+about a tenth of a second, and a flash of it on every hands-free turn is noise.
+The level meter waits too, so it does not open a second capture into the prompt.
+**Caveat:** a browser that never reports `audiostart` shows "Waiting" until the
+first words arrive. Chrome, desktop and Android, reports it.
+
+Verified in the browser at 1230px: the consent note appears on first press and
+"Not now" records nothing; turning read aloud on reads the current question and
+leaves the microphone closed. **Not verified:** the hands-free handover after a
+spoken answer (needs a real microphone session), and any phone.

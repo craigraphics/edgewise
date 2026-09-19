@@ -1,11 +1,12 @@
 'use client';
 
-import { XIcon } from 'lucide-react';
+import { Square, Volume2, XIcon } from 'lucide-react';
 
 import { Caveat } from '@/components/session/caveat';
 import { ExplainBack } from '@/components/session/explain-back';
 import { STATE_COPY, StateBadge } from '@/components/session/state-badge';
 import { Button } from '@/components/ui/button';
+import { useReadOut } from '@/hooks/use-read-out';
 import { EXPERIMENT_ACTION, EXPERIMENT_PROMPT, isExperimentId } from '@/lib/experiments/registry';
 import { downstreamOf, stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/graph/types';
@@ -57,6 +58,7 @@ export function Inspector({
 }: Props) {
   const blocked = downstreamOf(graph, node.id);
   const state = stateOf(model, node.id);
+  const readOut = useReadOut(node.id);
 
   return (
     // The guide owns scrolling, including its padding. A second scroller here
@@ -155,6 +157,24 @@ export function Inspector({
         </p>
       ) : (
         <>
+          {/*
+           * Listening, without talking. The panel offered only "Say it
+           * instead" — a way to speak an explanation and none to hear one —
+           * which is the same one-way coupling the conversation had, the
+           * other way round. Read in the same words and order as the
+           * walkthrough, caveat included: the caveat is the part most worth
+           * not skipping.
+           */}
+          {readOut.available ? (
+            <Button
+              size="touch"
+              variant="outline"
+              onClick={() => (readOut.speaking ? readOut.stop() : void readOut.read(spokenIdea(node)))}
+            >
+              {readOut.speaking ? <Square className="fill-current" /> : <Volume2 />}
+              {readOut.speaking ? 'Stop reading' : 'Read it to me'}
+            </Button>
+          ) : null}
           <p className="font-display text-read">{node.explanations.intuition}</p>
           <p className="text-muted-foreground text-base leading-relaxed">{node.explanations.example}</p>
 
@@ -189,4 +209,12 @@ export function Inspector({
 
     </div>
   );
+}
+
+function spokenIdea(node: ConceptNode): string {
+  const parts = [node.explanations.intuition, node.explanations.example];
+  if (node.simplificationCost) {
+    parts.push(`One thing worth flagging, because it will bite you later otherwise. ${node.simplificationCost}`);
+  }
+  return parts.join(' ');
 }

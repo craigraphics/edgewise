@@ -9,7 +9,9 @@ import type { ConceptNode, NodeState } from '@/lib/graph/types';
 import { absorbAllowance, allowanceToken } from '@/lib/session/allowance';
 import type { SessionConfig } from '@/lib/session/config';
 import { explanationReadiness } from '@/lib/session/explanation-length';
+import { cn } from '@/lib/utils';
 
+import { MicConsentNote, useMicStart } from './mic-consent';
 import { StateBadge } from './state-badge';
 
 /**
@@ -144,6 +146,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
   );
 
   const voice = useVoice(submit);
+  const mic = useMicStart(voice);
 
   if (!open) {
     return (
@@ -171,9 +174,14 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           {prompt && <p className="text-sm">{prompt}</p>}
           {voice.listening ? (
             <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
-              <span className="text-muted-foreground text-base">{voice.interim || 'Listening…'}</span>
+              {/* Smaller while waiting: it is an instruction about the browser,
+                  not the learner's words, and at reading size it wrapped round
+                  the Cancel button. */}
+              <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
+                {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : voice.interim || 'Listening…'}
+              </span>
               <Button size="touch" variant="outline" onClick={voice.stopListening}>
-                Done
+                {voice.waiting ? 'Cancel' : 'Done'}
               </Button>
             </div>
           ) : (
@@ -182,12 +190,18 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
               aria-label={prompt ?? `Your explanation of ${node.label}`}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder={`So ${node.label.toLowerCase()} is basically…`}
+              // Not built from the label. Labels are headings, not noun phrases —
+              // "What a 'neuron' is", "How wrong you are" — so any sentence built
+              // around one reads "is is" on half the map. The heading above
+              // already names the idea.
+              placeholder="The way I’d put it is…"
               rows={4}
               disabled={busy}
               className="bg-surface-1 resize-none"
             />
           )}
+
+          {mic.asking ? <MicConsentNote onConfirm={mic.confirm} onCancel={mic.cancel} /> : null}
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -199,7 +213,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
               Check my explanation
             </Button>
             {voice.supported.listen && !voice.listening ? (
-              <Button size="touch" variant="outline" onClick={voice.listen} disabled={busy}>
+              <Button size="touch" variant="outline" onClick={mic.start} disabled={busy || mic.asking}>
                 Say it instead
               </Button>
             ) : null}
