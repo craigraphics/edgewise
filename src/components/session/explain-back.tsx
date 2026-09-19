@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useVoice } from '@/hooks/use-voice';
 import type { ConceptNode, NodeState } from '@/lib/graph/types';
 import type { SessionConfig } from '@/lib/session/config';
+import { cn } from '@/lib/utils';
 
 import { MicConsentNote, useMicStart } from './mic-consent';
 
@@ -137,7 +138,10 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
       {prompt && <p className="text-sm">{prompt}</p>}
       {voice.listening ? (
         <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
-          <span role="status" className="text-muted-foreground text-base">
+          {/* Smaller while waiting: it is an instruction about the browser,
+              not the learner's words, and at reading size it wrapped round
+              the Cancel button. */}
+          <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
             {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : voice.interim || 'Listening…'}
           </span>
           <Button size="touch" variant="outline" onClick={voice.stopListening}>

@@ -324,7 +324,7 @@ export function Conversation({
                  microphone opens. Stopping lives in the button below, which is
                  the same control that started it. */
               <div className="border-border flex h-[5.25rem] items-center rounded-lg border border-dashed px-3">
-                <span role="status" className="text-muted-foreground text-base">
+                <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
                   {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : 'Listening…'}
                 </span>
               </div>
