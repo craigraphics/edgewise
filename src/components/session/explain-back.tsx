@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useVoice } from '@/hooks/use-voice';
 import type { ConceptNode, NodeState } from '@/lib/graph/types';
+import { absorbAllowance, allowanceToken } from '@/lib/session/allowance';
 import type { SessionConfig } from '@/lib/session/config';
+import { explanationReadiness } from '@/lib/session/explanation-length';
 import { cn } from '@/lib/utils';
 
 import { MicConsentNote, useMicStart } from './mic-consent';
+import { StateBadge } from './state-badge';
 
 /**
  * Explaining an idea back in your own words — the only thing that clears a block.
@@ -57,14 +60,38 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
   useEffect(() => () => requestRef.current?.abort(), []);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [reply, setReply] = useState<{ say: string; moved: boolean } | null>(null);
+  const [reply, setReply] = useState<{ say: string; moved: boolean; state: NodeState } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const againRef = useRef<HTMLButtonElement>(null);
+  const readiness = explanationReadiness(draft);
+
+  /*
+   * The outcome replaces the form and is brought on screen.
+   *
+   * It used to render under the textarea and its buttons, which put it at or
+   * below the fold at 1230x842 — the answer to the one thing that can change
+   * the map arrived somewhere nobody was looking, beside a form that stayed
+   * open as though nothing had happened. Focus moves to the next action
+   * because the control that had it has just gone; `preventScroll` leaves the
+   * scroll to the line above, which is the one that knows what to show.
+   */
+  useEffect(() => {
+    if (!reply) return;
+    panelRef.current?.scrollIntoView({ block: 'nearest' });
+    againRef.current?.focus({ preventScroll: true });
+  }, [reply]);
 
   const submit = useCallback(
     async (text: string) => {
       const explanation = text.trim();
-      if (!explanation || busy) return;
+      if (busy) return;
+      // A spoken "ok" lands here without passing the disabled button, so the
+      // same rule is held here and the reason shown against the words heard.
+      if (!explanationReadiness(explanation).ready) {
+        setDraft(explanation);
+        return;
+      }
 
       setBusy(true);
       setError(null);
@@ -84,7 +111,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
             currentState: state,
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: token,
+            sessionToken: allowanceToken(),
           }),
         });
 
@@ -93,6 +120,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           state?: NodeState;
           moved?: boolean;
           sessionToken?: string | null;
+          turnsLeft?: number | null;
           error?: string;
         };
 
@@ -102,9 +130,9 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
           return;
         }
 
-        if (data.sessionToken !== undefined) setToken(data.sessionToken);
+        absorbAllowance(data);
         if (data.state) onEarned(node.id, data.state);
-        setReply({ say: data.say ?? '', moved: Boolean(data.moved) });
+        setReply({ say: data.say ?? '', moved: Boolean(data.moved), state: data.state ?? state });
         setDraft('');
       } catch {
         if (controller.signal.aborted && controller.signal.reason !== 'timeout') return;
@@ -114,7 +142,7 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
         if (!controller.signal.aborted || controller.signal.reason === 'timeout') setBusy(false);
       }
     },
-    [busy, config, node.id, onEarned, state, token],
+    [busy, config, node.id, onEarned, state],
   );
 
   const voice = useVoice(submit);
@@ -128,96 +156,124 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
     );
   }
 
+  const close = () => {
+    setOpen(false);
+    setReply(null);
+    setError(null);
+  };
+
   return (
-    <div className="bg-surface-2/60 border-border space-y-2.5 rounded-xl border p-3.5">
-      <p className="text-muted-foreground text-2xs leading-relaxed">
-        In your own words, however roughly. Everyday language beats the right terminology — this is only
-        useful if it is actually yours.
-      </p>
+    <div ref={panelRef} className="bg-surface-2/60 border-border scroll-my-4 space-y-2.5 rounded-xl border p-3.5">
+      {reply ? null : (
+        <>
+          <p className="text-muted-foreground text-2xs leading-relaxed">
+            In your own words, however roughly. Everyday language beats the right terminology — this is only
+            useful if it is actually yours.
+          </p>
 
-      {prompt && <p className="text-sm">{prompt}</p>}
-      {voice.listening ? (
-        <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
-          {/* Smaller while waiting: it is an instruction about the browser,
-              not the learner's words, and at reading size it wrapped round
-              the Cancel button. */}
-          <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
-            {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : voice.interim || 'Listening…'}
-          </span>
-          <Button size="touch" variant="outline" onClick={voice.stopListening}>
-            {voice.waiting ? 'Cancel' : 'Done'}
-          </Button>
-        </div>
-      ) : (
-        <Textarea
-          ref={textareaRef}
-          aria-label={prompt ?? `Your explanation of ${node.label}`}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          // Not built from the label. Labels are headings, not noun phrases —
-          // "What a 'neuron' is", "How wrong you are" — so any sentence built
-          // around one reads "is is" on half the map. The heading above
-          // already names the idea.
-          placeholder="The way I’d put it is…"
-          rows={4}
-          disabled={busy}
-          className="bg-surface-1 resize-none"
-        />
-      )}
+          {prompt && <p className="text-sm">{prompt}</p>}
+          {voice.listening ? (
+            <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
+              {/* Smaller while waiting: it is an instruction about the browser,
+                  not the learner's words, and at reading size it wrapped round
+                  the Cancel button. */}
+              <span role="status" className={cn('text-muted-foreground', voice.waiting ? 'text-sm' : 'text-base')}>
+                {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : voice.interim || 'Listening…'}
+              </span>
+              <Button size="touch" variant="outline" onClick={voice.stopListening}>
+                {voice.waiting ? 'Cancel' : 'Done'}
+              </Button>
+            </div>
+          ) : (
+            <Textarea
+              ref={textareaRef}
+              aria-label={prompt ?? `Your explanation of ${node.label}`}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              // Not built from the label. Labels are headings, not noun phrases —
+              // "What a 'neuron' is", "How wrong you are" — so any sentence built
+              // around one reads "is is" on half the map. The heading above
+              // already names the idea.
+              placeholder="The way I’d put it is…"
+              rows={4}
+              disabled={busy}
+              className="bg-surface-1 resize-none"
+            />
+          )}
 
-      {mic.asking ? <MicConsentNote onConfirm={mic.confirm} onCancel={mic.cancel} /> : null}
+          {mic.asking ? <MicConsentNote onConfirm={mic.confirm} onCancel={mic.cancel} /> : null}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button size="touch" onClick={() => void submit(draft)} disabled={busy || !draft.trim()}>
-          Check my explanation
-        </Button>
-        {voice.supported.listen && !voice.listening ? (
-          <Button size="touch" variant="outline" onClick={mic.start} disabled={busy || mic.asking}>
-            Say it instead
-          </Button>
-        ) : null}
-        <Button
-          size="touch"
-          variant="ghost"
-          disabled={busy}
-          onClick={() => {
-            setOpen(false);
-            setReply(null);
-            setError(null);
-          }}
-        >
-          Not now
-        </Button>
-      </div>
-
-      {busy ? (
-        <p className="text-muted-foreground font-display text-read animate-pulse">Reading it…</p>
-      ) : null}
-      {error ? <p role="alert" className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
-
-      {reply ? (
-        <div role="status" className="edgewise-rise space-y-2 pt-1">
-          <p className="font-display text-read">{reply.say}</p>
-          {/*
-           * Stated plainly when something moved, and silent when it did not.
-           * "Not yet" as an explicit verdict on an attempt someone volunteered
-           * is the discouraging half of this interaction, and the reply above
-           * already says what was missing.
-           *
-           * When it did move, it is worth a moment: this is the only thing in
-           * the product that changes the map, and the same pulse fires on the
-           * node itself, so the two read as one event in two places.
-           */}
-          {reply.moved ? (
-            <p className="text-foreground flex items-center gap-1.5 text-2xs font-medium">
-              <span
-                aria-hidden
-                className="edgewise-aura inline-block size-1.5 rounded-full"
-                style={{ background: 'var(--foreground)' }}
-              />
-              The map has moved on this one.
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="touch"
+              onClick={() => void submit(draft)}
+              disabled={busy || !readiness.ready}
+              aria-describedby={draft.trim() && readiness.reason ? `${node.id}-explain-reason` : undefined}
+            >
+              Check my explanation
+            </Button>
+            {voice.supported.listen && !voice.listening ? (
+              <Button size="touch" variant="outline" onClick={mic.start} disabled={busy || mic.asking}>
+                Say it instead
+              </Button>
+            ) : null}
+            <Button size="touch" variant="ghost" disabled={busy} onClick={close}>
+              Not now
+            </Button>
+          </div>
+          {/* Said only once there is something typed: an empty field explains itself. */}
+          {draft.trim() && readiness.reason ? (
+            <p id={`${node.id}-explain-reason`} className="text-muted-foreground text-2xs leading-relaxed">
+              {readiness.reason}
             </p>
           ) : null}
+          {error ? <p role="alert" className="text-muted-foreground text-base leading-relaxed">{error}</p> : null}
+        </>
+      )}
+
+      {/*
+       * One live region for the whole exchange, mounted before the request so
+       * its change is announced: "Reading it…", then the reply in its place.
+       */}
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {busy ? (
+          <p className="text-muted-foreground font-display text-read animate-pulse">Reading it…</p>
+        ) : reply ? (
+          <div className="edgewise-rise space-y-3">
+            <p className="font-display text-read">{reply.say}</p>
+            {/*
+             * Stated plainly when something moved, and silent when it did not.
+             * "Not yet" as an explicit verdict on an attempt someone volunteered
+             * is the discouraging half of this interaction, and the reply above
+             * already says what was missing.
+             *
+             * When it did move, the new mark is drawn here, beside the words
+             * that earned it. The badge at the top of the panel changes too, but
+             * that can be a screen away; this one is on screen by construction.
+             */}
+            {reply.moved ? (
+              <p className="text-foreground flex flex-wrap items-center gap-2 text-2xs font-medium">
+                <span
+                  aria-hidden
+                  className="edgewise-aura inline-block size-1.5 rounded-full"
+                  style={{ background: 'var(--foreground)' }}
+                />
+                The map has moved on this one. It is now
+                <StateBadge state={reply.state} band={node.band} />
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      {reply ? (
+        <div className="flex flex-wrap gap-2">
+          <Button ref={againRef} size="touch" variant="outline" onClick={() => { setReply(null); requestAnimationFrame(() => textareaRef.current?.focus()); }}>
+            Explain it again
+          </Button>
+          <Button size="touch" variant="ghost" onClick={close}>
+            Close
+          </Button>
         </div>
       ) : null}
     </div>

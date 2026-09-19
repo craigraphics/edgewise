@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { ModeSwitch, type Mode } from './mode-switch';
-import { ToolsMenu } from './tools-menu';
+import { ToolsMenu, type ToolItem } from './tools-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 
@@ -12,7 +12,7 @@ export function AppHeader({ mode, onModeChange, marking, onLeaveMarking, tools }
   onModeChange: (mode: Mode) => void;
   marking: boolean;
   onLeaveMarking: () => void;
-  tools: { label: string; onSelect: () => void; separated?: boolean }[];
+  tools: ToolItem[];
 }) {
   return (
     <header className="border-border shrink-0 border-b">

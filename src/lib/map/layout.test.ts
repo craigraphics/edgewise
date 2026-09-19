@@ -12,6 +12,7 @@ import {
   NODE_HEIGHT,
   NODE_RADIUS,
   accentPath,
+  cameraOn,
   cameraShowing,
   clampCamera,
   clampZoom,
@@ -212,6 +213,59 @@ describe('fitCamera and viewBoxFor', () => {
 
   it('starts at the top when fitting the width', () => {
     expect(fitCamera(CONTENT, PANE, 'legible').y).toBe(0);
+  });
+});
+
+describe('cameraOn', () => {
+  /* The phone case this exists for: a pane far narrower than the map. */
+  const PHONE = { width: 350, height: 460 };
+
+  it('uses exactly the scale the fit mode asks for', () => {
+    expect(cameraOn(CONTENT, PHONE, 'legible', { x: 500, y: 600 }).scale).toBe(
+      fitCamera(CONTENT, PHONE, 'legible').scale,
+    );
+  });
+
+  it('centres the target on both axes when the map overflows the pane', () => {
+    const target = { x: 500, y: 600 };
+    const camera = cameraOn(CONTENT, PHONE, 'legible', target);
+    expect(camera.x + PHONE.width / camera.scale / 2).toBeCloseTo(target.x, 6);
+    expect(camera.y + PHONE.height / camera.scale / 2).toBeCloseTo(target.y, 6);
+  });
+
+  it('clamps to the end rather than overshooting past a target near the edge', () => {
+    const camera = cameraOn(CONTENT, PHONE, 'legible', { x: CONTENT.width, y: CONTENT.height });
+    expect(clampCamera(camera, CONTENT, PHONE)).toEqual(camera);
+    expect(camera.x + PHONE.width / camera.scale).toBeLessThanOrEqual(CONTENT.width + 0.001);
+    expect(camera.y + PHONE.height / camera.scale).toBeLessThanOrEqual(CONTENT.height + 0.001);
+  });
+
+  /*
+   * The two axes rest differently — horizontally centred, vertically at the top
+   * — and that belongs to `clampCamera`, not to this function. Asking to look at
+   * a node on an axis the view already covers must not be able to override it.
+   */
+  it('leaves an axis the view already covers where clampCamera puts it', () => {
+    const roomy = { width: 2000, height: 2000 };
+    expect(cameraOn(CONTENT, roomy, 'all', { x: 800, y: 900 })).toEqual(
+      fitCamera(CONTENT, roomy, 'all'),
+    );
+  });
+
+  it('keeps the node it was aimed at inside the view', () => {
+    const target = { x: 120, y: 980 };
+    const camera = cameraOn(CONTENT, PHONE, 'legible', target);
+    expect(target.x).toBeGreaterThanOrEqual(camera.x);
+    expect(target.x).toBeLessThanOrEqual(camera.x + PHONE.width / camera.scale);
+    expect(target.y).toBeGreaterThanOrEqual(camera.y);
+    expect(target.y).toBeLessThanOrEqual(camera.y + PHONE.height / camera.scale);
+  });
+
+  /* The whole point: a 12px label and a card big enough to tap. */
+  it('rests at a legible scale on a phone-sized pane', () => {
+    const camera = cameraOn(CONTENT, PHONE, 'legible', { x: 500, y: 600 });
+    expect(LABEL_SIZE * camera.scale).toBeGreaterThanOrEqual(12);
+    expect(NODE_HEIGHT * camera.scale).toBeGreaterThanOrEqual(40);
   });
 });
 

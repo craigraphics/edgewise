@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useVoice } from '@/hooks/use-voice';
 import { stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, LearnerModel, NodeState } from '@/lib/graph/types';
+import { absorbAllowance, allowanceToken } from '@/lib/session/allowance';
 import type { SessionConfig } from '@/lib/session/config';
 import { spokenForm, stepFor } from '@/lib/walkthrough/script';
 import { useWalkthrough } from '@/lib/walkthrough/store';
@@ -33,14 +34,23 @@ const ERRORS: Record<string, string> = {
   REWORD_FAILED: 'That did not come back. The walkthrough itself is unaffected.',
 };
 
+type Aside = { kind: 'simpler'; say: string } | { kind: 'answer'; question: string; say: string };
+
 export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Props) {
   const walk = useWalkthrough(graph);
   const [playing, setPlaying] = useState(false);
-  const [aside, setAside] = useState<string | null>(null);
+  /*
+   * Everything asked about this step, in order, each kept.
+   *
+   * It used to be one slot, so a typed question replaced the simpler telling
+   * somebody had just asked for — the thing that finally made sense vanished
+   * the moment they followed it up. Keyed to the step's position rather than
+   * cleared by the buttons, because the walk also moves on by itself.
+   */
+  const [asides, setAsides] = useState<{ position: number; items: Aside[] }>({ position: -1, items: [] });
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -49,6 +59,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
   // Pulled out as a plain value: `walk.current` reads like a ref to the linter,
   // and a dependency it refuses to track is one that will silently go stale.
   const currentNode = walk.current;
+  const stepAsides = asides.position === walk.position ? asides.items : [];
   const step = currentNode ? stepFor(currentNode, stateOf(model, currentNode.id)) : null;
 
   useEffect(() => {
@@ -67,13 +78,13 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
   }, [walk.position]);
 
   useEffect(() => {
-    if (!aside) return;
+    if (stepAsides.length === 0) return;
     // Scrolls the container rather than calling scrollIntoView on the element:
     // measured, the latter moved 34px of a needed 267 and left the answer off
     // screen, which reads as the button having done nothing.
     const el = scroller.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [aside]);
+  }, [stepAsides.length]);
 
   /*
    * The walk drives itself.
@@ -118,7 +129,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
       interrupt();
       setBusy(true);
       setError(null);
-      setAside(null);
+      const position = walk.position;
 
       try {
         const response = await fetch('/api/reword', {
@@ -131,18 +142,22 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
             alreadySaid: step ? spokenForm(step) : '',
             ...(config.apiKey.trim() ? { apiKey: config.apiKey.trim() } : {}),
             model: config.model,
-            sessionToken: token,
+            sessionToken: allowanceToken(),
           }),
         });
 
-        const data = (await response.json()) as { say?: string; error?: string; sessionToken?: string | null };
+        const data = (await response.json()) as { say?: string; error?: string; sessionToken?: string | null; turnsLeft?: number | null };
         if (!response.ok || data.error) {
           setError(ERRORS[data.error ?? ''] ?? 'Something went wrong. The walkthrough itself is unaffected.');
           return;
         }
 
-        if (data.sessionToken !== undefined) setToken(data.sessionToken);
-        setAside(data.say ?? null);
+        absorbAllowance(data);
+        const say = data.say;
+        if (say) {
+          const item: Aside = mode === 'question' ? { kind: 'answer', question: text ?? '', say } : { kind: 'simpler', say };
+          setAsides((current) => ({ position, items: [...(current.position === position ? current.items : []), item] }));
+        }
         setQuestion('');
         if (data.say && voice.readAloud) void voice.say(data.say, false);
       } catch {
@@ -151,7 +166,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         setBusy(false);
       }
     },
-    [busy, config, currentNode, interrupt, step, token, voice],
+    [busy, config, currentNode, interrupt, step, voice, walk.position],
   );
 
   if (!walk.hydrated) return null;
@@ -207,7 +222,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
         </div>
         <h2 className="font-display mt-3 text-xl font-semibold">{step.node.label}</h2>
         {step.brief ? (
-          <p className="text-muted-foreground mt-1 text-2xs">You already had this one — just in passing.</p>
+          <p className="text-muted-foreground mt-1 text-2xs">A brief pass on this one.</p>
         ) : null}
       </div>
 
@@ -231,11 +246,13 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
           </Caveat>
         ) : null}
 
-        {aside ? (
-          <div className="bg-surface-2 edgewise-rise rounded-xl px-4 py-3">
-            <p className="font-display text-read">{aside}</p>
+        {stepAsides.map((item, index) => (
+          <div key={index} className="bg-surface-2 edgewise-rise space-y-2 rounded-xl px-4 py-3">
+            <p className="eyebrow">{item.kind === 'simpler' ? 'Said more simply' : 'You asked'}</p>
+            {item.kind === 'answer' ? <p className="text-muted-foreground text-base leading-relaxed">{item.question}</p> : null}
+            <p className="font-display text-read">{item.say}</p>
           </div>
-        ) : null}
+        ))}
 
         {busy ? (
           <p className="text-muted-foreground font-display text-read animate-pulse">Thinking…</p>
@@ -249,6 +266,7 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
          */}
         <div className="pt-2">
           <ExplainBack
+            key={step.node.id}
             node={step.node}
             state={stateOf(model, step.node.id)}
             config={config}
@@ -294,7 +312,6 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
             variant="ghost"
             onClick={() => {
               interrupt();
-              setAside(null);
               walk.back();
             }}
             disabled={walk.position === 0}
@@ -306,7 +323,6 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
             size="touch"
             onClick={() => {
               interrupt();
-              setAside(null);
               walk.advance();
             }}
           >
@@ -331,7 +347,9 @@ export function Walkthrough({ graph, model, config, onNodeChange, onEarned }: Pr
                   interrupt();
                   return;
                 }
-                if (!voice.readAloud) voice.toggleReadAloud();
+                // Reading aloud only. This never grants the microphone: a
+                // conversation opens it only after a listen press of its own.
+                if (!voice.readAloud) voice.setReadAloud(true);
                 // Re-read the step we are on rather than skipping it.
                 spokenAt.current = -1;
                 setPlaying(true);

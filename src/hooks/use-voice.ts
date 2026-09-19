@@ -17,21 +17,30 @@ import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
  * to get them — and on Android, where recognition is the unreliable half and
  * speech is not, a broken microphone took working speech down with it.
  *
- * - `readAloud` is a standing preference about the tutor's turns.
- * - Answering out loud is a per-turn action, behind a consent asked once.
+ * - `readAloud` is a standing preference about the tutor's turns, and persists.
+ *   Hearing text read out sends nothing anywhere.
+ * - Answering out loud is a per-turn press, behind a consent that is NEVER
+ *   remembered. The sentence saying audio goes to Google comes before the
+ *   microphone first opens in each mounted conversation (`micConsented`, held
+ *   in state here and so gone on unmount).
  * - Hands-free is not a third switch. It is what happens when both are in use:
- *   `say(text, true)` reads the turn and then opens the microphone.
+ *   `say(text, true)` reads the turn and then opens the microphone. The caller
+ *   passes true only after a spoken answer in this same conversation.
+ *
+ * The old combined flag, `edgewise.voice.v1`, is why the consent is not stored.
+ * Pressing "Read it to me" in the walkthrough set it, and the next conversation
+ * then read its first question and opened the microphone without anybody
+ * having pressed a listen control. Audio going to Google has to follow a press
+ * made in that conversation, after the sentence saying so.
  *
  * Voice is opt-in and never the only way in. Chrome is the only reliable target,
  * the recognition is not on-device, and plenty of people are somewhere they
  * cannot talk out loud.
  */
 
-// The key predates the split and meant "voice on". It now means "read aloud",
-// which is the half of that choice that needed no consent, so existing
-// preferences carry over without re-asking anything.
-const KEY = 'edgewise.voice.v1';
-const MIC_CONSENT_KEY = 'edgewise.mic-consent.v1';
+const READ_ALOUD_KEY = 'edgewise.read-aloud.v1';
+/** The old combined flag. Never read; removed so a stale "on" cannot linger. */
+const LEGACY_KEY = 'edgewise.voice.v1';
 const WAITING_SHOWN_AFTER_MS = 500;
 
 export function useVoice(onFinalTranscript: (text: string) => void) {
@@ -40,8 +49,8 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
   // Through the shared store, so the walkthrough and the conversation agree
   // about the preference rather than each reading it once on mount.
-  const readAloud = usePersisted(KEY) === 'on';
-  const micConsented = usePersisted(MIC_CONSENT_KEY) === 'yes';
+  const readAloud = usePersisted(READ_ALOUD_KEY) === 'on';
+  const [micConsented, setMicConsented] = useState(false);
   const [supported, setSupported] = useState({ speak: false, listen: false });
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
@@ -96,6 +105,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
       handoverMs: needsMicrophoneHandover() ? LISTENER_TIMING.HANDOVER_MS : 0,
     });
     setSupported({ speak: speaker.current.available, listen: listener.current.available });
+    writePersisted(LEGACY_KEY, null);
 
     return () => {
       speaker.current?.stop();
@@ -202,16 +212,18 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
    * learner opened themselves is theirs to close — it is a different choice
    * now, and silencing the tutor should not cut somebody off mid-answer.
    */
-  const toggleReadAloud = useCallback(() => {
-    if (readAloud) {
+  const setReadAloud = useCallback((next: boolean) => {
+    if (!next) {
       speaker.current?.stop();
       setSpeaking(false);
     }
-    writePersisted(KEY, readAloud ? 'off' : 'on');
-  }, [readAloud]);
+    writePersisted(READ_ALOUD_KEY, next ? 'on' : 'off');
+  }, []);
 
-  /** Recorded once, the first time somebody agrees to their audio going to Google. */
-  const consentToMic = useCallback(() => writePersisted(MIC_CONSENT_KEY, 'yes'), []);
+  const toggleReadAloud = useCallback(() => setReadAloud(!readAloud), [readAloud, setReadAloud]);
+
+  /** For this mounted conversation only. Never persisted — see above. */
+  const consentToMic = useCallback(() => setMicConsented(true), []);
 
   return {
     readAloud,
@@ -222,6 +234,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     waiting,
     interim,
     error,
+    setReadAloud,
     toggleReadAloud,
     consentToMic,
     say,

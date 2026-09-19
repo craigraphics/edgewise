@@ -39,8 +39,9 @@ function openerFor(node: ConceptNode, state: NodeState): { opener: string; brief
     case 'known':
       // Covered anyway, because the walk goes through everything — but briefly.
       // Re-teaching in full something someone has just demonstrated reads as
-      // not having listened.
-      return { opener: `${node.label}, which you already had, so just in passing.`, brief: true };
+      // not having listened. It used to say "which you already had", which is
+      // the diagnostic result read back; the brevity says it without the mark.
+      return { opener: `${node.label}, briefly.`, brief: true };
     case 'shaky':
       return { opener: `${node.label}. You were most of the way there on this one.`, brief: false };
     case 'blocked':

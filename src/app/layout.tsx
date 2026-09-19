@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Newsreader } from 'next/font/google';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { DESCRIPTION, SITE_NAME, SITE_URL, TITLE } from '@/lib/seo';
 import { cn } from '@/lib/utils';
 
 import './globals.css';
@@ -28,9 +29,38 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: 'Edgewise',
-  description: 'Find the one idea that is blocking the rest, then work from there.',
-  robots: { index: false, follow: false },
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: `%s — ${SITE_NAME}` },
+  description: DESCRIPTION,
+  applicationName: SITE_NAME,
+  // Every page of this is one route, so there is one canonical and it is the
+  // root. Without it a share link carrying `?utm_source=` is a second URL.
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: 'en_GB',
+  },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
+  // The site was `index: false` while it was unreleased. It answers on a real
+  // domain now. If it goes back to being a private draft this is the line to
+  // flip — `robots.ts` allows crawling on its own and would let one in.
+  robots: { index: true, follow: true },
+};
+
+/**
+ * The browser chrome follows the theme the page is actually showing, which is
+ * `--surface-0` in each. A single `themeColor` paints a light bar above a dark
+ * page on iOS, which reads as the page not having loaded properly.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf9f5' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0c11' },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

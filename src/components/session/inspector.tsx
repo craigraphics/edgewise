@@ -2,9 +2,9 @@
 
 import { Square, Volume2, XIcon } from 'lucide-react';
 
-import { NodeGlyph } from '@/components/map/node-glyph';
 import { Caveat } from '@/components/session/caveat';
 import { ExplainBack } from '@/components/session/explain-back';
+import { STATE_COPY, StateBadge } from '@/components/session/state-badge';
 import { Button } from '@/components/ui/button';
 import { useReadOut } from '@/hooks/use-read-out';
 import { EXPERIMENT_ACTION, EXPERIMENT_PROMPT, isExperimentId } from '@/lib/experiments/registry';
@@ -12,12 +12,7 @@ import { downstreamOf, stateOf } from '@/lib/graph/frontier';
 import type { ConceptGraph, ConceptNode, LearnerModel, NodeState } from '@/lib/graph/types';
 import type { SessionConfig } from '@/lib/session/config';
 
-export const STATE_COPY: Record<NodeState, string> = {
-  known: 'Solid',
-  shaky: 'Half-held',
-  blocked: 'Not yet',
-  unexplored: 'Not looked at',
-};
+export { STATE_COPY };
 
 /** Order matches the 1–4 keyboard shortcuts. */
 export const MARKS: NodeState[] = ['known', 'shaky', 'blocked', 'unexplored'];
@@ -47,24 +42,6 @@ type Props = {
   onPlay?: () => void;
   explainRequest?: number;
 };
-
-/**
- * The state, drawn the way the map draws it.
- *
- * A plain grey `Badge` saying "Not yet" gave the panel and the map two
- * unrelated vocabularies for the same fact. Reusing `NodeGlyph` means the mark
- * you just read on a node is the mark you see here, and it cannot drift.
- */
-function StateBadge({ state, band }: { state: NodeState; band: string }) {
-  return (
-    <span className="bg-surface-2 border-border text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs">
-      <svg width={11} height={11} aria-hidden className="shrink-0 overflow-visible">
-        <NodeGlyph state={state} cx={5.5} cy={5.5} colour={`var(--band-${band})`} />
-      </svg>
-      {STATE_COPY[state]}
-    </span>
-  );
-}
 
 export function Inspector({
   graph,

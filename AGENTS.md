@@ -1696,6 +1696,1741 @@ control in this panel is at least 40px.
 a screen reader hears the consequence once per committed change rather than on
 every frame. Nothing on the drawing is draggable.
 
+### The representation playground — two encodings, one collision — 2026-09-12
+
+On `experiment/03-representation`, branched from `main` after the predictor
+merged. An experiment on `features-and-representation`, built to the same rule
+as the neuron, the tokenizer and the predictor: change something, inspect the
+consequence, optionally explain it. See `docs/representation-playground.md` for
+the verification table and the limits.
+
+**The collision is the instrument.** Two 4x4 black-and-white pictures, and two
+ways of turning them into numbers: the mean of the sixteen cell values, or all
+sixteen in their declared order. The opening pair is a filled top half against a
+checkerboard — eight white cells each, nobody would confuse them, both arrive as
+**0.5**. Switch encoding and the same two pictures differ at eight of sixteen
+positions. Both numbers are computed from the cells on screen; nothing selects a
+prepared answer.
+
+**"Information is lost" is given as a count, not asserted.** `sharingPictures`
+reports how many of the 65,536 possible pictures produce exactly this encoded
+data: **12,870** for an average of 0.5, **exactly 1** for any ordered list. The
+extremes are the honest exception and are shown rather than hidden — all-white
+and all-black are each produced by one picture, so a single number does separate
+those. An encoding is not lossy by nature; this one is lossy in the middle. That
+count is tested against a **brute-force enumeration of all 65,536 pictures**,
+which is the "do not assert the encoder against itself" trap closed by a third
+route.
+
+**Rearranging is the second half of the argument.** A quarter turn moves every
+cell and adds none, so the average cannot move and the ordered list must. The
+panel reports what happened rather than claiming it: a symmetric picture gets
+*"looks the same after a quarter turn, so both encodings are unchanged too"*.
+Claiming a change that did not occur, on the node about not trusting surface
+claims, would teach the opposite of the node.
+
+**Immediate feedback, no prediction step.** The neuron asks for a prediction
+because it has one arithmetic result worth committing to. Here the interesting
+move is flipping a cell and watching the collision appear or break, so every
+change shows at once and nothing is gated behind a guess.
+
+**The two cell colours are deliberately not theme tokens.** This panel is about
+brightness values, so a cell worth 1 has to read as white in both themes;
+letting dark mode swap them would make 1 the dark value and contradict the
+arithmetic printed beside it. That exemption puts them outside
+`globals.test.ts`, so `representation-contrast.test.ts` holds them to a number
+instead — **17.33:1**, both directions, plus a test that fails if either is ever
+redefined under a theme. Each cell also prints its own value as a digit, so the
+grid survives greyscale.
+
+**A `sr-only` span made the whole page scroll.** Each grid carried a visually
+hidden summary. Tailwind's `sr-only` is `position: absolute`, and with no
+positioned ancestor its containing block sits **above** the shell's
+`overflow: hidden` — so the shell does not clip it. Laid out at its static
+position deep inside a scrolling pane, it extended the document's own scroll
+area: **1602px of page scroll at 320x568**, against this file's oldest layout
+rule. Invisible in the code, invisible on screen, and caught only because the
+probe measures the right quantity and the predictor panel on the same shell
+measured a clean zero as a control. The spans are gone — they duplicated a count
+already printed and, being outside any live region, announced nothing on change.
+**The rule to carry forward: `sr-only` inside one of this app's scrolling panes
+escapes the shell's clip.**
+
+**Roving tabindex on the grids.** Thirty-two cells would have been thirty-two tab
+stops. Arrow keys move, Home and End jump, Space and Enter flip — the standard
+grid pattern, and every cell is still a plain button carrying its row, column and
+`aria-pressed`, so nothing depends on a custom role being interpreted correctly.
+Measured: 12 tab stops through the panel in one-number mode, 28 in list mode,
+every one scrolled into view at 320x568 and 720x450.
+
+**Marks were checked against a populated model, not an empty one.** With ten
+marks loaded — including this node's prerequisite and three of its dependants —
+flipping cells, choosing positions, turning a picture and switching encodings
+left the stored model byte-identical. An empty model would have proved much less.
+
+### Learning a rule, or using one — 2026-09-12
+
+On `experiment/04-training-vs-inference`, branched from `main` after the
+representation playground merged. An experiment on `training-vs-inference`, in
+the predictor's own delivery setting so there is no new story to learn. See
+`docs/training-vs-inference.md` for the verification table and the limits.
+
+**The rule is stored, and the answer function cannot see the data.**
+`answerWith(learned, distance)` takes a rule and a distance; the delivery rows
+are not in scope. So "using the rule cannot change it" is the shape of the
+function rather than a promise in a comment — which is the same structural move
+as putting a required field before `verdict` in the assessor schema, applied to
+a panel instead of a prompt. The fitting is `regression.ts` unchanged: this node
+is about when that step runs, not how it works.
+
+**Refusing to learn beats learning badly.** `learnability` answers whether
+pressing the button would do anything, and the button is disabled with the reason
+in words when it would not — unchanged deliveries, fewer than two complete rows,
+or every remaining row at one distance. Refusing *before* the attempt is why a
+rule already in hand can never be destroyed by an emptied field, and it is why
+`Learned.fit` is a `FittedModel` rather than a `FitResult`. There is no state in
+which the panel holds an undetermined rule, so there is no copy to write for one.
+
+**The distance is held while the two rules are compared.** Both are read at one
+distance, so the cause of the difference cannot be the question. The slider and
+the number field are disabled for that stretch, with the reason beside them and
+an explicit way out in the tab order. Two answers at two distances would not be
+a comparison of two rules.
+
+**Two rules can agree at one distance.** They cross. `compare` reports `same`
+there while still reporting that the rate moved, rather than printing a
+difference of zero as a change. The threshold is 0.05 minutes, under the 0.1 the
+panel prints, because a change nobody can see is not a change.
+
+**The names come last, and the limit is stated.** "Learning a rule" and "using
+the rule" carry the whole first half; training and inference are introduced only
+once the difference is on screen. That card then says *"This is the common setup,
+not a law"* — models are retrained, and some are handed documents at the moment
+you ask. Claiming no system ever learns during use would be a new misconception
+planted on the node whose job is removing one.
+
+**A shipped contrast defect, found by a test written for the new panel.** Both
+experiment readouts painted their value card as a 10% tint of their own band and
+put band-coloured text on it. Measured: **4.18:1 in light mode**, under AA, and
+no tint that still reads as a tint reaches 4.5. Exactly the map-node failure this
+file already records — text sitting on the band colour, twenty-four combinations
+none of which had been measured — reappearing in a place `globals.test.ts` did
+not look, because that block only ever covered `foreground` and
+`muted-foreground` on the plain surfaces. The card is a plain surface now in
+**both** panels; the predictor had it first and shipped with it. Three
+assertions per theme hold it, including that the card still separates from the
+readout behind it.
+
+**The number field was 22px wide at 320px.** With the field free to shrink, the
+row's label took the width. Seventh time a defect here was found by measuring
+rather than reading, and the rule it broke was already written down.
+
+**`NumberField` is now shared** by the predictor and this panel. Its `h-10` is
+the 40px finger-target lesson, and duplicating that across two files is how a
+measured lesson gets lost.
+
+**Nothing here touches the map.** No learner-model access. Reading answers,
+editing deliveries, learning again, answering the optional question and resetting
+all left storage at zero keys, read before and after. One real assessed
+explanation then cleared **only** this node, with the prerequisite and all three
+dependants unchanged.
+
+### How far off was the answer? — 2026-09-12
+
+On `experiment/05-loss`, branched from `main` after the training-vs-inference
+experiment merged. An experiment on `loss`, built to the same rule as the four
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/how-far-off.md` for the verification tables and the limits.
+
+**Right-or-wrong sits beside how-far-off, and one of them moves.** A delivery
+took 30 minutes; guesses of 29 and 60 both read **Wrong**, and read "1 minute
+off" and "30 minutes off". Moving the second guess leaves the first column saying
+Wrong the whole way and shrinks the second continuously. That is the node's own
+sentence — *"'Wrong' gives you nowhere to go; 'wrong by this much' tells you
+which direction is better"* — acted out rather than asserted, and nothing on the
+first screen names a loss, a metric or an error function.
+
+**No prediction step.** The neuron asks for one because it has a single
+arithmetic result worth committing to. Here the interesting move is moving the
+guess and watching which readout responds, so every change shows at once rather
+than being gated behind a number nobody has been given a way to work out.
+
+**Two real measures, and the units are not pretended away.** The second example
+scores four deliveries both ways: the average size of the miss, in minutes, and
+the average of each miss multiplied by itself, which is a score in minutes times
+minutes and is never printed as minutes. Two ready-made sets are off by 5 minutes
+on average and score 25 against 100, so the first measure cannot choose between
+them and the second calls one four times worse. **That tie is asserted in
+`loss.test.ts` rather than described in the copy**, so editing those numbers later
+cannot quietly remove the disagreement the panel claims to show.
+
+**The name comes last**, once both measures are on screen with numbers in them —
+and the card then carries the half of the node that is easy to miss: neither
+measure is more correct, a person picks, and whatever the chosen number does not
+notice, the model has no reason to fix. That is the node's second recorded
+misconception, stated rather than left to the optional question.
+
+**The expectations are written out by hand.** Asserting a measure against itself
+is the trap the tokenizer closed by decoding `bpe_ranks` independently, the
+predictor by checking the least-squares conditions, and the representation
+playground by brute-forcing all 65,536 pictures. This one closes it with
+arithmetic anybody can check in their head. Exact guesses give zero on both;
+equal misses in either direction score identically; the 20-minute miss changes
+the two measures differently and by exactly four; an empty list returns `null`
+rather than 0, because printing 0 for "no guesses" would say the guesses were
+perfect when none was made.
+
+**A rounding defect, found by driving the panel rather than reading it.**
+Switching back from the blunder set printed "3.3 times worse" where the answer is
+4: `timesWorse` rounded to one decimal and the panel then inverted, and 1 ÷ 0.3
+is not 4. Display rounding belongs at the point of display. Tested in both
+directions.
+
+**`--band-learning` is 4.30:1 as text, and the two existing readouts pass by
+luck.** Generalising the readout check to every band shows `foundations` is the
+only one that clears AA against those cards in light mode — `networks` 4.45,
+`behaviour` 4.36, `learning` 4.30, `language` 4.02. So the reason the predictor
+and the two-phase panel are legible is that their band happens to be the darkest
+of the six, not anything about the design, and the same treatment here would have
+been a contrast defect. This panel prints its numbers in `foreground` with the
+band on the border, and `BANDS_USED_AS_TEXT` in `globals.test.ts` records the
+measurement so adding a band to that list is a deliberate act. The band-accent
+block now checks all three surfaces too, since these panels draw band-coloured
+borders on all of them. Eighth time a defect here was found by measuring rather
+than reading, and the third time in the same place: **text sitting on the band
+colour, in a combination nothing had measured.**
+
+**The grading check banned this node's subject.** `registry.test.ts` rejected any
+prompt containing "wrong", and this node exists entirely to separate "wrong" from
+"wrong by this much". The rule was never about vocabulary — it is about handing
+the learner a verdict — so judging words are now checked against the prompt's own
+words with quoted text stripped first, verdict *phrases* are still checked against
+the whole prompt, and a test asserts the quote-stripping cannot be used to smuggle
+a verdict through in quotation marks. **Worth keeping: a rule stated as a word
+list eventually collides with a subject that is about those words.**
+
+**The verdict pair at 320px was measured, not argued about.** Two columns puts
+"30 minutes off" on three lines in a 100px card and stands 98px tall; two stacked
+cards is taller still and pushes the slider — the first thing there is to do — a
+long way below the fold; two label-left, value-right rows is 80px and reads in one
+line each. That is what it does below 420px.
+
+**Nothing here touches the map.** No learner-model access. Checked against a
+**populated** model — ten marks including this node, its prerequisite and its
+dependants — rather than an empty one: moving the guess, editing every delivery,
+switching all three sets and opening both explanations left storage
+byte-identical. The follow-up question opens the existing `ExplainBack` empty with
+a disabled submit.
+
+**No end-to-end assessed explanation was run.** The predictor and two-phase
+experiments each submitted one and confirmed it cleared only their node; this one
+did not, so that claim rests on the absence of learner-model access and on the
+before/after storage reads. Recorded in `docs/how-far-off.md` under "Not
+verified".
+
+### One step at a time — a real slope, and a step that runs away — 2026-09-12
+
+On `experiment/06-small-steps`, branched from `main` after the how-far-off
+experiment merged. An experiment on `gradient-descent`, built to the same rule as
+the five before it: change something, inspect the consequence, optionally explain
+it. See `docs/one-step-at-a-time.md` for the verification tables and the limits.
+
+**One guess, one fact, one button.** The delivery from `loss` continues — the
+same 30 minutes — and the model guessed 40. The first screen carries the guess
+and how far off it is, the single fact a step is allowed to act on (*"moving the
+guess down makes it less wrong"*), and **Take one step**. Then the before and
+after sit side by side and stay there. Nothing on that screen says gradient,
+learning rate or loss, and there is no landscape and no rolling ball.
+
+**No prediction step, deliberately.** The neuron asks for one because it has a
+single arithmetic result worth committing to. Here the learner has been given
+nothing they could use to work out the size of the next move, and asking them to
+guess an unexplained number is the thing this file's own rules forbid.
+
+**The update is real, and the slope is checked against the score rather than
+against itself.** `guess ← guess − step × 2(guess − actual)`, over a squared
+error. `slopeAt` is the analytic expression; the test measures
+`(score(g+h) − score(g−h)) / 2h` and requires the two to agree. Asserting a
+measure against itself is the trap the tokenizer closed by decoding `bpe_ranks`
+independently, the predictor by checking the least-squares conditions, the
+representation playground by brute force and the loss panel by hand arithmetic;
+this one closes it with a finite difference.
+
+**Three step sizes, and they are the three things that can happen.** A step here
+covers a fixed fraction of the remaining distance, because the slope is
+proportional to the gap — a fifth of the way, a little past, three times past.
+That fraction is a *consequence* of the update and is held to it in the test
+rather than written into the copy, and the panel says the neat relationship
+belongs to this one-number example rather than to training. **The labels say how
+big a step is, never how it will turn out**, with a test rejecting "past", "too
+far", "worse" and "best" in a label.
+
+**A step that would run away is refused, and the number it would have reached is
+printed.** *"From 50.48 min, a much bigger step would have taken the guess to
+−10.96 min, which is less than no time at all."* Clamping it into something that
+still looked reasonable would have hidden the one thing a too-big step is for.
+Choosing a smaller size clears it and carries on, so it is a stop rather than a
+dead end.
+
+**The panel contradicted itself once, and only driving it found that.** A run of
+bigger steps converges fast enough that within a dozen steps the gap is under
+0.005 minutes, so a row printed **"30 → 30 min · 0 off → 0 off · past it, and
+closer"** — the classification tolerance is 1e-9 and the display rounds to two
+places. Same shape as the `loss` panel's own rule that "0 minutes off" must never
+sit beside the word "Wrong". A real distance too small to print now says so
+(`under 0.01 minutes off`), and the readout carries the note that earns its
+place: the steps carry on getting smaller, which is the ordinary ending rather
+than landing exactly on the answer. Ninth time a defect here was found by
+measuring rather than reading.
+
+**The first action was 517px below the panel title, and the fix came from
+measuring the siblings.** The how-far-off panel is 334, representation 445,
+predictor 520. In house norms and still the wrong end of them for a panel whose
+whole first screen is one button. Two paragraphs became one, and the direction
+line stopped being a bordered box and became a 3px band accent down its leading
+edge — the map's own idiom. **431 now**, and at 1100×700 the title and the first
+action fit on screen together, which they did not before.
+
+**The brief's wording for the optional question was changed rather than the test
+relaxed.** "Why can moving in a helpful direction still go wrong…" trips
+`registry.test.ts`, which rejects a judging word in a prompt's own text. The
+`loss` node genuinely needed "wrong" and relaxed the rule once, by
+quote-stripping, with the reasoning recorded. This node does not need it, so it
+asks in the panel's own vocabulary — *"still leave the guess further away"* —
+rather than relaxing the same rule a second time.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+stepping, changing size, running, hitting the cap, being refused and resetting
+left a **populated** ten-mark model byte-identical. Then the direction the
+how-far-off experiment left open — a real explanation submitted through the live
+assessor moved `gradient-descent` **`shaky` → `known`** and left **every other
+key unchanged**, prerequisite and dependants included.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open and
+stepped, so there is nothing for a reduced-motion setting to suppress. The only
+self-moving thing is the optional six-step run, which is opt-in and carries a
+Stop button throughout.
+
+### Reaching an experiment — a button, and a URL — 2026-09-13
+
+On `experiment/08-experiment-links`, branched from `main` after the
+one-step-at-a-time experiment merged. The owner asked for a direct route from
+the focused view to every experiment, and for a URL that names where you are.
+See `docs/experiment-links.md` for the verification table and the limits.
+
+**Seven ideas have an experiment and only one was reachable from the focused
+view** — the idea in focus, through the invitation at the bottom. Every
+neighbour that has one now carries a `Try it` button on its own card. It is a
+second control, not a second invitation: the card still opens the idea, and the
+button takes its accessible name from `EXPERIMENT_ACTION`, so it can never read
+as an unlabelled "try" beside a heading it does not belong to.
+
+**The invitation was 576px below the panel title with its action off the bottom
+of the window**, measured at 1230x842 — the viewport this file already records
+as the common laptop. It now sits directly under the idea in focus whenever
+that idea has its own experiment: **325px**, fully on screen. The general
+neuron invitation still comes last, on ideas that have none, so one invitation
+per view still holds. Same defect as the one-step-at-a-time panel's 517px, in a
+different place, found the same way.
+
+**Two URL forms: `#idea/<id>` and `#play/<id>`**, with a bare `#tokens`
+accepted and rewritten. `replaceState`, never `pushState` — selecting an idea
+is panel state, not a page, and pushing would bury the back button under
+twenty-three entries. An unknown id lands on the ordinary first screen rather
+than an empty panel that reads as a failed load, and `#play/<id>` for an idea
+with no experiment falls back to the idea, so a link written before its
+experiment exists still arrives somewhere true.
+
+**The hash is a subscription, not a store.** `persisted.ts` and `use-media.ts`
+use `useSyncExternalStore` because components render from those values. Nothing
+renders from the hash: a link is an *event*, and the app responds by moving. So
+`use-hash.ts` takes a callback, and the hash already in the address bar is
+delivered through that same callback rather than read separately on mount — one
+path in, so a pasted link and a hand-edited one cannot disagree. That shape was
+not chosen for tidiness. The obvious version is what
+`react-hooks/set-state-in-effect` rejects, and the rule's own text names the
+alternative. **The lint error was right about the design, not just the line.**
+
+**`#idea/tokens` typed while the tokenizer was open left the experiment
+running.** Selecting an idea used to leave an experiment by accident — the
+focused view moves off the one being played — but not when the idea was the
+same one, so the URL said one thing and the screen showed another. `openNode`
+stops it explicitly now.
+
+**A hash-link check that does not reload is checking something else.** Changing
+only the fragment is a same-document navigation, so React state carries across
+it, and a probe that walked several links in a row credited each result to the
+wrong cause. Every case was re-run through `about:blank` first.
+
+**The row's `overflow: hidden` would have clipped the focus outline.** Making
+the neighbour a row with two buttons inside it, clipped to its own corner
+radius, hides a 3px-offset outline on both. The right-hand control carries the
+inner radius itself instead. Tenth time a defect here was found by measuring
+rather than reading — and this one was introduced by a purely visual line.
+
+### "Explore this idea" was a control that did nothing — 2026-09-12
+
+Reported by the owner while reviewing the experiment above, and older than it:
+introduced with `b18a5c4` and already on `main`.
+
+The focused card's "Explore this idea" calls `openNode`, which selects the idea
+and brings the guide into view. But the card always draws the **selected** idea,
+so after the first press of a session it was selecting what was already selected
+and showing a panel that was already on screen. On a wide window nothing moved.
+It worked exactly once per session and was inert from then on.
+
+`src/lib/map/panel.ts` now answers whether the panel is already showing that
+idea, and the card renders the way in — and its button wrapper — only when there
+is somewhere to go. Below the panel breakpoint the offer stays, because there the
+two surfaces are switched between rather than shown side by side, so the same
+press still does something real and is the route back to an idea's text from
+inside an experiment. That is why the predicate asks about the layout and not
+only about the selection, and why it is a tested pure function rather than an
+inline comparison.
+
+**Worth keeping:** the defect was reachable in two clicks from a fresh load and
+survived three experiment sessions on this card. Nothing measures whether a
+control does anything, which is the one thing this project has never had a probe
+for.
+
+### Did it learn the pattern, or remember the examples? — 2026-09-13
+
+On `experiment/07-generalization`, branched from `main` after the small-steps
+experiment merged. An experiment on `generalization-overfitting`, built to the
+same rule as the six before it: change something, inspect the consequence,
+optionally explain it. See `docs/memorising-or-learning.md` for the verification
+tables and the limits.
+
+**Two rules, one set of past phone sales, and the reversal is the experiment.**
+A shop estimates a used phone's sale price from its age, making the input and
+answer explicit before introducing either rule. A straight trend cannot bend
+for one cracked phone; a flexible curve passes through every sale exactly. On
+the five sales it learned from, the curve is **nothing off** and the line is
+$51.2 off. On four held-out sales, the curve is $100 off and the line is $34.5.
+The rule with the perfect score is the one that is 2.9 times further out.
+
+**Exactness is the point, so the curve is real interpolation.** Newton divided
+differences: the one curve of exactly the right flexibility to pass through every
+past sale. "Nothing off on any past sale" has to be a fact about the
+arithmetic, or the panel is asserting the very thing it exists to demonstrate.
+The straight line is the predictor's `fitLine`, unchanged — this node is about
+what a fit is worth on unseen data, not about how fitting works.
+
+**The held-out sales cannot reach a rule.** `fitLine` and `fitCurve` take a list
+of past sales and nothing else; a dataset's `heldOut` rows are never in scope
+inside either. Same structural move as `answerWith(learned, distance)` in
+`phases.ts`, and there is a test that swaps the held-out rows for nonsense and
+requires both rules to come out byte-identical. "The new answers were never used"
+is the shape of the function rather than a promise in a comment.
+
+**Three datasets, because one of them would be a lie.** **One damaged phone**
+has the curve chasing a cracked screen's one-off price and losing. **The early
+price drop** has value genuinely falling in a curve, and there the flexible fit
+is **25.8 times better** on held-out sales. **One clean pattern** has no chance
+variation in the past sales at all, so the flexible rule comes out straight and both
+answer identically. Each is held to the case it claims in the test rather than
+described in the copy. Teaching that a more detailed rule always fails would be a
+new misconception planted on the node whose job is removing one — what decides it
+is whether the thing being followed will happen again, which is a fact about the
+world and not about the rule.
+
+**Every held-out sale sits inside the fitted age range**, and at an age no past
+sale used — both asserted. So the failure is genuine overfitting rather than a
+rule being asked about a phone much older or newer than anything it saw.
+
+**No prediction step.** The learner has been given nothing they could use to work
+out how far off either rule will be on unseen data, and asking for a guess at an
+unexplained number is what this file already forbids. The interesting move is one
+button and watching one score hold while the other collapses.
+
+**The names come last**, once both numbers are on screen: training data, held-out
+set, overfitting, generalising. The card then carries the node's second recorded
+misconception rather than leaving it to the optional question — an overfitted
+rule is not broken and did not fail at its job; it learned one cracked phone's
+chance price very well.
+
+**The learner-facing words use everyday English.** The question is now “Can a
+perfect score still lead to bad guesses?” Short sentences explain the exact
+failure before naming it: the flexible rule followed one cracked phone's unusual
+price, that detail did not happen again, and new sales exposed the mistake. The
+experiment and the companion concept explanation contain no em dashes. Terms
+such as “capacity” and “transferable” were removed from the learner view.
+
+**The expectations are held to answers worked out on paper.** The parabola
+through (0,1) (1,3) (2,9) is `2x² + 1`, so `p(3) = 19`. The curve through two
+points is the line through them. On the clean dataset the data is exactly
+`820 - 10a`, where `a` is phone age in months, so the curve must be too — checked
+against that expression and against `fitLine`, a different implementation. That is the "do not assert the encoder
+against itself" trap closed by a fifth route, after `bpe_ranks` decoded
+independently, the least-squares conditions, brute force over 65,536 pictures,
+and hand arithmetic.
+
+**The first action sat 982px below the panel title, and only a measurement found
+it.** The siblings put theirs at 334, 431, 445 and 520. The cause was the
+drawing: its `<svg>` is `h-auto w-full`, and in the map pane at 1230×842 that is
+664px wide, so a 320×200 viewBox stood **415px tall on its own** — 42% of the
+whole distance. Nothing about that is visible in the code, which says `w-full`;
+the number only exists on a screen of a particular width. The chart is capped at
+30rem and shortened, the rule cards lost a line each, and **the button moved
+above the picture**: the drawing is optional support and everything it shows is
+printed in words, so it had no business pushing the only action off the page.
+**471 now**, with the button in view. Tenth time a defect here was found by
+measuring rather than reading.
+
+**`sr-only` was deliberately not used** for the narrow-width column labels. Below
+460px the 2×2 becomes one column per rule and each value carries its own heading
+inline, switched with `display` rather than hidden with `sr-only`, so exactly one
+label is in the accessibility tree at each width. The recorded reason stands: an
+absolutely positioned hidden span inside one of this app's scrolling panes
+escapes the shell's clip and adds page scroll.
+
+**Nothing in the experiment touches the map.** No learner-model access:
+revealing, switching datasets and resetting use component state only. After the
+phone example replaced delivery, one real mechanism explanation through the
+live assessor moved `generalization-overfitting` **`unexplored` → `known`**.
+The earlier delivery version was also checked against a populated ten-mark model
+and left every other key unchanged; that byte-level comparison was not repeated,
+but the client and server upgrade paths are unchanged and remain unit-tested.
+
+The required `pnpm calibrate --explain --runs 3` rerun failed on unrelated
+fixtures: 2/72 false passes for `hallucination/parroted` and one false block for
+`neuron/technical`. That canary has no `generalization-overfitting` fixture, so
+it says nothing direct about this question, but it is the current evidence for
+the shared assessor and must travel with the work.
+
+### How can numbers help us find related words? — 2026-09-13
+
+On `experiment/09-embeddings`, branched from `main` after the experiment-links
+work merged. An experiment on `embeddings`, built to the same rule as the eight
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/word-neighbours.md` for the verification table and the limits.
+
+**Real learned values, named and licensed.** 163 words of **GloVe 6B, 100
+dimensions** (Wikipedia 2014 + Gigaword 5; Pennington, Socher and Manning, EMNLP
+2014), released under the Open Data Commons **PDDL v1.0**, which is why a slice
+can sit in the repo. `scripts/extract-word-vectors.ts` copies them out of the
+published file and refuses to emit a partial collection. Random numbers presented
+as meaning would teach the exact thing this node exists to correct.
+
+**Static, and the panel keeps that separate.** One fixed list per word, learned
+from how often words appear near each other. `SOURCE.kind` is `'static'` and a
+test pins it, because the node's second recorded misconception is precisely the
+confusion with the context-dependent values a model computes inside a sentence.
+That distinction is also the panel's best moment: **`mouse` comes back as cat,
+rabbit, dog, keyboard, screen, computer** — both meanings mixed into one saved
+list, because a static vector cannot choose.
+
+**The grouping is ours; the neighbours are the numbers'.** Fourteen everyday
+areas exist so a word can be found, and the panel says nothing in the numbers
+knows about them. The collection is chosen so several words land somewhere else
+entirely — `rock` is filed under Outdoors and sits with `band`, `album`, `song`;
+`hedge` is filed under the garden and sits with `money`, `bank`, `cash`. Both are
+asserted in the test rather than described in the copy.
+
+**"The flat picture leaves a lot out" is a count.** `projectionDisagreesWith`
+compares each word's nearest neighbour in two dimensions with its nearest in the
+full lists: **146 of 163 differ**, and the panel prints that number. A test
+requires the disagreement to cover more than half the collection, so a copy line
+that stopped being true would fail there. Neighbours are read from all 100
+numbers and never off the drawing — `guitar`'s nearest in the full lists is
+`bass`, and in two dimensions it is something else, which is also tested.
+
+**The projection is deterministic on purpose.** Power iteration needs a starting
+direction, and a random one moves the picture between two readings of the same
+collection. Fixed seed, and the sign pinned to the loading of largest magnitude,
+because an SVD is free to settle on either end of the same axis and a mirrored
+drawing is not the same drawing.
+
+**Nothing is guessed at when a word is missing.** `aubergine` is reported as not
+in this small saved collection; a typo retries on shorter openings, so `guitarr`
+offers `guitar`; only when nothing matches at all do the four opening words stand
+in. `invalidReason` rejects a list of the wrong length, a value that is not
+finite, and an all-zero list — the last of which would otherwise divide by zero
+and print `NaN` as though it were an answer.
+
+**The fixtures are held to the same quantity computed a different way.** Cosine
+similarity is checked against the straight-line gap between the two lists scaled
+to length 1, which shares no arithmetic with the dot-product form, plus fixtures
+anybody can check in their head. That is the "do not assert the measure against
+itself" trap closed by a sixth route, after `bpe_ranks` decoded independently,
+the least-squares conditions, brute force over 65,536 pictures, hand arithmetic,
+and answers worked out on paper. The shipped values are additionally **pinned to
+the opening numbers of the published `guitar` and `garden` lines**, so
+regenerating the file from some other source fails the test rather than quietly
+changing what the panel calls meaning.
+
+**No prediction step.** The learner has been given nothing they could use to work
+out which words will come back, and asking somebody to guess an unexplained
+result is what this file already forbids. One press, and the answer is there.
+
+**The first action is 286px below the panel title** at 1230x842 — the shortest of
+the nine, against 334 / 431 / 445 / 471 / 520 for its siblings. At 320 it is 415,
+which is the intro wrapping rather than anything added.
+
+**`sr-only` was deliberately not used**, on the recorded grounds that an
+absolutely positioned hidden span inside one of this app's scrolling panes
+escapes the shell's clip and adds page scroll. The consequence is written down in
+`docs/word-neighbours.md` rather than left implicit: a screen reader hears
+`bass 0.85`, with the meaning of the number carried by the sentence under the
+list rather than by the row.
+
+**`--band-language` is still never used as text.** It measures 4.02:1 against
+these cards, under AA, which `BANDS_USED_AS_TEXT` in `globals.test.ts` already
+records. It carries the similarity bars, which are graphics held to 3:1 by the
+band-accent block, and the card's leading edge. Every number is printed as text
+beside its bar.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+choosing words, changing them, typing a missing word, opening the numbers, the
+two-meanings card and the picture, and resetting left a **populated** ten-mark
+model byte-identical. Then one real explanation through the live assessor moved
+`embeddings` **`shaky` → `known`** and left every other key unchanged.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open and
+both words chosen, so there is nothing for a reduced-motion setting to suppress.
+
+**`EXPERIMENT_PROMPT` is display copy.** `ExplainBack` renders it and never sends
+it, so the assessor prompt, the decision schema and the model list are untouched
+by this work. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on exactly the two fixtures the previous two sessions
+recorded: **2/72 false passes for `hallucination/parroted`**, which this file
+records as deliberately left failing, and **3/24 false blocks for
+`neuron/technical`**, which is the same figure the word-neighbours session
+measured on unchanged fixtures, prompt and model. Everyday words 12/12,
+misconception flag 12/12, jargon-with-mechanism 9/12. That canary has no
+`train-test-split` fixture, so it says nothing direct about this experiment, but
+it is the current state of the shared assessor and travels with the work rather
+than being summarised away. Full figures in `docs/saved-messages.md`. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on the two fixtures the previous session already
+recorded: 2/72 false passes for `hallucination/parroted`, which this file
+records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical`, which was 1 in the generalization session and is 3 here on
+the same unchanged fixtures, prompt and model. That is run-to-run variance in
+the shared assessor rather than anything about this experiment, which has no
+fixture in that canary — but it is the current state of it and travels with the
+work rather than being summarised away. Full figures in
+`docs/word-neighbours.md`.
+
+### Can we trust a result we helped choose? — 2026-09-13
+
+On `experiment/10-train-test-split`, branched from `main` after the
+word-neighbours experiment merged. An experiment on `train-test-split`, built to
+the same rule as the nine before it: change something, inspect the consequence,
+optionally explain it. See `docs/saved-messages.md` for the verification table
+and the limits.
+
+**A junk-mail filter, and three groups of invented messages.** Six to learn
+from, four to help choose how cautious it should be, and four whose answers stay
+out of view until asked for. The rule is said once, at the top, in the learner's
+own words: *"Save some messages until you have finished choosing the filter."*
+The names — training, validation, test — arrive only after all three groups have
+been used, and the panel says plainly that the order matters more than the
+names.
+
+**The middle group is now a real decision, not a silent default.** The first
+version preselected the cautious setting, which meant somebody could open the
+final answers without making the choice the experiment exists to explain.
+`caution` begins at `null`; two whole clickable outcome cards expose the
+trade-off, and no final-check control exists until one is explicitly chosen.
+After learning, the six labelled messages collapse out of the main path. After
+the reveal, the conclusion comes before the optional row-level evidence.
+
+**The filter really learns, and the learning has one input.** Each word scores
+the log ratio of the junk examples containing it against the wanted ones, with
+one added to each count; a message's junk score is exactly the total of its
+known words' scores, and a word the examples never contained counts nothing.
+`learnFilter(examples)` takes one list, so the choosing group and the saved
+group are not in scope where the filter is built — the same structural move as
+`answerWith` in `phases.ts`, and a test swaps both of those groups for nonsense
+and requires the filter to come out byte-identical. `runOn` takes a finished
+filter, so reading any group, the saved one included, cannot be a further round
+of learning.
+
+**Two mailboxes, and they disagree about which setting is right.** In the small
+mailbox being quick catches all the junk and costs you a message you wanted. In
+the other it looks free — both junk caught, nothing hidden, nothing wrong at
+all — until the saved messages, where it hides one. So the panel cannot be read
+as teaching a rule of thumb about caution; what decides it is the data, and the
+only honest reading is the one nothing was chosen on. Each case is held to being
+the case it claims in `junk-filter.test.ts` rather than described in the copy.
+Two messages in the first mailbox score 0.7, one junk and one wanted, so no bar
+can separate them; both scores are printed rather than tidied away.
+
+**Refusing beats learning badly.** With no junk examples, or none wanted, every
+word would lean the only way there is and the filter would call everything junk
+while looking like it had learned something. `learnFilter` returns `not-enough`
+with the reason, the panel says which in words, and there is no state in which
+it holds a filter built from one kind of example. It is reachable: switch the
+three wanted examples off under "Change what it learns from".
+
+**The note that outlives everything.** Once a mailbox's final answers have been
+on screen, any later change to the filter leaves *"We have seen these answers
+now. This is no longer a fresh check."* beside the control that caused it and
+inside the result. **Reset does not un-see an answer**: it re-hides the group and
+then says so, driven by a flag this panel's own Reset deliberately does not
+clear. Each mailbox keeps its own saved messages, so switching to one whose
+check has not been opened is genuinely fresh and switching back is not.
+
+**Two defects found by measuring, both at 320px.** The first action sat **757px**
+below the panel title — three stacked group cards at 304px and a six-line intro
+at 158 — measured against the siblings at 286 / 334 / 431 / 445 / 471 / 520. The
+step number now sits beside its name below 560px and the provenance line moved
+under the button. The clarity pass then moved the action before the tracker and
+removed Reset from the pristine state: **344px now, and 190px at 1230x842.**
+The same button was also 291px
+wide in a 242px column and hung 32px off the right, because the shared `Button`
+is `whitespace-nowrap` at a fixed height. **Eleventh time a defect here was found
+by measuring rather than reading.**
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+learning, switching settings, revealing, switching mailbox, toggling examples
+and resetting left a **populated** ten-mark model byte-identical. Then one real
+explanation through the live assessor moved `train-test-split` **`unexplored` →
+`shaky`** and left every other key unchanged. It came back half-held rather than
+solid; that is the assessor's call and is recorded rather than tuned.
+
+**No motion at all.** `document.getAnimations()` is empty with the panel open
+and every section expanded, so there is nothing for a reduced-motion setting to
+suppress. Driving the whole panel also produced **zero network requests**.
+
+**`EXPERIMENT_PROMPT` is display copy.** `ExplainBack` renders it and never sends
+it, so the assessor prompt, the decision schema and the model list are untouched
+by this work. `pnpm calibrate --explain --runs 3` was run anyway for current
+evidence and **fails**, on exactly the two fixtures the previous two sessions
+recorded: **2/72 false passes for `hallucination/parroted`**, which this file
+records as deliberately left failing, and **3/24 false blocks for
+`neuron/technical`**, which is the same figure the word-neighbours session
+measured on unchanged fixtures, prompt and model. Everyday words 12/12,
+misconception flag 12/12, jargon-with-mechanism 9/12. That canary has no
+`train-test-split` fixture, so it says nothing direct about this experiment, but
+it is the current state of the shared assessor and travels with the work rather
+than being summarised away. Full figures in `docs/saved-messages.md`.
+
+### When a model learns, what does it actually keep? — 2026-09-13
+
+On `experiment/11-parameters-scale`, branched from `main` after the
+train-test-split experiment merged. An experiment on `parameters-scale`, built
+to the same rule as the ten before it: change something, inspect the
+consequence, optionally explain it. See `docs/saved-numbers.md` for the
+verification table and the limits.
+
+**Three kinds of number, told apart by the layout.** A bike rental shop keeps
+two — *"Start at $2, then add $3 for each hour"*, named as **Starting price**
+and **Price per hour** — a customer brings one, *2 hours*, and the price for
+this rental is $8. The two kept numbers sit in one card with the band down its
+leading edge; the customer's input sits in a dashed card marked *"Not kept by
+the shop."* Nothing on that screen says billions, weights or layers, there is no
+network drawing and no wall of sliders, and the arithmetic is under a
+disclosure.
+
+**The three build checks are the node's own claims.** `priceFor(params, hours)`
+takes the rule and the hours and nothing else, so every visible price is the
+same arithmetic. `fitParams(rentals)` takes past rentals and nothing else, so
+the customer's input is not in scope where the numbers are worked out — the same
+structural move as `answerWith` in `phases.ts`, checked by driving the panel:
+with a fit on screen, changing 2 hours to 5 moved only what each rule *reads
+off* and left both rules where they were. And `parametersOf` returns the named
+list that the panel *counts*, so "the rule still keeps 2 numbers" is derived
+rather than printed; two of the three rental sets differ only in size, four
+against ten, and a test fits every count from 2 to 12.
+
+**The fit is `fitLine` unchanged, and it refuses rather than inventing.** This
+node is about what a fit leaves behind, not about how fitting works. Four past
+rentals give $1.50 and $3.40; ten give $2.10 and $3.20; a set where every rental
+was two hours long leaves the price per hour completely undetermined and is
+**refused with the reason**, rather than dividing by a spread of zero. A cleared
+saved number is withheld the same way — it is not a price of zero.
+
+**The expectations are worked out on paper and by the normal equations.**
+Asserting a fit against the function that produced it is the trap closed by
+`bpe_ranks` decoded independently, the least-squares conditions, brute force
+over 65,536 pictures, hand arithmetic, answers on paper and pinning to a
+published file. This one closes it with a seventh and eighth route: the four
+rentals give 17 ÷ 5 = $3.40 and 10 − 3.4 × 2.5 = $1.50, checkable in your head,
+and the misses are then required to sum to zero and not lean with the hours.
+
+**The names and the scale come last, and carry what is easy to get wrong.** No
+single number is a stored fact — **and they are not empty either**: training
+pushes information from the examples into them, and pieces of training text have
+been pulled back out of trained models. More numbers means a model *can* fit
+more; it does not mean better answers on its own. There is no bigger-model-wins
+race, and "What this leaves out" adds that some large models use only a fraction
+of their saved numbers on any one step.
+
+**A disagreement with an authored simplification, recorded rather than acted
+on.** The node's `explanations.example` says *"Nothing else is stored. No
+database of facts, no copy of the training text."* The first half is the point
+of the node. The second half is stronger than the evidence — training-data
+extraction is a documented result — and telling a learner recovery is impossible
+hands them a new false belief in place of an old one. **Nothing was changed**:
+the graph, the assessor prompt, the schema and the model list are untouched. The
+panel's wording is chosen to be *true beside* the authored text, which is visible
+in the inspector at the same time on a wide screen. Softening that second
+sentence is the owner's call.
+
+**The first action was 863px below the panel title at 320px**, measured against
+the six sibling panels as a control (286 / 334 / 344 / 431 / 445 / 471 / 520).
+The fix was structural, not a copy trim: the action moved **into the board
+grid**, directly under the rule card whose numbers it changes, with the input and
+the price in the second column. On a wide screen the rule and its button hold
+the left column; at 320px the same order stacks. Reading order and visual order
+match at both widths, which is why this is grid placement and not `order`.
+**521 at 320px and 382 at 1230x842 now.** Twelfth time a defect here was found
+by measuring rather than reading.
+
+**Restoring a cleared number said nothing at all.** Emptying a field left no
+complete reading to compare against and overwrote the snapshot with nothing, so
+typing the value back produced no sentence — the learner acted and the panel
+went quiet. The snapshot keeps the last *complete* reading now. Found by driving
+the panel, not by reading the code.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+changing either saved number, changing the hours, clearing and restoring a
+field, switching all three rental sets, learning, being refused, applying a fit
+and resetting left a **populated** ten-mark model byte-identical. Driving the
+whole panel produced **zero network requests**, and
+`document.getAnimations()` is empty with it open.
+
+**`pnpm calibrate --explain --runs 3` was not run**, and no end-to-end assessed
+explanation was submitted. `EXPERIMENT_PROMPT` is display copy that
+`ExplainBack` renders and never sends, and this work changes no prompt, schema
+or model-list file. The last three sessions recorded the canary failing on
+exactly two fixtures — 2/72 false passes for `hallucination/parroted`, which
+this file records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical` — and that remains the current state of the shared assessor.
+Recorded in `docs/saved-numbers.md` under "What was not verified".
+
+### If the final amount is wrong, how do we work back? — 2026-09-13
+
+An experiment on `backprop-intuition`, built to keep three moments separate:
+the original prediction, advice calculated backward from its final difference,
+and the learning step that changes both earlier settings. See
+`docs/working-backwards.md` for the arithmetic, verification and explicit
+limits.
+
+**One frozen run, then two simultaneous changes.** Ten minutes × 0.5 litres per
+minute × 60% predicts 3 litres, while the plant was measured at 4. With
+half-squared error, the tap sensitivity is −6 and the share sensitivity is −5.
+Both are calculated from a copied pre-update settings object. The visibly
+labelled 0.01 learning step then changes the tap estimate to 0.56 and the share
+to 65% at the same time, so the next prediction is 3.64 litres. Updating the
+first setting before calculating the second would be a different algorithm and
+is pinned out by the tests.
+
+**Advice is not an update.** The first action reveals splitter advice and then
+tap advice while the saved settings stay visible and unchanged. Only the next
+action applies them. A reducer at page level makes that action idempotent under
+repeated activation and preserves the experiment across navigation; the
+existing global Start over path resets it with all siblings. Exact agreement
+produces zero advice and no Apply control. Empty, out-of-range, non-finite and
+physically impossible cases never produce an invented or clamped result.
+
+**The metaphor has a written boundary.** "Blame, spread backwards" names the
+direction of the job, not the calculation. Backpropagation computes chain-rule
+sensitivities. Gradients are not percentages or conserved portions of a finite
+substance, need not add to 100, and leave no leftover blame to pass farther
+back. This is a two-setting teaching model, not real plumbing or a full neural
+network.
+
+**The first action was 910px below the title at 320px in the first draft.** The
+run, settings and connecting copy all preceded it. Moving the run and action
+ahead of the detailed settings card brought it to **503px**; changing the shared
+nowrap button to a wrapping, auto-height 208×47px control kept it inside its
+narrow card. Resize-after-load checks from 320×568 through 1920×900 found no
+page scroll, right clipping or off-right experiment control. A resumed short
+pass also checked visible keyboard focus, both themes, global reset, a
+200%-equivalent reflow and an isolated zero-request trace. BrowserOS's targeted
+wheel call hung twice, and it cannot drive browser-chrome zoom itself; those
+limits are recorded rather than implied away in `docs/working-backwards.md`.
+
+**Nothing here changes the map.** The experiment has no learner-model or
+network access. A populated ten-mark model stayed byte-identical through the
+completed play, navigation and explanation-draft checks. The graph, assessor
+prompt, schema and model list are untouched, so no calibration run was needed
+or run. No explanation was submitted and this is not a learner study.
+
+### How can the words around "bank" change what it means here? — 2026-09-13
+
+On `experiment/12-attention`, branched from `main` after the saved-numbers
+experiment merged. An experiment on `attention`, built to the same rule as the
+eleven before it: change something, inspect the consequence, optionally explain
+it. See `docs/words-around-it.md` for the verification tables and the limits.
+
+**No arrows, because arrows are the misconception.** The node's two recorded
+misconceptions are that the model "pays attention to the important words" and
+that the shares explain its reasoning. A diagram of arrows between words makes
+both worse — an arrow looks like choosing, and a thick arrow looks like a
+reason. So there is one sentence, one word being updated, and the same word
+updated again in a second sentence. *We walked beside the river to the bank*
+leaves `bank` at **outdoors 1.60 / money 0.21**; *We took cash to the bank*
+leaves it at **0.24 / 1.78**. On its own it is an even **1.00 / 1.00**, which is
+asserted in the test rather than described in the copy, so nothing but the words
+around it breaks the tie.
+
+**Real single-head causal self-attention, with the identity left in.**
+`match = (q · k) / √2`, softmax, blend — and the query, key and value settings
+are the identity. That is a simplification and the panel says so: it makes every
+number on screen one the learner can check against the nine-word vocabulary
+table, which is worth more here than three matrices nobody would multiply. Real
+models **learn** those three sets of numbers, and *How it works* says that too.
+
+**Causality is the shape of the function.** `updateAt(words, index)` slices to
+`index` and stops, so a later word is not scored, not weighted and not blended —
+it is not in scope. The same structural move as `answerWith` in `phases.ts` and
+`learnFilter` in `junk-filter.ts`. A test swaps every word after the target for
+nonsense and requires the contributions, the blend and the leading word to come
+out byte-identical. Because `bank` is last in both sentences the rule is
+invisible on the first screen, so an optional section runs the same arithmetic on
+`river` — word 5 of 8 — with the three later words struck through: *"Not a small
+share. No share, no match number, not in the arithmetic."* It earns a second
+point for free: `river` keeps 98% of its own description, because it is already a
+clear word.
+
+**Several shares, never a single winner.** River 43%, bank 21%, walked 10%, and
+the five all-zero words at 5% each. A test rejects a leader above 60%, because a
+single winner reads as the model picking one word, which is the misconception
+this node exists to remove. Nothing is at zero either — `percent` prints
+`under 1%` rather than `0%` when a share is genuinely above zero, found by
+driving the look-ahead section where three words sit at 0.19% beside the panel's
+own sentence *"They still get one. Nothing is dropped."* Same rule as the
+one-step-at-a-time panel's `under 0.01 minutes off`.
+
+**The column adds up, or the panel says why.** At two decimals 1.28 + 0.21 +
+0.10 prints as 1.59 under a total of 1.60; the unrounded parts total exactly.
+`roundingShows` compares the printed parts to the printed sum, so the note
+appears only where the discrepancy is real — a note that was always there would
+be claiming one on readings that have none.
+
+**The expectations are read straight off the vocabulary table.** The query is
+`bank`'s own description `[1, 1]`, so each match before scaling is just a word's
+two numbers added up: 0, 1, 0, 0, 3, 0, 0, 2. The shares are then recomputed in
+the test from literal `Math.exp` calls and the blend from a second loop. That is
+the "do not assert the measure against itself" trap closed by a seventh route,
+after `bpe_ranks` decoded independently, the least-squares conditions, brute
+force over 65,536 pictures, hand arithmetic, answers worked out on paper, and
+pinning to a published file.
+
+**Three defects found by measuring or driving, not by reading.** The first action
+sat 502px below the panel title at 390px and 416 at 1100x700 with the button off
+the bottom; moving the connection sentence below the readout — where it reads
+better, since it is about a description changing — put it at **306 at 1230x842**,
+the second shortest of the twelve panels. Each before/after card stood 176px tall
+at 320px with 90px of nothing under its numbers, because `flex-basis` is the main
+axis and the 11rem that set a column width side by side became a minimum *height*
+the moment the pair stacked. And each share row was three lines tall with five of
+the eight saying "adds outdoors 0.00 · money 0.00" — true, and noise; they say
+**"adds nothing"** now, which is the same fact and also the point.
+
+**A note on the probe, not the panel.** A first contrast probe composited every
+colour over black, so the share track — a `color-mix` with `transparent` — read
+as near-black and reported the bar at 1.52:1 in light mode. The real figure is
+3.36. The failure mode is this project's oldest: **the measurement was aimed at
+the wrong quantity**, and a wrong number costs more than no number.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+switching sentences, opening and closing every section, twenty rapid presses and
+Reset left a **populated** ten-mark model byte-identical. Then one real
+explanation through the live assessor moved `attention` **`blocked` → `known`**
+and left every other key unchanged. Zero network requests while driving the whole
+panel, and `document.getAnimations()` is empty with it open.
+
+**A disagreement with an authored simplification, recorded rather than acted
+on.** The `embeddings` node's authored text says *"nobody decided what any single
+dimension means"*, which is true of real models. This panel **names** its two
+columns, because a blend of two unnamed numbers cannot be read and reading it is
+the whole experiment. **Nothing was changed** — the graph, the assessor prompt,
+the schema and the model list are untouched — and the exemption is stated on
+screen under *How it works* rather than left implicit. Whether the authored
+sentence should acquire a clause is the owner's call.
+
+**The numbers are defined where they appear, not in front of the button.** A
+first pass put three undefined terms in a learner's way — the two column names,
+*description*, and *share* — all in or beside the readout and none explained
+until an optional section further down. The interaction was simple and the
+readout was not readable, which is the more common failure of the two. One
+sentence now sits **inside the readout card**, so it arrives at the moment the
+numbers do rather than standing in front of the first action as a lesson, and it
+is outside the `aria-live` region so it is not re-announced on every press. The
+result sentence grounds *share* by using it, and both of its claims —
+&ldquo;balanced between the two&rdquo; and which way it leans — are read off
+`leadingColumn` rather than written down. Inside *See the shares*, the match
+number became checkable: *"how much the two descriptions overlap, divided by the
+same fixed number every time&hellip; river overlaps bank by 3.00, so it reads
+2.12 below"*, with both figures derived from the update on screen. None of it
+moved the first action, because the readout sits below the button.
+
+**`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
+display copy that `ExplainBack` renders and never sends, and this work changes no
+prompt, schema or model-list file. The last four sessions recorded that canary
+failing on exactly two fixtures — 2/72 false passes for `hallucination/parroted`,
+which this file records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical`. One end-to-end assessed explanation was submitted through the
+live path instead, and is reported in `docs/words-around-it.md`.
+
+### Why does it answer, instead of adding more questions? — 2026-09-15
+
+On `experiment/18-post-training`, branched from `main` after the notice-search
+experiment merged, and rebased onto it after the picking-a-word one did. An
+experiment on `pretraining-vs-posttraining`, built to the same rule as the
+nineteen before it: change something, inspect the consequence,
+optionally explain it. See `docs/preferred-reply.md` for the verification table
+and the limits.
+
+**The reply that answers nothing starts with the most chance.** Somebody asks
+*"My bike has a flat tyre. What should I do first?"*, and three replies written
+by hand sit under it: more questions, a short first step, a longer answer. The
+opening chances are **55% / 25% / 20%**, with more questions on top, because on
+its own a question is often followed by more questions. Choose a reply — the
+whole card is the control — press **Learn from this choice**, and it becomes
+**31% / 52% / 16%**. Nothing is rewritten. That is the node's first recorded
+misconception acted out rather than asserted.
+
+**It is a real softmax choice model trained by one gradient step on
+cross-entropy.** `chances` is the softmax, `howFarOff` is the loss, `learnFrom`
+is its gradient. Nothing moves a bar by a hard-coded amount and nothing swaps a
+reply for a different one after a press. The opening round is checkable on
+paper, and `howFarOff` falls from 1.397 to 0.652. The step cannot overshoot at
+any size — the chosen score rises by `step x (1 - its chance)` and the others
+fall by `step x their chance`, so the gap always widens — which is why the panel
+offers no step-size control and says so.
+
+**Two things are the shape of a function.** `applyAction` carries the `scores`
+array through **by reference** on a `select`, so "pointing at a reply trains
+nothing" is asserted by identity rather than by reading the handler. And the
+state holds one score per entry of `REPLIES`, so there is nowhere for reply text
+— or anything about bicycles — to be learned; a test runs twenty rounds and
+requires the question and all three replies to be deep-equal to a clone taken
+beforehand. That is what makes *"nothing here transfers to a question these
+three replies do not already answer"* a fact about the data rather than a
+disclaimer.
+
+**A reducer, so twenty presses are twenty steps.** Measured in the browser two
+ways: twenty clicks inside one synchronous task, and twenty clicks with a render
+between each, both give exactly twenty rounds and byte-identical chances. An
+action that would do nothing returns the state itself.
+
+**The expectations are held to a central difference.** `learnFrom`'s implied
+gradient is checked against `(loss(s+h) - loss(s-h)) / 2h`, over a loss written
+out again from its definition in the test file — no shared arithmetic with the
+closed form — plus the opening round worked out on paper. That is the "do not
+assert a measure against itself" trap closed by a ninth route.
+
+**A container query set on the wrong number, found by measuring the content
+box.** `Learn from this choice` and the sentence saying what it did sat **1063px
+below the panel title at 1230x842** — entirely off the bottom of the window —
+and 1147 at 1100x700. The threshold was 44rem, copied from the notice-search
+panel. A container query reads the **content box**, and this panel gets 535px of
+it at 1100, 614 at 720, 664 at 1230 and 696 at 768, so it fired at none of them.
+A first pass at 37rem still missed 1100, because the panel's padding is `2.5vw`
+and the pane is not the viewport. 33rem is under all four. **311-345 now, on
+screen, at every width from 640 up.** Eighteenth time a defect here was found by
+measuring rather than reading.
+
+**The first action was 527px down**, the worst of the nineteen panels, because
+it was a button 178px inside the first card. The whole card is the control now,
+with the chance outside it — a number that moves every round has no business
+inside a button's accessible name. **449 at 320, 359 at 1230x842**, inside the
+range the siblings measure.
+
+**A chance that is really there never prints as nothing.** Measured, a losing
+reply drops under half a percent on round 72 and the chosen one passes 99.5% on
+round 134, and neither ever arrives. `0%` and `100%` would say a reply had been
+ruled out, which is the opposite of what these chances do. `under 1%` and
+`over 99%`, with both boundaries pinned in the test. Same rule as the attention
+panel's `under 1%`.
+
+**A wrong probe, caught before it was believed.** The first twenty-presses check
+fired every click inside one synchronous loop and reported that no round had
+applied. React never re-renders inside a synchronous task, so `Learn` stayed
+`disabled` from the first iteration to the last and all twenty clicks were
+no-ops on a disabled button. The measurement was aimed at the wrong quantity,
+which is this project's oldest failure in a new place.
+
+**A disagreement with the authored text, recorded and not acted on.** The node's
+`explanations.intuition` says the assistant persona, the tone, the refusals and
+*"the willingness to answer at all — all of that is added afterwards"*. A model
+trained only to continue text is not silent: it answers questions, especially
+where the text in front of it makes an answer the likely continuation, and
+showing one a few worked examples first was the standard way to get useful
+answers out of it before instruction tuning. Further training also changes what
+a model knows and can do, not only how it sounds. The node's own
+`simplificationCost` already concedes the other half. **Nothing was changed** —
+the graph, the assessor prompt, the schema and the model list are untouched —
+and the panel's wording is chosen to be *true beside* the authored text, which is
+visible in the inspector at the same time on a wide screen. Softening that
+sentence is the owner's call.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+choosing, learning, twenty rapid rounds, every disclosure and Reset left a
+**populated** ten-mark model — this node and both prerequisites included —
+byte-identical. Then one real explanation through the live assessor moved
+`pretraining-vs-posttraining` **`blocked` → `known`** and left every other mark
+unchanged. Zero network requests while driving the whole panel, and
+`document.getAnimations()` is empty with it open.
+
+**`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
+display copy that `ExplainBack` renders and never sends, and this work changes
+no prompt, schema or model-list file. One end-to-end assessed explanation was
+submitted through the live path instead.
+
+### Can it answer from the right notice? — 2026-09-14
+
+On `experiment/16-rag`, branched from `main` after the one-piece-at-a-time
+experiment merged. An experiment on `rag`, built to the same rule as the sixteen
+before it: change something, inspect the consequence, optionally explain it. See
+`docs/notice-search.md` for the verification tables and the limits.
+
+**The second misconception is reachable in three presses.** A swimming pool with
+five short dated notices, and one fixed question: *When does the pool close on
+Saturday?* **Find a notice** ranks them and puts the top one into **What the
+answer can use**. **Answer from this notice** gives *"The pool closes at 4pm on
+Saturday"*, quoting the exact line it came from. Then **Try the older notice** —
+the question does not move and neither does the answering rule, only the passage
+does — and the same rule gives **6pm**, fluently, with a citation that really
+does point at the line it used. That is the node's `simplificationCost` acted out
+rather than asserted: *"a wrong retrieval yields a fluent, well-cited, wrong
+answer, and that is harder to catch than an obvious invention."*
+
+**The search is real, and the panel's sharpest sentence is a fact about the
+function.** Each score adds up, per shared word, how often the notice uses it
+divided by how many notices contain it at all. The 14 March notice comes top at
+1.58 against 1.25 because it says "Saturday" three times to the January notice's
+two — **because of how it is worded, not because it is newer**. `rank` never
+reads `date` or `version`, and `retrieval.test.ts` replaces every one of them
+with nonsense and requires the ranking and the scores to come back identical. The
+collection is stored in a deliberately non-date order too, because ties go to
+position in it and a newest-first list would make that tie rule a date preference
+by the back door.
+
+**`answerFrom(notice, question)` takes one notice**, so the collection is not in
+scope where the answer is built — the same structural move as `answerWith` in
+`phases.ts` and `answerFrom(request.included)` in `context.ts`. A test hands it
+the one notice with no Saturday hours while every other notice in the collection
+has them. It also takes the **subject from the matched line** rather than
+assuming one, which is why handing it the café notice answers about the café; a
+template that printed "the pool" regardless would be inventing the very thing
+this node exists to correct.
+
+**Nothing is called a meaning search.** No embedding distance is invented
+anywhere. The panel says it is a keyword count, says real systems usually search
+by meaning instead, and points at the word-neighbours experiment where positions
+in space are real. The answer is labelled a template beside every answer it
+produces, and *What this example leaves out* says a real language model in its
+place can misread a good passage, blend two sources, or add a detail that is in
+neither.
+
+**Both honest cases are reachable, and neither is stated as a law.** *Is there a
+sauna?* returns nothing at all rather than a closest guess — and the panel then
+says a real system may hand over its best match anyway, and a model given a
+passage that does not answer the question can still sound confident. Handing over
+the lane swimming or maintenance notice gives **"This notice does not give the
+answer"** rather than a time from somewhere else. The name card is earned only by
+a real answer; a notice that gave none is a real outcome and is not that.
+
+**Six defects found by measuring or driving, not by reading.** The first action
+sat **657px** below the panel title at 320px against 286–525 across the siblings
+measured as a control in the same run — **484 now, and 297 at 1230** — fixed by
+moving the invented-content label beside the invented content and dropping the
+phone-sized question to `text-xl`. A question button hung off the right at 320px,
+the shared `Button` being `whitespace-nowrap` at a fixed height, which
+`docs/saved-messages.md` already records. The change sentence repeated the stale
+banner word for word, adjacent on one screen. The name card was unlocked by a
+*no-answer*. The day was hard-coded as "Saturday", then lowercase once derived.
+And the title, date and version ran together for anything taking the text rather
+than the picture — *"Lane swimming times12 February 2026version 1"*. Seventeenth
+time.
+
+**A wrong probe, for the fourth time — and the tell was the same one.** The first
+contrast run reported **identical figures in both themes**. The theme here is a
+class on `<html>`, and the probe set `data-theme`, so both runs measured light
+mode. Corrected by confirming `--surface-0` had actually moved before believing a
+number: worst text **5.55** light and **7.89** dark, worst graphic **5.25** and
+**6.12**. `--band-systems` is never printed as text — this is the first
+`systems`-band panel, that band has not been measured against these cards, and
+`BANDS_USED_AS_TEXT` in `globals.test.ts` still lists only `foundations`.
+
+**And a trap reproduced while checking.** An early run showed the name card
+appearing after a no-answer with the fix already in place. The cause was the
+check: **a hash-only navigation is a same-document navigation, so React state
+carries across it**, and the run inherited the previous one's state. Every case
+was re-run through `about:blank` first, which is what
+`docs/experiment-links.md` already records.
+
+**Nothing here touches the map.** No learner-model access: searching, answering,
+swapping notices, both honest cases, every disclosure, twenty rapid alternating
+press rounds and Reset left a **populated** ten-mark model — `rag` itself and
+both prerequisites included — byte-identical. Zero fetches, zero XHRs and zero
+new resource loads while driving the whole panel, and `document.getAnimations()`
+is empty with it open.
+
+**No disagreement with an authored simplification.** The node's intuition is
+exactly what the panel shows. Its `example` says the usual search step uses
+embeddings; this one deliberately does not, names what it is instead, and points
+at the experiment where they are real — narrower than the authored text rather
+than in conflict with it. The graph, the assessor prompt, the schema and the
+model list are untouched.
+
+**`pnpm calibrate --explain --runs 3` was not run, and no assessed explanation
+was submitted.** `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders
+and never sends, and this branch changes no prompt, schema or model-list file.
+The claim that nothing here moves a mark rests on the absence of learner-model
+access and on the before/after storage reads, which is the same position
+`docs/how-far-off.md` records. The last four sessions recorded that canary
+failing on exactly two fixtures — 2/72 false passes for `hallucination/parroted`,
+deliberately left failing, and 3/24 false blocks for `neuron/technical` — and
+that remains the current state of the shared assessor.
+
+### If it is still in the chat, why can’t the model use it? — 2026-09-13
+
+On `experiment/14-context-window`, branched from `main` after the one-block
+experiment merged. An experiment on `context-window`, built to the same rule as
+the thirteen before it: change something, inspect the consequence, optionally
+explain it. See `docs/what-gets-sent.md` for the verification tables and the
+limits.
+
+**Two lists, side by side, allowed to disagree.** A birthday-party chat whose
+first message is *"The door code is 47A."*, and a card headed **Included in this
+request**. The chat never loses a message; the request has 80 tokens of room.
+One press of **Add more party notes** takes it over, the oldest message is
+dropped, and that message is the door code — still on screen, visibly outside the
+request, with the scripted reply changing to *"I cannot see a door code in the
+messages I was given."* The fourth press drops **two** whole messages at once,
+which is the rule acted out rather than illustrated: it removes as many as it
+takes. Measured through the walk: 66 → 75 → 77 → 78 → 65, then 77 with the code
+put back.
+
+**The counts are real; the allowance is invented and labelled; the reply is
+scripted and labelled everywhere it appears.** `cl100k_base` from the same pinned
+`js-tiktoken` the tokenizer playground uses, in a worker — zero fetches and zero
+XHRs while driving the whole panel. The 80-token allowance was chosen *after*
+measuring the messages so one press visibly pushes the oldest out, and "How the
+counting works" says it is not any real model’s limit. **There is no fallback
+count:** with `window.Worker` replaced by a constructor that throws, the panel
+reports it, offers a retry and shows no numbers at all, because a made-up count
+is exactly what this node exists to correct.
+
+**The scripted reply earns its place through its signature.** `answerFrom` takes
+the included messages and nothing else, so "the reply can only use what was sent"
+is the shape of the function rather than a promise in a comment — the same move
+as `answerWith` in `phases.ts` and `learnFilter` in `junk-filter.ts`. A test
+hands it a visible history full of door codes and an included list with none and
+requires it to come back empty-handed. It reads the text, not a flag, and the
+question *"What was the door code again?"* deliberately does not set it off.
+
+**The four honest points, on screen and after the thing has happened.** Nothing
+was forgotten — the message was not sent, and the chat belongs to the app. Other
+apps do other things: refuse an oversized request, summarise the older part, keep
+their own notes. Being sent is not the same as being used, so a bigger window
+does not mean everything in it counts equally — the node’s second recorded
+misconception, stated rather than left to the optional question. And what
+training left in the model’s numbers is still there and is not part of this
+request at all.
+
+**A message too long to fit is a real boundary, and it leaves free tokens
+behind.** 110 tokens against a capacity of 40. No amount of dropping older
+messages helps, and everything older is held back with it — which is a
+consequence of this app’s one rule, not a second decision. Free tokens beside a
+list of things left out reads as a contradiction, so the card now says why.
+Reaching past the blockage for something smaller would be *choosing other
+material to send*, which some services really do and this one does not.
+
+**The first action sat 568px below the panel title at 1440 and 734 at 320**,
+against 286–521 across the thirteen sibling panels, with the button off the
+bottom of the window at 1100x700. Sixteenth time a defect here was found by
+measuring rather than reading. Copy trimming did not close it — three message
+cards are 260px of it at 320 — so the fix was structural: the action moved to the
+**top of the second column** with the request it changes directly beneath it, and
+in one column the grid order became **action, chat, request**. **157–293 now, at
+every width tested.**
+
+**The stage is a container query, the first in this codebase, and that is the
+point.** This panel is drawn inside the focused-map pane, which is about 664px
+wide at a 1230px viewport and 768px at 1440. The viewport does not say whether
+there is room for two columns here, so every `max-width` rule in `globals.css`
+that tried would have been guessing.
+
+**A wrong probe, for the third time.** The first contrast check resolved colours
+by parsing `getComputedStyle`. Computed colours here come back as `lab(...)`,
+which canvas `fillStyle` does **not** convert, so the parser read the three `lab`
+numbers as `r, g, b` and reported **1.25 for everything in both themes** —
+identical figures across themes being the tell, the same one the transformer
+session recorded for an `oklch()` parser. Resolved by painting into a 1x1 canvas
+and reading the pixel back, the worst text is **5.55** light and **7.89** dark,
+and the worst graphic **4.16** and **6.89**. It then caught a real defect: the
+meter’s reserve segment measured 1.77:1 against its track in one theme.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+four notes, the resend, the long message in and out, every disclosure, forty
+rapid alternating presses and Reset left a **populated** ten-mark model — both
+prerequisites and both dependants included — byte-identical. Then one real
+explanation through the live assessor moved `context-window` **`shaky` →
+`known`** and left every other mark unchanged. `document.getAnimations()` is
+empty with the panel open and driven.
+
+**No disagreement with an authored simplification.** The node’s intuition says
+the whole history is re-sent every turn, which is exactly what the panel shows,
+and its `simplificationCost` is `null`. The one place the panel is more careful
+than a casual reading is *"Nothing outside it exists as far as the model is
+concerned"*, which is true of this conversation’s text and not of what training
+left in the model’s numbers — so the panel says which, rather than proposing a
+change. The graph, the assessor prompt, the schema and the model list are
+untouched. `pnpm calibrate --explain --runs 3` was not run; `EXPERIMENT_PROMPT`
+is display copy that `ExplainBack` renders and never sends, and one end-to-end
+assessed explanation was submitted through the live path instead.
+
+### What happens inside one repeated block? — 2026-09-13
+
+On `experiment/13-transformer`, branched from `main` after the attention
+experiment merged. An experiment on `transformer`, built to the same rule as the
+twelve before it: change something, inspect the consequence, optionally explain
+it. See `docs/one-block.md` for the verification tables and the limits.
+
+**No architecture poster, and no arrows.** The node's recorded misconceptions
+are that a transformer is a new kind of maths rather than an arrangement of
+pieces already understood, and that its decisive advantage was raw quality
+rather than parallel training. A diagram of labelled boxes teaches neither, and
+an arrow between two words reads as one word choosing another — which is the
+`attention` node's misconception, inherited here. So the first screen is a
+five-word note about pets, its last word marked, two numbered stages, and **Run
+one block**. Nothing on it says attention, residual, normalisation,
+feed-forward, head, layer or token.
+
+**It puts back exactly what the node admits it leaves out.** The
+`simplificationCost` reads *"Position handling is left out here. Attention alone
+treats a sentence as an unordered bag."* Each place has its own small row of
+numbers, added once before the first block — and the claim is **proved rather
+than asserted**: `transformer.test.ts` removes the place rows, shuffles the
+earlier words, and requires the last word's result to come out byte-identical,
+then puts them back and requires it to differ. Sharing clues adds contributions
+up, and a total does not depend on the order the terms arrive in. This is the
+first experiment whose subject is an authored simplification's own confession,
+rather than a disagreement with one.
+
+**The dimensions are deliberately unnamed, and that is the opposite call from
+the panel next door.** `attention.ts` names its two columns so the blend can be
+read, which is why `docs/words-around-it.md` records a disagreement with the
+`embeddings` node's authored "nobody decided what any single dimension means".
+Here the only thing to read is *that* the numbers moved and *when*, so nothing
+needs a name and no new disagreement is created. **Nothing in this branch
+changes the graph, the assessor prompt, the schema or the model list.**
+
+**Which meant the payoff had to be readable without naming a dimension.** The
+first build was mechanically clear and thin: press the button, three rows of
+unnamed numbers appear, a sentence says they changed and then changed again.
+True, and nothing to hold on to. Two fixes, neither of which invents a meaning.
+`distanceMoved` is the straight-line distance between where a description was
+and where it ended up — a real quantity, printed with its plain meaning in the
+same sentence — so the two stages can be compared: **1.35** for sharing clues,
+**3.14** for the calculation after. And the strongest single fact in the panel
+was buried three sections down: the note uses *the* twice, both copies start
+from the same three numbers, and after the block they are `0.20 · 0.35 · -0.51`
+and `-0.46 · -0.98 · 0.75`. That card sits under the readout now, with both of
+its reasons named, and the repeated word is **found from the sentence** so it
+disappears rather than lying if the note ever changes to one without a repeat.
+
+**A complete block, in the modern arrangement.** Rescale a copy, gather from the
+earlier rows and itself, add the result back; rescale a copy, run a two-layer
+calculation with a bend in the middle, add that back. Post-norm was built first
+and rejected by measurement: after normalising every row, each row matches
+itself most strongly, so the second block's gathering step moved the last word
+by **0.007** and the panel would have been claiming a change it could not show.
+
+**Causality and position-wise work are both signatures, not comments.**
+`attendAt(rescaled, index)` slices and stops; a test swaps every word after a
+position for different words and requires that position's gather and both its
+stage rows to be identical. `feedForward(row, calculation)` takes one row, so
+one row inside a block with wildly different neighbours gives the same answer as
+running it alone.
+
+**The expectations are held to a second implementation and to hand arithmetic.**
+Asserting a measure against itself is the trap closed seven times already — by
+decoding `bpe_ranks` independently, the least-squares conditions, brute force
+over 65,536 pictures, hand arithmetic, answers worked out on paper, pinning to a
+published file, and literal `Math.exp` calls. This one closes it an eighth way:
+a plainly written implementation of the whole block lives in the test file and
+imports nothing from the module but the constants, alongside anchors anybody can
+check — the first word may use only itself, so it gets one share worth 1 and its
+blend *is* its own rescaled row.
+
+**Three defects found by measuring or driving, not by reading.** The result
+sentence said "changed its numbers" twice in a row. Reset was offered on a
+screen with nothing to reset, and at 390px wrapped onto its own row directly
+above the panel's actual first action — **474px** below the panel title at 390
+and **341** at 1230×842, now **418** and **285** with the motive line added. And
+the "done" marker under each completed stage had no space in front of it, so it
+read as "…earlier wordsdone" to anything taking the text rather than the
+picture. Thirteenth, fourteenth and fifteenth time.
+
+**A wrong probe, again.** The first contrast check read the numbers out of a
+computed `oklch()` string as if they were `r, g, b` and reported everything
+between 1.1 and 1.5 in both themes; the identical figures across themes were the
+tell. Resolved through a canvas instead, the worst text is **5.55** and the worst
+graphic **3.58**, both above their floors. `--band-language` is still never used
+as text.
+
+**A pre-existing condition, measured against its siblings rather than blamed on
+this branch.** At 720×450 the focused-map pane is **20px tall**, and at 320×568
+about 250px — for the `attention` and `embeddings` panels exactly as much as for
+this one. Everything above it takes the rest of the window. Recorded, not worked
+around.
+
+**Nothing here touches the map, checked both ways.** No learner-model access:
+running, swapping, twelve rapid swaps, every section opened and Reset left a
+**populated** ten-mark model byte-identical. Then one real explanation through
+the live assessor moved `transformer` **`unexplored` → `known`** and left every
+other key unchanged, both prerequisites included. Zero network requests while
+driving the whole panel, and `document.getAnimations()` is empty with it open.
+
+**`pnpm calibrate --explain --runs 3` was not run.** `EXPERIMENT_PROMPT` is
+display copy that `ExplainBack` renders and never sends, and this work changes no
+prompt, schema or model-list file. The last four sessions recorded that canary
+failing on exactly two fixtures — 2/72 false passes for `hallucination/parroted`,
+which this file records as deliberately left failing, and 3/24 false blocks for
+`neuron/technical`. One end-to-end assessed explanation was submitted through the
+live path instead, and is reported in `docs/one-block.md`.
+
+### Why can the same beginning get a different next word? — 2026-09-15
+
+On `experiment/17-sampling`, branched from `main` after the notice-search
+experiment merged. An experiment on `sampling-temperature`, built to the same
+rule as the seventeen before it: change something, inspect the consequence,
+optionally explain it. See `docs/picking-a-word.md` for the verification tables
+and the limits.
+
+**The panel next door asked for it.** `next-token.ts` has carried this line in
+its header since it was written: *"The highest chance always wins, with a stated
+tie rule. Choosing at random among the likely pieces is a different idea and
+belongs to its own experiment."* This is that experiment, and because
+`sampling-temperature`'s only prerequisite is `next-token-prediction`,
+registering the id was enough for that panel's **Builds into** row to grow a
+`Try it` button for it. Nothing in `deep-link.ts` needed touching either.
+
+**One sentence, three endings, one button.** *In the garden I found a …*, with
+flower 60%, stone 30% and dragon 10% beside it the whole time. Seven presses
+gave flower, flower, flower, stone, flower, dragon, flower — and the chances
+never moved. That is the node's first recorded misconception taken apart by
+pressing rather than by arguing: the model does not *decide* to phrase things
+differently, it hands out chances and something outside it draws one.
+
+**Then two plain-language settings reshape the chances before the draw**, with
+each row showing what it has now and what it started with. Read off screen:
+78.3 / 19.6 / 2.2 for favouring the usual, 47.3 / 33.4 / 19.3 for the unusual,
+100 / 0 / 0 for the top option — all matching the arithmetic by hand, where
+favouring the usual squares each chance (0.36, 0.09, 0.01 over 0.46).
+**"Always pick the top option" sits apart from the other two**, because it is a
+different kind of choice rather than a very small temperature: no amount of
+dividing reaches zero, and rounding towards it would misreport a decision
+somebody actually made.
+
+**The name comes last, and carries the node's second misconception.** Nothing
+says *temperature* until a setting has been used and a real change is on screen.
+The card then says it cannot make an ending more accurate, does not measure
+imagination and has no way of checking whether an answer is true — and that
+always taking the top option is a real choice, not a mistake, which is a softer
+claim than the authored misconception makes. See the disagreement below.
+
+**Written to survive small numbers.** `adjust` scores each chance as
+`log(p) / T`, subtracts the largest score, takes `exp`, and rescales. That
+subtraction is not tidiness: written the obvious way, at `T = 0.0005` the
+largest weight is `exp(-1021)`, every weight underflows to zero, the total is
+zero and every chance comes out `NaN`. The test asserts the naive form really
+does total zero there. A panel printing `NaN` as a chance would be teaching the
+exact thing this node exists to correct.
+
+**The randomness is a parameter, and it is the repo's first.** There was no
+`Math.random` anywhere in `src/` before this branch — the only generator was a
+private, hard-coded-seed LCG inside `embeddings.ts`. `drawFrom(chances, random)`
+takes the source in its signature rather than reaching for it inside, which is
+what lets the tests drive exact boundary values and a seeded sequence;
+`Math.random` is named once, at the call site in the click handler. And `adjust`
+takes the starting chances as a parameter and returns a new array, so
+"changing the setting does not change what the model produced" is the shape of
+the function rather than a promise in a comment — the same structural move as
+`answerWith(learned, distance)` in `phases.ts`.
+
+**The fixtures are held to the power form.** `softmax(log p / T)` is
+algebraically `p^(1/T)` normalised, computed in the test with `Math.pow`,
+sharing no code and no intermediate value with the implementation. That is the
+"do not assert the measure against itself" trap closed by a **tenth** route,
+after `bpe_ranks` decoded independently, the least-squares conditions, brute
+force over 65,536 pictures, hand arithmetic, answers worked out on paper,
+pinning to a published file, literal `Math.exp` calls, a second whole
+transformer block, and a naive scan of raw story text. The four settings are
+held to **what they do rather than to their own copy**, and a test rejects a
+verdict word — *best*, *worse*, *too far* — in any label: a label says how the
+chance is spread, never how a draw will turn out.
+
+**Four defects found by measuring or driving, not by reading.** The result
+sentence went stale on a setting change — drawing "flower" at 60% and then
+favouring the usual endings left the sentence reporting 60% beside a row saying
+78.3%, a chance no longer on screen anywhere; the picks and the counts both
+belong to one setting now, so changing it clears both and the panel says so. The
+first action sat 482px below the panel title at 320px, against 149–525 across
+four siblings measured as controls in the same run, fixed by moving the
+"chosen for this example" label beside the chances it qualifies rather than in
+front of the first action. The button sat about 90px below the sentence it
+continues, because the chances card spans both grid rows and the slack from a
+tall card was being shared out — **12px now, and 274 at 1230x842**. And the
+"started at 60%" line was two pixels closer to its own row than to the next one,
+so it read as a caption for the ending below it. Eighteenth time.
+
+**A wrong probe, for the fifth time — and the tell was a new one.** The first
+contrast run reported three setting buttons at **1.10:1 in dark mode and nothing
+wrong in light**. The probe took the first non-transparent ancestor background
+and painted it over an empty canvas, and dark mode's outline buttons carry a
+*translucent* background, so it was measuring the label against near-black.
+Compositing over black, which `docs/words-around-it.md` already records once.
+Corrected by building the background from the outermost **opaque** ancestor
+down: worst text **5.55** light and **7.89** dark, chance bars 3.83 and 8.62,
+leading edges 4.18 and 9.50. `--band-language` is still never printed as text.
+Every 1px hairline in the panel measures about 1:1 against what is behind it —
+and so does every hairline in the `next-token` and `rag` panels, measured in the
+same run, so that is shell-wide `--border` rather than anything this branch
+introduces.
+
+**Nothing here touches the map.** No learner-model access: forty rapid
+alternating presses, every setting, a hundred batch draws, every disclosure and
+Reset left a **populated** ten-mark model — `sampling-temperature` itself and its
+prerequisite included — byte-identical. Zero fetches, zero XHRs and zero new
+resource loads while driving the whole panel, and `document.getAnimations()` is
+empty with it open at every width.
+
+**A disagreement with the authored node, recorded rather than acted on.** The
+node's misconception says greedy decoding *"in practice produces flat,
+repetitive, looping text"*, and its example says temperature zero makes a model
+*"near-deterministic"*. Both are fair about real language models and neither is
+demonstrable in a closed list of three, where taking the top option is exactly
+deterministic rather than near it. The panel says which is which on screen — that
+the determinism here follows from the example being closed, that it is not a
+promise about a deployed service, and that greedy choice is a real choice rather
+than a mistake. **Nothing was changed**: the graph, the assessor prompt, the
+decision schema and the model list are untouched.
+
+**`pnpm calibrate --explain --runs 3` was not run, and no assessed explanation
+was submitted.** `EXPERIMENT_PROMPT` is display copy that `ExplainBack` renders
+and never sends, and this branch changes no prompt, schema or model-list file.
+The claim that nothing here moves a mark rests on the absence of learner-model
+access and on the before/after storage reads, which is the same position
+`docs/how-far-off.md` and `docs/notice-search.md` record. The last five sessions
+recorded that canary failing on exactly two fixtures — 2/72 false passes for
+`hallucination/parroted`, deliberately left failing, and 3/24 false blocks for
+`neuron/technical`.
+
+### What turns one tool call into working towards a goal? — 2026-09-15
+
+On `experiment/21-agents`, branched from `main` after the calculator-handoff
+experiment merged. An experiment on `agents`: a fictional library, a small
+catalogue, and one fixed goal — *find two mystery books under 200 pages that
+are available now.* **Take the next step** runs one tool and puts its result
+beside the button: search returns candidates by genre, check returns a
+candidate's real page count and current availability. The catalogue table
+marks each row live — *not a candidate*, *candidate — not checked yet*,
+*confirmed*, *discarded* — so the whole run is visible, not just the latest
+line. The loop stops the moment two distinct books are confirmed and names
+the evidence: *"The Silver Key and Whispers in the Library are both
+mysteries, under 200 pages, and available in the latest check."* Read
+`docs/one-goal-one-loop.md` for what was verified and what was not.
+
+**The policy is one pure function that cannot see the catalogue.**
+`decide(progress)` in `src/lib/experiments/agents.ts` takes only what the
+loop has learned so far — searched, candidates, checked results, confirmed
+ids — and never the catalogue itself; a test asserts its arity is exactly
+one. A search hit alone is never confirmed, only a checked result that is
+both under the page limit and available. Three catalogues over the same
+eight books make the point concrete under **Try a problem**: everything goes
+to plan; a candidate that would have matched turns out to be unavailable,
+so the next action genuinely changes and the loop still succeeds; or no
+second match exists at all, and the loop checks every candidate and reports
+**"The task is unfinished"** rather than declaring success.
+
+A **Stop** control is visible any time a step is in flight or the run is
+going by itself, and **Run the remaining steps** only appears after a manual
+step. A checkbox can make one step report a tool error instead of a result —
+the failed attempt is logged, nothing in `progress` changes, and the very
+next decision is identical to the one that just failed, so retrying loses
+nothing. The reducer uses the same request-id discipline as the tool-use and
+RAG experiments: a stale or duplicate `resolve`, including one delivered
+after Reset or a dataset change, is silently ignored.
+
+**A learning-experience pass, 2026-09-16, after an audit against the running
+app.** The first build was correct and taught badly, and five of the defects
+were breaches of rules this file already states.
+
+- **The decision was never shown.** `decide(progress)` is the node, and only
+  its result was rendered, behind a button reading *Take the next step* while
+  every sibling names its action. `describeDecision` now puts the action and
+  the reason above the button, both read off `decide`, and the button carries
+  that name: *Check The Silver Key*.
+- **The ending needed a press that ran nothing.** Measured: six presses for
+  five tool calls, with the fifth already reporting *2 of 2 confirmed*. The
+  stopping condition — the thing this node is about — was staged as the loop
+  failing to notice it had finished. `resolve` settles in the same action
+  now: five presses, five steps, with a test requiring the two to be equal.
+- **The readout promised steps the loop would not take.** *"Check the next
+  candidate."* sat directly above *"The task is unfinished."* Every such
+  sentence is read off the next decision now.
+- **Scenario labels gave away the ending**, against the rule
+  `one-step-at-a-time` records with a test behind it. They name the shelf now,
+  and `LIBRARY_SCENARIOS` moved into the lib so a test can reject a spoiler.
+- **The node's hardest half was behind a `<details>`.** The `simplificationCost`
+  and the second misconception are on the main path now, in a **What made it
+  stop** card that also names the `MAX_STEPS` ceiling as a rule a person wrote
+  and points at the two candidates the loop never checked — the stopping
+  condition visible for free, and previously unremarked.
+
+**The first action was 737px below the panel title**, against 308-395 across
+five siblings measured as controls in the same run, with 359px of it a
+catalogue table whose cells were all em dashes before anything was looked up.
+The fix was structural, not a copy trim: a two-column cockpit holding the goal
+and the next decision with the readout spanning beneath, the table below the
+action and not rendered until the search returns it, and Reset out of the
+header because a control that appears mid-run must not move the first action.
+**261 now, constant across pristine, mid-run and a resize down and back.**
+
+**Both of this panel's `@container` rules were dead.** `.agents-lab` never set
+`container-type: inline-size`, which every sibling `-lab` root does, so
+neither the cockpit's columns nor the existing three-column scenario grid ever
+appeared at any width; and the threshold was 40rem against a 557px content
+box. Nineteenth time a defect here was found by measuring rather than reading.
+
+**A sixth wrong probe.** A contrast run reported 1.17:1 for ordinary
+foreground text in light mode, on a heading that is visibly near-black on
+cream: computed colours here serialise as `lab(...)`, which canvas
+`fillStyle` silently rejects, so text and backdrop were both read as the black
+fill underneath. Exactly the trap `docs/what-gets-sent.md` records, met again
+by a probe written on that doc's own advice. With a Lab-to-sRGB conversion the
+figures separate by theme and match the shell's recorded values: worst text
+**5.55** light and **7.89** dark, band accents **5.72** and **6.75**.
+
+Verified: a real explanation submitted through the live assessor moved
+`agents` `unexplored → known` and left all ten other existing marks
+byte-identical; that was before this pass and was not repeated, and the path
+is unchanged. After it, a **populated ten-mark model** stayed byte-identical
+across a full run, all three shelves, a forced error, twenty rapid presses,
+every disclosure and Reset, with **zero fetches, zero XHRs and zero new
+resource loads** and no animations.
+**Not verified this session**: the browser-automation tool's `resize_window`
+did not change the tab's actual `window.innerWidth`, so the 320px layout was
+checked by constraining the experiment's own container in the live DOM
+rather than by resizing the browser, and a `Tab`-key press did not move
+`document.activeElement`, so keyboard focus order rests on this panel using
+only native `<button>`, `<input type="checkbox">`, and `<details>/<summary>`
+elements, the same primitives already audited in the sibling panels it was
+built alongside. No phone, no screen reader, no calibration run — the graph,
+assessor, schema, fixtures, and model list are untouched.
+
+### A phone gets a readable map, not a small one — 2026-09-17
+
+On `fix/03-phone-and-polish`, from the 2026-09-16 audit. The map below the panel
+breakpoint used `fit='width'`, which at a 390px viewport is a 350px pane against
+904x1038 content units: **scale 0.387, a 5.0px label and a 26.3px card**. Both
+measured. At 660 it was 8.6px and 44.8px.
+
+It rests at `legible` now — never below 12px — with the camera on the lead node
+rather than the top-left corner. **12px labels and 62.8px cards at 390 and 660.**
+The whole shape is still one press away, because `refit` always meant `'all'` and
+is untouched. So the overview argument stated in `fitScale` survives as a gesture
+somebody makes, rather than as the only thing a phone was ever offered. `'width'`
+existed for a drag sheet the recognition-first proposal removed; it is kept for
+any future layout that overlays the map, and nothing rests on it.
+
+**`cameraOn` leaves alone any axis the view already covers**, rather than
+centring and letting `clampCamera` sort it out. Its own test caught why:
+`panBounds` deliberately does not pin the vertical axis when the pane is taller
+than the map, because that is how `fitCamera` puts the root at the top instead of
+the middle. Centring there opens the map on a band of empty space above the one
+node everything else rests on.
+
+### One name per destination; a place label names the place
+
+The walkthrough was called five things in one file — *explore the walkthrough*,
+*open walkthrough*, *open the walkthrough*, *revisit the walkthrough*, *teach me
+everything* — so nothing told a visitor they were the same door.
+
+**An action says what happens, using the destination's one name. A place label
+says where you are.** Every button to the walkthrough says "Teach me everything";
+the phone tab and the panel's `aria-label` say "Walkthrough", exactly as they say
+"Conversation" opposite "Find my starting point".
+
+The header switch carrying the same words as the panel's primary button is the
+point of the rule, not a breach of it. What that cost was two controls with
+identical labels and no way to tell them apart, so the switch states its own role
+in three words instead of being renamed.
+
+### The allowance was a constant, and the cap was three caps
+
+`setupLabel` interpolated `FREE_TURN_CAP`, so the settings menu read
+"Shared free allowance · 25 turns" on the first turn and on the last.
+
+The real count was unavailable, and the reason is the more useful finding: the
+signed session token lived in **three independent `useState`s** — `use-session`,
+the walkthrough and explain-back — each starting at null, so each surface opened
+its own 25-turn allowance and alternating between them got you three. This file
+had already recorded the opposite as the design: *"Interruptions and explanations
+now share that allowance."* They did not, and nothing was measuring it.
+
+`src/lib/session/allowance.ts` owns the token, in memory, as an external store —
+the shape `persisted.ts` established, and for the reason that file gives: a value
+several components read and write cannot be per-component state without drifting.
+`src/lib/session/metering.ts` replaces the three routes' byte-identical metering
+blocks and returns the number all of them already computed and discarded.
+
+Two rules in it are load-bearing:
+
+- **The count is the binding cap**, `min(session, daily)`. Late in a day the
+  per-browser allowance is what will actually stop somebody, and reporting 20
+  when the answer is 3 is the same dishonesty as the fixed 25, in a form that is
+  harder to notice.
+- **An absent field means unchanged, not null.** The scripted opening and a skip
+  both spend nothing, mint nothing and report no count; read as null, either
+  would wipe a count the session had earned.
+
+Measured live: opening 25, one real answer 24, one walkthrough interruption 23.
+
+**This is not a score.** The rule this file holds — never a score, never a
+count — is about the learner's understanding. An allowance is a fact about the
+service, it lives inside a menu, and it never appears beside the map.
+
+### Return focus by identity, not by element
+
+Closing an idea used to focus a DOM element captured when the panel opened. That
+is the wrong identity: the focused view is keyed on the node it draws, so the
+button that opened the panel is routinely replaced before it can be focused
+again — `isConnected` comes back false and focus falls through to the map
+section. It also only recorded on the first open, so walking idea to idea through
+the inspector's prerequisite buttons left it several ideas stale.
+
+It remembers the **id** and finds whatever currently represents it. All three map
+formats carry `data-node`, so one selector covers the SVG group, the focused card
+and the list row without knowing which is on screen.
+
+### `requestAnimationFrame` is not a promise that React has committed
+
+Both skip links, and the close path, set state and then focused inside a
+`requestAnimationFrame`. Below the panel breakpoint the region they target
+carries `hidden` until React commits, and **focusing a `display: none` element
+silently does nothing** — which is exactly what "the skip link targets a section
+whose controls are 0px tall" looks like from outside. `flushSync` first, then
+focus.
+
+### Two things this session's browser tool could do that the last two could not
+
+`Emulation.setDeviceMetricsOverride` through `browser.cdpJsonForPage` gives a
+**true `innerWidth`**, so narrow widths no longer have to be proxied by
+constraining a container — a substitution `docs/one-goal-one-loop.md` and
+`docs/handover.md` both had to record. And
+`Emulation.setFocusEmulationEnabled` makes `:focus` styling measurable in a
+background tab, which is how the two skip links were caught sitting at identical
+coordinates.
+
+**One probe was wrong before it was believed.** A synthetic Escape dispatched on
+`document` reported that Escape did not close the panel. It is an artefact: the
+target of a real keypress is the focused element, and the handler's
+`target?.closest(...)` throws on a Document, which has no `closest`. Dispatched
+on the focused element, and then with real key events, it works. A synthetic
+event is not the thing it imitates — the same lesson as measuring the wrong
+quantity, one level down.
+
 ### Reading aloud and answering out loud are separate — 2026-09-17
 
 On `experiment/03-split-voice`, branched from `main`. The conversation had one
@@ -1717,16 +3452,21 @@ though"* — a broken microphone took working speech down with it.
   the field: the spoken answer is sent, not dictated for editing. It was
   labelled first and measured — the row needed ~400px and the panel gives it
   349 on a 1230px laptop, so it wrapped.
-- **The Google disclosure is asked once**, on the first press of either
-  microphone (conversation or explain-back), and consent is persisted. Printed
-  permanently, it also guarded reading aloud, which sends nothing anywhere.
+- **The Google disclosure is asked on the first press in each conversation**
+  (and each explain-back), before the microphone opens, and is never persisted.
+  Printed permanently, it also guarded reading aloud, which sends nothing
+  anywhere. *Merged with #33, which had split the same switch independently
+  and made the rule that consent to the microphone is never remembered — the
+  first version of this branch persisted it, and gave that up in the merge.*
 - **Hands-free is not a switch.** After a spoken answer, the next question —
   if read aloud — opens the microphone when it finishes. After a typed answer
   it does not. The microphone opening on its own for somebody who just chose
   the keyboard is the surprise this split exists to remove.
-- `edgewise.voice.v1` used to mean "voice on" and now means "read aloud" — the
-  half that needed no consent — so existing preferences carry over. It is read
-  through `usePersisted`, so the walkthrough and the conversation agree.
+- Read aloud is `edgewise.read-aloud.v1`, from #33, and the old combined
+  `edgewise.voice.v1` is removed on mount. It is read through `usePersisted`,
+  so the walkthrough and the conversation agree. #33's explicit "Talk and
+  listen" switch is replaced by the implicit rule above; both hold that the
+  microphone never opens without a press in the same conversation.
 - "helps me find where to begin" sits under "I don't know" and is tied to it
   with `aria-describedby`. Beside both buttons it read as a caption for the row.
 

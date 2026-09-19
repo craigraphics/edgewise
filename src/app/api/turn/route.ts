@@ -7,11 +7,13 @@ import { SETTLES, type Decision, type SettledState } from '@/lib/agent/schema';
 import { settle } from '@/lib/agent/verdict';
 import { leadNode, nextToAsk, withMark } from '@/lib/graph/frontier';
 import { closingFor, nothingToAsk } from '@/lib/session/closing';
+import { openingFor } from '@/lib/session/opening';
+import { FINAL_ACKNOWLEDGEMENT, isSkip, skipTurn } from '@/lib/session/skip';
 import { GRAPH } from '@/lib/graph/load';
 import { nodeState, type LearnerModel, type NodeState } from '@/lib/graph/types';
 import { isWhitelisted, MODELS } from '@/lib/models';
-import { fallbackKey, serverDefaultModel } from '@/lib/provider';
-import { canMeter, FREE_DAILY_CAP, FREE_TURN_CAP, issue, overCap, spendSoFar } from '@/lib/session/token';
+import { serverDefaultModel } from '@/lib/provider';
+import { meterFreeTurn } from '@/lib/session/metering';
 
 /**
  * One turn of the diagnostic.
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
       done: false,
       nodeId: opening.id,
       followUps: 0,
-      say: `${OPENING} ${opening.probes[0]}`,
+      say: openingFor(opening),
       sessionToken: input.sessionToken ?? null,
     });
   }
@@ -96,27 +98,37 @@ export async function POST(request: Request) {
   const current = GRAPH.nodes.find((node) => node.id === input.currentNodeId);
   if (!current) return NextResponse.json({ error: 'UNKNOWN_NODE' }, { status: 400 });
 
+  /*
+   * A skip is settled here, before the cap and before any model call.
+   *
+   * Sent to the model, "skip" was judged an answer that did not address the
+   * question and the same node was asked again — the interrogation this product
+   * cannot survive. It is recorded exactly as "I don't know" is and moves on.
+   * It costs nothing, so it does not count against the free allowance either.
+   */
+  if (isSkip(input.answer)) {
+    console.log(`[turn] ${current.id} -> blocked (skipped, no model call)`);
+    return NextResponse.json({ ...skipTurn(GRAPH, learner, current), sessionToken: input.sessionToken ?? null });
+  }
+
   // Resolve the key, and cap the free path before spending anything.
   let apiKey = input.apiKey?.trim() ?? '';
   let token = input.sessionToken ?? null;
 
+  /*
+   * `turnsLeft` is null under a key of their own: there is no cap, so there is
+   * no number, and the settings menu says so rather than printing an allowance
+   * that does not apply.
+   */
+  let turnsLeft: number | null = null;
+
   if (!byok) {
-    if (!canMeter()) return NextResponse.json({ error: 'FREE_TIER_UNAVAILABLE' }, { status: 503 });
+    const metered = await meterFreeTurn(token);
+    if (!metered.ok) return NextResponse.json({ error: metered.error, cap: metered.cap }, { status: metered.status });
 
-    const spend = await spendSoFar(token);
-    const over = overCap(spend);
-    if (over) {
-      return NextResponse.json(
-        { error: over, cap: over === 'FREE_DAILY_SPENT' ? FREE_DAILY_CAP : FREE_TURN_CAP },
-        { status: 429 },
-      );
-    }
-
-    const shared = fallbackKey();
-    if (!shared) return NextResponse.json({ error: 'FREE_TIER_UNAVAILABLE' }, { status: 503 });
-
-    apiKey = shared;
-    token = await issue(spend.turns + 1, spend.daily + 1);
+    apiKey = metered.apiKey;
+    token = metered.token;
+    turnsLeft = metered.turnsLeft;
   }
 
   /*
@@ -192,7 +204,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       done: upcoming === null,
-      say,
+      // On the last turn the model's own acknowledgement is dropped. It once
+      // read "We have reached a point where the mechanics aren't clear" — a
+      // verdict, in the cheapest model's words, straight before the closing.
+      say: upcoming === null ? FINAL_ACKNOWLEDGEMENT : say,
       // The payoff line is scripted for the same reason the opening is: it is
       // the single most important sentence in the product, and leaving it to
       // the cheapest model on the list produced vague endings like "we have
@@ -204,6 +219,7 @@ export async function POST(request: Request) {
       nodeId: upcoming?.id ?? null,
       followUps: settledState ? 0 : input.followUps + 1,
       sessionToken: token,
+      turnsLeft,
       model: result.model,
       costUsd: result.costUsd,
     });
@@ -216,9 +232,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'TURN_FAILED' }, { status: 500 });
   }
 }
-
-const OPENING =
-  "Let's work out where your understanding of this currently sits — there are no right answers here, and \"I don't know\" is genuinely useful. Starting somewhere near the bottom:";
 
 /** Narrows a verdict to the three that actually settle a node. */
 function isSettling(verdict: Decision['verdict']): verdict is SettledState {

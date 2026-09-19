@@ -179,8 +179,23 @@ function AnimatedOverture({ graph, onRead }: Props & { onRead: () => void }) {
    * order, which is what the sequence was saying.
    */
 
+  /*
+   * A `<main>` and a heading spine, because this version had neither.
+   *
+   * The still version below is a properly structured document — `<main>`, an
+   * `<h1>`, an `<h2>` per act. This one had a bare `<div>` and five `<p>`s, and
+   * it is the version everybody actually gets: the switch reads
+   * `prefers-reduced-motion` after hydration, so the server and the first
+   * render always produce this tree. Anything navigating by landmark or heading
+   * met a page with none of either.
+   *
+   * The captions become the headings rather than gaining hidden twins. An
+   * `sr-only` heading here would be an absolutely positioned element inside a
+   * 640vh scroll track, which is how this project last added 1602px of stray
+   * page scroll.
+   */
   return (
-    <div ref={track} className="relative h-[640vh]">
+    <main ref={track} className="relative h-[640vh]">
       <button onClick={onRead} className="bg-surface-1 border-border fixed top-5 left-5 z-30 min-h-10 rounded-full border px-4 text-sm">Read without animation</button>
       <div ref={stage} className="bg-surface-0 sticky top-0 h-dvh overflow-hidden">
         {pane.width > 0 ? (
@@ -237,10 +252,12 @@ function AnimatedOverture({ graph, onRead }: Props & { onRead: () => void }) {
             cropped by them. It is the difference between a frame and a window. */}
         <div className="pointer-events-none absolute inset-0 overture-vignette" aria-hidden />
 
-        {CAPTIONS.map((caption) => (
+        {CAPTIONS.map((caption, index) => (
           <CaptionBlock
             key={caption.line}
             caption={caption}
+            /* One h1, then h2s — the same spine as the still version. */
+            level={index === 0 ? 1 : 2}
             t={scrollYProgress}
             lead={lead.label}
             rests={rests}
@@ -253,7 +270,7 @@ function AnimatedOverture({ graph, onRead }: Props & { onRead: () => void }) {
         <ScrollHint t={scrollYProgress} />
         <Way t={scrollYProgress} />
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -418,11 +435,14 @@ export function OvertureNode({
 
 export function CaptionBlock({
   caption,
+  level = 2,
   t,
   lead,
   rests,
 }: {
   caption: Caption;
+  /** Heading level. The first caption is the page's h1, the rest are h2s. */
+  level?: 1 | 2;
   t: MotionValue<number>;
   lead: string;
   rests: number;
@@ -438,6 +458,7 @@ export function CaptionBlock({
 
   const fill = (text: string) => text.replace('{lead}', lead).replace('{rests}', String(rests));
   const hero = caption.size === 'hero';
+  const Heading = level === 1 ? 'h1' : 'h2';
 
   return (
     <motion.div
@@ -453,7 +474,7 @@ export function CaptionBlock({
             {fill(caption.kicker)}
           </p>
         ) : null}
-        <p
+        <Heading
           className={cn(
             'font-display text-balance',
             hero
@@ -462,7 +483,7 @@ export function CaptionBlock({
           )}
         >
           {fill(caption.line)}
-        </p>
+        </Heading>
         {caption.sub ? (
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-base leading-relaxed sm:mt-5 sm:text-lg">
             {fill(caption.sub)}

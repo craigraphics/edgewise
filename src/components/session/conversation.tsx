@@ -18,11 +18,19 @@ type Props = {
   messages: Message[];
   status: 'idle' | 'thinking' | 'running' | 'done' | 'error';
   error: string | null;
-  /** No marks and no walkthrough progress yet — say plainly what this is. */
+  /** Nothing on the map is marked yet — say plainly what this is. */
   firstTime: boolean;
+  /** A conversation left partway through, found in this browser. */
+  resumable: { question: string | null } | null;
   onStart: () => void;
+  onResume: () => void;
+  /** Throws the stored conversation away and begins a new one. Marks are kept. */
+  onStartAgain: () => void;
   onAnswer: (text: string) => void;
-  onReset: () => void;
+  /** Clears the transcript only. Marks are kept. */
+  onNewConversation: () => void;
+  /** Asks first, then clears the map. */
+  onClearMap: () => void;
   onRetry: () => void;
   onConfigure: () => void;
   onExplore: () => void;
@@ -52,9 +60,12 @@ export function Conversation({
   status,
   error,
   firstTime,
+  resumable,
   onStart,
+  onResume,
+  onStartAgain,
   onAnswer,
-  onReset, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
+  onNewConversation, onClearMap, onRetry, onConfigure, onExplore, onWalk, onPlay, draft, onDraftChange,
   lead,
 }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -158,6 +169,44 @@ export function Conversation({
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, status, voice.interim]);
 
+  /*
+   * One name per destination, and it is the name the header switch uses:
+   * "Find my starting point" and "Teach me everything". The walkthrough was
+   * called five different things in this file alone — explore the walkthrough,
+   * open walkthrough, open the walkthrough, revisit the walkthrough — so a
+   * visitor had no way to tell they were all the same door.
+   *
+   * The rule that settles it: an ACTION says what happens, using the
+   * destination's one name. A PLACE LABEL says where you are, so the phone tab
+   * and the panel's `aria-label` still say "Walkthrough", exactly as they say
+   * "Conversation" opposite "Find my starting point".
+   */
+  if (status === 'idle' && resumable) {
+    return (
+      <div className="shrink-0">
+        <p className="eyebrow">Find your starting point</p>
+        <h2 className="font-display mt-5 text-[clamp(2rem,3.1vw,3rem)] leading-[1.08] tracking-tight">
+          Your conversation,<br /><em>where you left it.</em>
+        </h2>
+        {resumable.question && <>
+          <p className="text-muted-foreground mt-5 text-sm">The last question was</p>
+          <p className="font-display text-read border-border mt-2 max-w-[60ch] border-l-2 pl-3.5">{resumable.question}</p>
+        </>}
+        <Button size="touch" onClick={onResume} className="mt-6 min-h-12 w-full justify-between px-5">
+          Pick up where you left off <ArrowRightIcon />
+        </Button>
+        {/* Starting again keeps every mark. Only the conversation goes. */}
+        <Button size="touch" variant="outline" onClick={onStartAgain} className="mt-3 w-full">
+          Start again
+        </Button>
+        <p className="text-muted-foreground mt-3 text-sm">Either way, your map stays as it is.</p>
+        <p className="text-muted-foreground border-border mt-6 border-t pt-4 text-xs leading-relaxed">
+          Your map and this conversation are saved in this browser. Answers go to our server and Google’s AI to find your starting point. Voice transcription also goes to Google.
+        </p>
+      </div>
+    );
+  }
+
   if (status === 'idle') {
     return (
       <div className="shrink-0">
@@ -167,13 +216,13 @@ export function Conversation({
             {firstTime ? <>Read the explainers.<br /><em>Still not clicking?</em></> : <>Your map,<br /><em>ready to revisit.</em></>}
           </h2>
           <p className="mt-5 text-base leading-relaxed">
-            {firstTime ? 'One half-held idea can make everything after it harder to follow. A short conversation helps find where to begin.' : lead ? 'Keep exploring from the ideas already on your map. You can revisit any connection or continue the conversation.' : 'Every idea on this map is marked solid. Revisit an explanation or explore the walkthrough.'}
+            {firstTime ? 'One half-held idea can make everything after it harder to follow. A short conversation helps find where to begin.' : lead ? 'Keep exploring from the ideas already on your map. You can revisit any connection or continue the conversation.' : 'Every idea on this map is marked solid. Revisit an explanation, or have the whole thing taught again.'}
           </p>
           <Button size="touch" onClick={!firstTime && !lead ? onWalk : onStart} className="mt-6 min-h-12 w-full justify-between px-5">
-            {firstTime ? 'Find my starting point' : lead ? 'Continue from my map' : 'Revisit the walkthrough'} <ArrowRightIcon />
+            {firstTime ? 'Find my starting point' : lead ? 'Continue from my map' : 'Teach me everything'} <ArrowRightIcon />
           </Button>
           <p className="text-muted-foreground mt-3 text-sm">Speak or type. No maths or code. “I don’t know” is a useful place to start.</p>
-          <button onClick={onPlay} className="mt-4 min-h-11 w-full text-left text-sm underline underline-offset-4">Or take a neuron apart →</button>
+          <button onClick={onPlay} className="mt-4 min-h-11 w-full text-left text-sm underline underline-offset-4">Or see how one neuron scores a movie →</button>
           {!firstTime && lead && <button onClick={onExplore} className="starting-point mt-6 w-full text-left">
             <span className="eyebrow">A place to explore</span>
             <span className="font-display mt-2 block text-xl">{lead.node.label}</span>
@@ -183,7 +232,7 @@ export function Conversation({
             <p className="eyebrow">What you leave with</p>
             <p className="font-display mt-3 text-read">A map of what holds, what is half-held, and what to explore next.</p>
             <p className="text-muted-foreground mt-3 text-sm">Read any idea now. Listening to an explanation never changes a mark; explaining it in your own words can.</p>
-            <button onClick={onWalk} className="mt-4 min-h-10 text-sm underline underline-offset-4">Or explore the walkthrough</button>
+            <button onClick={onWalk} className="mt-4 min-h-10 text-sm underline underline-offset-4">Or teach me everything</button>
           </div>
           <p className="text-muted-foreground border-border mt-6 border-t pt-4 text-xs leading-relaxed">
             Your map is saved in this browser. Answers go to our server and Google’s AI to find your starting point. Voice transcription also goes to Google.
@@ -194,13 +243,19 @@ export function Conversation({
   }
 
   /*
-   * The pinned turn is the tutor's most recent one, and only while it is still
-   * the live question. Once the session is done the closing belongs in the
-   * transcript with everything else — there is nothing left to answer, so
-   * nothing left to hold still.
+   * The pinned turn is the tutor's most recent one: the live question, and at
+   * the end the closing.
+   *
+   * The closing used to drop into the transcript with everything else, on the
+   * reasoning that there was nothing left to answer. But the pinned turn is the
+   * live region, so a screen reader heard every question and then silence: the
+   * sentence naming where to begin, and the control that goes there, were
+   * never announced. Keeping the same element and changing what is in it is
+   * what makes the ending heard.
    */
   const lastTutor = [...messages].reverse().find((message) => message.role !== 'user');
-  const pinned = status !== 'done' && lastTutor ? lastTutor : null;
+  const done = status === 'done';
+  const pinned = lastTutor ?? null;
   const current = pinned?.content ?? null;
   const history = pinned ? messages.filter((message) => message !== pinned) : messages;
 
@@ -225,17 +280,28 @@ export function Conversation({
        * So the live turn is pinned here, and only what came before it scrolls.
        */}
       {current ? (
-        <div className="border-border/60 mb-4 max-h-[42%] shrink-0 overflow-y-auto border-b pb-4" tabIndex={0} role="region" aria-label="Current question">
+        <div className={cn('border-border/60 mb-4 shrink-0 overflow-y-auto border-b pb-4', done ? 'max-h-[70%]' : 'max-h-[42%]')} tabIndex={0} role="region" aria-label={done ? 'Where this leaves you' : 'Current question'}>
           {/*
            * Reading aloud is a preference about the question, so it sits with
            * the question. It used to live at the bottom of the composer, under
            * a divider, fused to the microphone.
            */}
           <div className="mb-2 flex min-h-10 items-center justify-between gap-2">
-            <p className="eyebrow">A place to begin</p>
+            <p className="eyebrow">{done ? 'Where this leaves you' : 'A place to begin'}</p>
             <ReadAloudControl voice={voice} />
           </div>
-          <p className="font-display text-read edgewise-rise max-w-[60ch]" aria-live="polite" aria-atomic="true">{current}</p>
+          <div aria-live="polite" aria-atomic="true">
+            <p key={current} className="font-display text-read edgewise-rise max-w-[60ch]">{current}</p>
+            {done ? (
+              <div className="mt-5 space-y-3">
+                <p className="eyebrow">Your next step</p>
+                {lead && <p className="font-display text-xl">{lead.node.label}</p>}
+                <Button size="touch" onClick={onExplore} className="min-h-12 w-full">
+                  {lead ? 'Explore this idea' : 'Teach me everything'} <ArrowRightIcon />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -305,17 +371,21 @@ export function Conversation({
             <div className="flex flex-wrap gap-2">
               <Button size="touch" onClick={onRetry}>Retry this turn</Button>
               <Button size="touch" variant="outline" onClick={onConfigure}>Connection settings</Button>
-              <Button size="touch" variant="ghost" onClick={onWalk}>Open walkthrough</Button>
+              <Button size="touch" variant="ghost" onClick={onWalk}>Teach me everything</Button>
             </div>
           </div>
         ) : status === 'done' ? (
           <div className="space-y-3">
-            <p className="eyebrow">Your next step</p>
-            {lead && <p className="font-display text-xl">{lead.node.label}</p>}
-            <Button size="touch" onClick={onExplore} className="min-h-12 w-full">
-              {lead ? 'Explore this idea' : 'Open the walkthrough'} <ArrowRightIcon />
-            </Button>
-            <Button variant="ghost" size="touch" onClick={onReset}>Start a fresh conversation</Button>
+            {/*
+             * Two different actions, deliberately far apart in weight. A fresh
+             * conversation keeps every mark; it used to wipe the whole map in
+             * one unconfirmed press, from the screen somebody reaches at the
+             * exact moment the map has become worth having.
+             */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="ghost" size="touch" onClick={onNewConversation}>Start a fresh conversation</Button>
+              <Button variant="ghost" size="touch" onClick={onClearMap} className="text-muted-foreground">Clear my map…</Button>
+            </div>
           </div>
         ) : (
           <>
@@ -370,16 +440,32 @@ export function Conversation({
                * beside both buttons, it read as a caption for the row, and it
                * was unclear which of the two it described.
                */}
+              {/*
+               * The two alternatives to answering sit together, with the
+               * caption under the pair rather than in a column of its own:
+               * set as its own column it was the widest thing on the row, and
+               * with Skip beside it the row overflowed a laptop's panel by 2px
+               * and broke unevenly.
+               *
+               * Skip is always valid and always moves on. The server recognises
+               * it before any model call and records it as "I don't know" is
+               * recorded, so it can never come back as the same question.
+               */}
               <div className="flex flex-col items-start gap-1">
-                <Button
-                  size="touch"
-                  variant="outline"
-                  onClick={() => submit("I don't know")}
-                  disabled={!answering || busy}
-                  aria-describedby="idk-why"
-                >
-                  I don&rsquo;t know
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="touch"
+                    variant="outline"
+                    onClick={() => submit("I don't know")}
+                    disabled={!answering || busy}
+                    aria-describedby="idk-why"
+                  >
+                    I don&rsquo;t know
+                  </Button>
+                  <Button size="touch" variant="outline" onClick={() => submit('Skip')} disabled={!answering || busy}>
+                    Skip
+                  </Button>
+                </div>
                 <span id="idk-why" className="text-muted-foreground text-2xs">
                   helps me find where to begin
                 </span>

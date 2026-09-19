@@ -48,7 +48,7 @@ export const LEGIBLE_SCALE = 12 / 13;
  * Zoom is a camera control, not a design control.
  *
  * The floor is set by a requirement, not by taste: the whole map has to be able
- * to fit a phone. It is 928 content units wide against a 390px viewport, so
+ * to fit a phone. It is 904 content units wide against a 390px viewport, so
  * anything above 0.42 makes "fit the whole thing" impossible and strands
  * someone on a map whose corners they cannot reach. 0.3 leaves headroom below
  * that.
@@ -176,15 +176,20 @@ export const clampZoom = (scale: number): number => Math.min(MAX_ZOOM, Math.max(
  * trade the previous build measured and got right, when it expressed the same
  * rule as a 760px floor.
  *
- * `width` is for the layouts where the panel floats over the map. It shows the
- * full width always and pans vertically. Flooring it at legibility instead
- * clipped the right-hand column mid-node at tablet sizes, which reads as a
- * broken drawing rather than as something you can scroll — a failure the
- * previous build already measured and fixed once.
+ * `width` shows the full width always and pans vertically. It was the resting
+ * mode below the panel breakpoint, for the layout where a drag sheet floated
+ * over the map: flooring that at legibility clipped the right-hand column
+ * mid-node, which reads as a broken drawing rather than as something you can
+ * scroll. The sheet is gone — below 1100px the map and the guide are full-size
+ * views switched between — and `width` at a phone's pane width put the labels
+ * at 5px and the node cards at 22px tall, so nothing uses it as a resting mode
+ * any more. It is kept because that clipping argument is still true of any
+ * future layout that overlays the map.
  *
- * `all` is what the Fit control does, and the phone default: the whole shape at
- * once. At that size the labels are genuinely too small to read cold, which is
- * what an overview is — tapping any node still opens its full text in the panel.
+ * `all` is what the Fit control does: the whole shape at once. At that size the
+ * labels are genuinely too small to read cold, which is what an overview is —
+ * tapping any node still opens its full text in the panel. It is now reached by
+ * asking for it rather than by being the only thing a phone was offered.
  */
 export function fitScale(content: Size, pane: Size, mode: FitMode): number {
   if (pane.width <= 0 || pane.height <= 0) return 1;
@@ -261,6 +266,47 @@ export function zoomAt(camera: Camera, pointer: Point, factor: number, content: 
 export function fitCamera(content: Size, pane: Size, mode: FitMode): Camera {
   const scale = fitScale(content, pane, mode);
   return clampCamera({ scale, x: 0, y: 0 }, content, pane);
+}
+
+/**
+ * The resting camera for a map that is bigger than its pane: same scale as
+ * `fitCamera`, but looking at `target` rather than at the top-left corner.
+ *
+ * A phone cannot have both the whole shape and a readable label — 904 content
+ * units into 350 pixels is a 5px label and a 22px tall card, which is neither
+ * legible nor a big enough thing to tap. So the scale stays at whatever the fit
+ * mode asks for and the camera moves instead, which costs nothing: it is a
+ * camera over a fixed drawing, so nothing here can move one node relative to
+ * another.
+ *
+ * Centred rather than merely brought into view, because this runs on first
+ * paint. `cameraShowing` is the other one — it does the least it can, which is
+ * right when somebody is already reading and wrong when there is nothing on
+ * screen yet to preserve.
+ *
+ * An axis the view already covers is left alone entirely, rather than centred
+ * and then clamped. `panBounds` pins the horizontal axis in that case but
+ * deliberately does NOT pin the vertical one — it allows the camera above the
+ * map, so that `fitCamera` can place the root at the top of the pane rather than
+ * in the middle of it. Centring there would open the map on a band of empty
+ * space above the one node everything else rests on. Caught by its own test.
+ */
+export function cameraOn(content: Size, pane: Size, mode: FitMode, target: Point): Camera {
+  const scale = fitScale(content, pane, mode);
+  const centre = (position: number, contentLength: number, paneLength: number) => {
+    const view = paneLength / scale;
+    return view >= contentLength ? 0 : position - view / 2;
+  };
+
+  return clampCamera(
+    {
+      scale,
+      x: centre(target.x, content.width, pane.width),
+      y: centre(target.y, content.height, pane.height),
+    },
+    content,
+    pane,
+  );
 }
 
 /** Move the camera so a node sits inside the view, without changing the scale. */

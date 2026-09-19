@@ -142,8 +142,8 @@
         "Believing individual neurons hold individual concepts — a 'grandmother neuron' — rather than concepts being spread across many."
       ],
       "explanations": {
-        "intuition": "An artificial neuron multiplies each of its inputs by a weight, adds them up, and passes the total through a simple function that bends the line. That is the whole thing. The weights are the part that gets learned; everything else is fixed arithmetic.",
-        "example": "Ten numbers in, each multiplied by its own weight, summed, then squashed. One number out. You could do it on paper."
+        "intuition": "An artificial neuron is a small number-combiner. It gives each input its own influence, adds the results to a starting number, then applies one simple final rule. One number comes out. The influence settings — called weights — and the starting number are the parts learned during training. There is no little brain inside it: just arithmetic.",
+        "example": "Imagine a streaming app has already described a movie with numbers — how funny it is, how mysterious it is, and so on. One neuron can make each number count more, less, or against the result, add them, and send out one match score. It sees only the numbers, not the movie."
       },
       "simplificationCost": "The word 'neuron' does real damage. It imports intuitions about brains — firing, memory, thinking — that do not apply, and it makes the arithmetic sound more mysterious than it is."
     },
@@ -183,16 +183,16 @@
         "training-vs-inference"
       ],
       "probes": [
-        "A model gets every single training example exactly right. Is that good news? Why or why not?",
-        "What would you actually want a model to have picked up, as opposed to what it could pick up?"
+        "A model gets every training example right. Does that prove it learned the pattern? Why?",
+        "What should the model learn so it can handle a new example?"
       ],
       "misconceptions": [
-        "Reading perfect training performance as success, rather than as the classic warning sign.",
-        "Thinking overfitting means the model is bad, rather than that it learned the wrong thing very well."
+        "Thinking a perfect score on the training examples proves the model will work on new examples.",
+        "Thinking an overfitted model learned nothing. It learned the examples very closely, including details that do not repeat."
       ],
       "explanations": {
-        "intuition": "A model with enough capacity can simply memorise its training data — get everything right and have learned nothing transferable. What you actually want is a rule that works on examples it has never seen. Perfect scores on the data you trained on are evidence of memorisation at least as often as evidence of understanding.",
-        "example": "A student who memorises last year's exam paper scores full marks on it and fails this year's. Nothing about the full marks was fake; it just measured the wrong thing."
+        "intuition": "A model can get every practice example right by following small details that will not happen again. That does not mean it found a useful pattern. The real test is whether its rule also works on new examples it has never seen.",
+        "example": "A student memorises last year's test and gets full marks on that same paper. Then the questions change and the student struggles. The first score was real, but it only showed that they remembered those questions."
       },
       "simplificationCost": null
     },
