@@ -1737,6 +1737,16 @@ to me**, through `useReadOut`: speaker only, no listener, no preference. One
 press reads the intuition, example and caveat in the walkthrough's words, and
 opening another idea stops it.
 
+**The silence window ran through the permission prompt.** Reported from real
+use: on a first visit, "Say it instead" put Chrome's microphone prompt up, and
+by the time it was allowed the turn had already closed — the window started at
+`start()`, and reading a prompt takes longer than four seconds. It now starts
+when the microphone actually opens (`audiostart`, or a first result where that
+is not reported). Since the window can no longer bound a recogniser that ends
+instantly without opening, `MAX_UNOPENED` does: three such ends and the turn
+closes. One waiting on a prompt does not end, so is never counted. The three
+prompt tests in `listener.test.ts` fail against the old listener.
+
 Verified in the browser at 1230px: the consent note appears on first press and
 "Not now" records nothing; turning read aloud on reads the current question and
 leaves the microphone closed. **Not verified:** the hands-free handover after a

@@ -101,6 +101,18 @@ const HANDOVER_MS = 300;
  */
 const CLOSING_MS = 1200;
 
+/**
+ * How many recognisers may end without the microphone ever having opened
+ * before the turn gives up.
+ *
+ * The silence window only runs once the microphone is live (see `opened`), so
+ * it can no longer be what bounds a recogniser that ends instantly on its own —
+ * a microphone held by something else, say. This is. It counts only
+ * recognisers that never reached `audiostart`: one waiting on a permission
+ * prompt does not end, so somebody reading the prompt is never counted.
+ */
+const MAX_UNOPENED = 3;
+
 /** Recogniser error codes worth telling someone about, and what they mean. */
 const ERRORS: Record<string, ListenError> = {
   'not-allowed': 'denied',
@@ -137,6 +149,8 @@ type Recognition = {
   onresult: ((event: RecognitionEvent) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  /** Fires once audio capture has begun — which is after any permission prompt. */
+  onaudiostart: (() => void) | null;
 };
 
 type RecognitionConstructor = new () => Recognition;
@@ -176,6 +190,20 @@ type Turn = {
    * absorb them.
    */
   lastHeard: number;
+  /**
+   * Whether the microphone has actually opened this turn.
+   *
+   * The silence window does not run until it has. On a first visit `start()`
+   * puts Chrome's permission prompt in front of the learner, and reading it and
+   * choosing takes longer than the window — so the turn used to close before
+   * the microphone it was waiting on had ever opened, and the first thing
+   * somebody saw after allowing it was their turn ending.
+   *
+   * Set once and never cleared: restarts come out of the window, as above.
+   */
+  opened: boolean;
+  /** Recognisers that ended before the microphone ever opened. See MAX_UNOPENED. */
+  unopened: number;
   recogniser: Recognition | null;
   /** The silence-window poll. One per turn, cleared when the turn settles. */
   tick: ReturnType<typeof setInterval> | null;
@@ -295,11 +323,25 @@ export function browserListener(options: ListenerOptions = {}): Listener {
     /** True only while this recogniser is the one the current turn is using. */
     const mine = () => turn === subject && subject.recogniser === recognition && !subject.settled;
 
+    /** The microphone is live. The silence window starts from here, once. */
+    const open = () => {
+      if (subject.opened) return;
+      subject.opened = true;
+      subject.lastHeard = Date.now();
+    };
+
+    recognition.onaudiostart = () => {
+      if (mine()) open();
+    };
+
     recognition.onresult = (event) => {
       // A superseded recogniser finishing its last thought must not be able to
       // write into the turn that replaced it.
       if (!mine()) return;
 
+      // A result proves the microphone is open even where `audiostart` is not
+      // reported — the window must not be able to wait for it forever.
+      open();
       subject.lastHeard = Date.now();
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         const result = event.results[index];
@@ -329,10 +371,14 @@ export function browserListener(options: ListenerOptions = {}): Listener {
       if (!mine()) return;
       subject.recogniser = null;
 
+      if (!subject.wanted) return settle(subject);
+
+      // Ended without ever opening the microphone. Retried, but not forever.
+      if (!subject.opened && ++subject.unopened >= MAX_UNOPENED) return settle(subject);
+
       // Still meant to be listening: the browser stopped, we did not. Scheduled
       // rather than immediate — see RESTART_MS.
-      if (subject.wanted) after(subject, RESTART_MS, () => spawn(subject));
-      else settle(subject);
+      after(subject, RESTART_MS, () => spawn(subject));
     };
 
     try {
@@ -374,9 +420,11 @@ export function browserListener(options: ListenerOptions = {}): Listener {
         handlers,
         wanted: true,
         settled: false,
-        // Seeded when the microphone actually opens, below, so the handover is
-        // not charged against the learner's thinking time.
+        // Seeded when the microphone actually opens, so neither the handover
+        // nor a permission prompt is charged against the learner's thinking time.
         lastHeard: Date.now(),
+        opened: false,
+        unopened: 0,
         recogniser: null,
         tick: null,
         timers: [],
@@ -384,15 +432,12 @@ export function browserListener(options: ListenerOptions = {}): Listener {
       turn = subject;
 
       subject.tick = setInterval(() => {
-        if (subject.settled || !subject.wanted) return;
+        if (subject.settled || !subject.wanted || !subject.opened) return;
         if (Date.now() - subject.lastHeard >= SILENCE_MS) close(subject);
       }, TICK_MS);
 
       if (handoverMs > 0) {
-        after(subject, handoverMs, () => {
-          subject.lastHeard = Date.now();
-          spawn(subject);
-        });
+        after(subject, handoverMs, () => spawn(subject));
       } else {
         spawn(subject);
       }
@@ -414,4 +459,4 @@ export const LISTEN_ERROR_COPY: Record<ListenError, string> = {
   failed: 'Speech recognition is not working in this browser. Typing works everywhere.',
 };
 
-export const LISTENER_TIMING = { SILENCE_MS, TICK_MS, RESTART_MS, HANDOVER_MS, CLOSING_MS };
+export const LISTENER_TIMING = { SILENCE_MS, TICK_MS, RESTART_MS, HANDOVER_MS, CLOSING_MS, MAX_UNOPENED };
