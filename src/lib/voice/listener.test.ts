@@ -398,6 +398,23 @@ describe('the permission prompt', () => {
     expect(FakeRecogniser.live).toHaveLength(MAX_UNOPENED);
   });
 
+  it('says when the microphone has opened, once, and not before', () => {
+    // The interface says "Waiting for the microphone" until this fires, so
+    // firing early would put "Listening…" over a prompt again.
+    let opens = 0;
+    browserListener().start({ ...record().handlers, onOpen: () => (opens += 1) });
+
+    vi.advanceTimersByTime(SILENCE_MS);
+    expect(opens).toBe(0);
+
+    latest().open();
+    latest().say('weights', false);
+    latest().end();
+    vi.advanceTimersByTime(RESTART_MS);
+    latest().open();
+    expect(opens).toBe(1);
+  });
+
   it('still reports a refused prompt', () => {
     const log = record();
     browserListener().start(log.handlers);

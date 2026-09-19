@@ -108,7 +108,9 @@ export function Conversation({
    * page, so the halo shows for both voices but only reacts to one — which is
    * the right way round, since the question it answers is "can it hear me".
    */
-  const micLevel = useMicLevel(voice.listening);
+  // Not while the permission prompt is up: a second capture asking at the same
+  // moment has nothing to measure yet.
+  const micLevel = useMicLevel(voice.listening && !voice.waiting);
 
   /*
    * Speak each new tutor turn once.
@@ -322,7 +324,9 @@ export function Conversation({
                  microphone opens. Stopping lives in the button below, which is
                  the same control that started it. */
               <div className="border-border flex h-[5.25rem] items-center rounded-lg border border-dashed px-3">
-                <span className="text-muted-foreground text-base">Listening…</span>
+                <span role="status" className="text-muted-foreground text-base">
+                  {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : 'Listening…'}
+                </span>
               </div>
             ) : (
               <Textarea
@@ -409,11 +413,12 @@ export function Conversation({
                     // Stopping stays available even mid-request; only starting is
                     // held back while a turn is in flight.
                     disabled={(busy || !answering || mic.asking) && !voice.listening}
-                    aria-label={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
-                    title={voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                    aria-label={voice.waiting ? 'Cancel' : voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
+                    title={voice.waiting ? 'Cancel' : voice.listening ? 'Stop talking and send it' : 'Answer out loud'}
                   >
                     {voice.listening ? <Square className="fill-current" /> : <AudioLines />}
-                    {voice.listening ? 'Stop and send' : null}
+                    {/* Nothing has been heard yet, so there is nothing to send. */}
+                    {voice.waiting ? 'Cancel' : voice.listening ? 'Stop and send' : null}
                   </Button>
                 ) : null}
 

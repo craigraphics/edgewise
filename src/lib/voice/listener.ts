@@ -44,6 +44,11 @@ export type ListenHandlers = {
   /** Fires repeatedly as recognition firms up. `final` marks the last one. */
   onResult(transcript: string, final: boolean): void;
   onError(reason: ListenError): void;
+  /**
+   * The microphone is actually open — after any permission prompt. At most once
+   * per `start`. Until it fires, the learner is being asked, not heard.
+   */
+  onOpen?(): void;
   /** Fires exactly once per `start`, once recognition has stopped for any reason. */
   onEnd(): void;
 };
@@ -328,6 +333,7 @@ export function browserListener(options: ListenerOptions = {}): Listener {
       if (subject.opened) return;
       subject.opened = true;
       subject.lastHeard = Date.now();
+      subject.handlers.onOpen?.();
     };
 
     recognition.onaudiostart = () => {

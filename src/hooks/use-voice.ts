@@ -32,6 +32,7 @@ import { browserSpeaker, type Speaker } from '@/lib/voice/speaker';
 // preferences carry over without re-asking anything.
 const KEY = 'edgewise.voice.v1';
 const MIC_CONSENT_KEY = 'edgewise.mic-consent.v1';
+const WAITING_SHOWN_AFTER_MS = 500;
 
 export function useVoice(onFinalTranscript: (text: string) => void) {
   const speaker = useRef<Speaker | null>(null);
@@ -44,6 +45,25 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
   const [supported, setSupported] = useState({ speak: false, listen: false });
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
+  /*
+   * Listening has been asked for and the microphone is not open yet — on a
+   * first visit, Chrome's permission prompt is up. Saying "Listening…" over
+   * that is untrue, and somebody who starts answering into it loses the start
+   * of their answer.
+   */
+  const [waiting, setWaiting] = useState(false);
+  /*
+   * Shown only if opening takes a noticeable time. With permission already
+   * granted the microphone opens in about a tenth of a second, and flashing
+   * "Waiting for the microphone" for that long on every hands-free turn is
+   * noise. A prompt takes seconds.
+   */
+  const waitingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearWaiting = useCallback(() => {
+    if (waitingTimer.current) clearTimeout(waitingTimer.current);
+    waitingTimer.current = null;
+    setWaiting(false);
+  }, []);
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +71,9 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
   const finalText = useRef('');
   /** Whether this turn already reported a reason, so the fallback stays quiet. */
   const failed = useRef(false);
+  /** Stopped by the learner before the microphone ever opened: a cancel, not a miss. */
+  const cancelled = useRef(false);
+  const opened = useRef(false);
   /*
    * Held in a ref because the listener's callbacks are registered once per
    * `start` and would otherwise close over a stale `onFinalTranscript` — an
@@ -77,6 +100,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     return () => {
       speaker.current?.stop();
       listener.current?.stop();
+      if (waitingTimer.current) clearTimeout(waitingTimer.current);
     };
   }, []);
 
@@ -90,11 +114,21 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
 
     finalText.current = '';
     failed.current = false;
+    cancelled.current = false;
+    opened.current = false;
     setInterim('');
     setError(null);
     setListening(true);
+    clearWaiting();
+    waitingTimer.current = setTimeout(() => {
+      if (!opened.current) setWaiting(true);
+    }, WAITING_SHOWN_AFTER_MS);
 
     listener.current.start({
+      onOpen: () => {
+        opened.current = true;
+        clearWaiting();
+      },
       onResult: (transcript, isFinal) => {
         if (isFinal) {
           finalText.current = `${finalText.current} ${transcript}`.trim();
@@ -112,6 +146,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
       },
       onEnd: () => {
         setListening(false);
+        clearWaiting();
         setInterim('');
 
         const heard = finalText.current.trim();
@@ -130,12 +165,14 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
          * Suppressed when an error was already reported: that message is more
          * specific than this one and has just been put on screen.
          */
-        if (!failed.current) setError(LISTEN_ERROR_COPY['no-speech']);
+        if (!failed.current && !cancelled.current) setError(LISTEN_ERROR_COPY['no-speech']);
       },
     });
-  }, []);
+  }, [clearWaiting]);
 
   const stopListening = useCallback(() => {
+    // Backing out of the prompt is not a turn where nothing was heard.
+    if (!opened.current) cancelled.current = true;
     listener.current?.stop();
   }, []);
 
@@ -182,6 +219,7 @@ export function useVoice(onFinalTranscript: (text: string) => void) {
     supported,
     speaking,
     listening,
+    waiting,
     interim,
     error,
     toggleReadAloud,

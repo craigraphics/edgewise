@@ -1747,6 +1747,16 @@ instantly without opening, `MAX_UNOPENED` does: three such ends and the turn
 closes. One waiting on a prompt does not end, so is never counted. The three
 prompt tests in `listener.test.ts` fail against the old listener.
 
+**Waiting is not listening.** Until the microphone opens (`onOpen`), both mic
+surfaces say *"Waiting for the microphone… allow it when your browser asks."*
+and the stop control reads **Cancel** — nothing has been heard, so there is
+nothing to send, and cancelling does not show "did not catch anything". The text
+appears only if opening takes over 500ms: with permission granted it opens in
+about a tenth of a second, and a flash of it on every hands-free turn is noise.
+The level meter waits too, so it does not open a second capture into the prompt.
+**Caveat:** a browser that never reports `audiostart` shows "Waiting" until the
+first words arrive. Chrome, desktop and Android, reports it.
+
 Verified in the browser at 1230px: the consent note appears on first press and
 "Not now" records nothing; turning read aloud on reads the current question and
 leaves the microphone closed. **Not verified:** the hands-free handover after a

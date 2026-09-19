@@ -137,9 +137,11 @@ export function ExplainBack({ node, state, config, onEarned, openRequest = 0, pr
       {prompt && <p className="text-sm">{prompt}</p>}
       {voice.listening ? (
         <div className="border-border flex h-20 items-center justify-between rounded-lg border border-dashed px-3">
-          <span className="text-muted-foreground text-base">{voice.interim || 'Listening…'}</span>
+          <span role="status" className="text-muted-foreground text-base">
+            {voice.waiting ? 'Waiting for the microphone… allow it when your browser asks.' : voice.interim || 'Listening…'}
+          </span>
           <Button size="touch" variant="outline" onClick={voice.stopListening}>
-            Done
+            {voice.waiting ? 'Cancel' : 'Done'}
           </Button>
         </div>
       ) : (
